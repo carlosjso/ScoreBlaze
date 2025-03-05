@@ -1,0 +1,215 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcador de Baloncesto</title>
+    <link rel="stylesheet" href="~/css/marcador.css">
+</head>
+<body>
+    <div class="scoreboard">
+
+        <div class="time" id="time">10:00</div>
+        <div class="quarter">
+            <span>Cuarto</span>
+            <div class="quarter-number" id="quarter">1</div>
+        </div>
+        <div class="teams">
+            <div class="team">
+                <img src="titanes.jpeg" alt="Local Logo" class="team-logo" id="local-logo">
+                <div class="team-name">Titanes</div>
+                <div class="score" id="local-score">0</div>
+                <div class="score-animation" id="local-score-animation"></div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="team">
+            <img src="gladeadores.jpg" alt="Visitante Logo" class="team-logo" id="visitor-logo">
+            <div class="team-name">Gladiadores</div>
+            <div class="score" id="visitor-score">0</div>
+            <div class="score-animation" id="visitor-score-animation"></div>
+            </div>
+            </div>
+            <div class="arrow-container">
+            <div class="fouls" id="local-fouls">0</div>
+            <div class="arrow" id="arrow">⮕</div>
+            <div class="fouls" id="visitor-fouls">0</div>
+            </div>
+            </div>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+
+<script>
+    let time = 600; // 10 minutos
+    const timeDisplay = document.getElementById('time');
+    let timerInterval;
+    let isPaused = true; 
+    let isSubtracting = false;
+
+    function updateTime() {
+        let minutes = Math.floor(time / 60);
+        let seconds = time % 60;
+        timeDisplay.textContent = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        if (time > 0) {
+            time--;
+        } else {
+            resetTime(); 
+        }
+    }
+    function resetTime() {
+            clearInterval(timerInterval);
+            time = 600; 
+            updateTime();
+            startTimer();
+        }
+
+    function startTimer() {
+        timerInterval = setInterval(updateTime, 1000);
+    }
+
+    function pauseTime() {
+        clearInterval(timerInterval);
+    }
+
+    function resumeTime() {
+        startTimer();
+    }
+
+    function togglePause() {
+        if (isPaused) {
+            resumeTime();
+        } else {
+            pauseTime();
+        }
+        isPaused = !isPaused;
+    }
+
+    function updateScore(team, points) {
+        const scoreElement = document.getElementById(`${team}-score`);
+        let currentScore = parseInt(scoreElement.textContent);
+        currentScore += points;
+        scoreElement.textContent = currentScore < 0 ? 0 : currentScore;
+        if (points > 0 && !isSubtracting) {
+            showScoreAnimation(team, points); 
+            triggerConfetti();
+            const logoElement = document.getElementById(`${team}-logo`);
+            logoElement.classList.add('rotate'); 
+            setTimeout(() => {
+                logoElement.classList.remove('rotate'); 
+            }, 1000);
+            if (points === 3) {
+                document.body.classList.add('shake'); 
+                setTimeout(() => {
+                    document.body.classList.remove('shake'); 
+                }, 500);
+            }
+        }
+    }
+
+    function showScoreAnimation(team, points) {
+        const scoreAnimation = document.getElementById(`${team}-score-animation`);
+        scoreAnimation.textContent = `+${points}`;
+        scoreAnimation.style.display = 'block'; 
+        setTimeout(() => {
+            scoreAnimation.style.opacity = '0'; 
+            scoreAnimation.style.transform = 'translate(-50%, -150%)'; 
+setTimeout(() => {
+scoreAnimation.style.display = 'none'; 
+scoreAnimation.style.opacity = '1'; 
+scoreAnimation.style.transform = 'translate(-50%, -50%)'; 
+}, 500);
+}, 1000);
+}
+function updateQuarter(increment) {
+    const quarterElement = document.getElementById('quarter');
+    let currentQuarter = quarterElement.textContent === 'T.E.' ? 5 : parseInt(quarterElement.textContent);
+    currentQuarter += increment;
+    if (currentQuarter > 4) {
+        quarterElement.textContent = 'T.E.';
+    } else if (currentQuarter < 1) {
+        quarterElement.textContent = '1';
+    } else {
+        quarterElement.textContent = currentQuarter;
+    }
+}
+
+function updateArrow(direction) {
+    const arrowElement = document.getElementById('arrow');
+    arrowElement.textContent = direction === 'left' ? '⬅' : '⮕';
+}
+
+function updateFouls(team, increment) {
+    const foulsElement = document.getElementById(`${team}-fouls`);
+    let currentFouls = parseInt(foulsElement.textContent);
+    currentFouls += increment;
+    foulsElement.textContent = currentFouls < 0 ? 0 : currentFouls;
+}
+
+function triggerConfetti() {
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
+
+document.addEventListener('keydown', function(event) {
+    switch(event.code) {
+        case 'Space':
+            event.preventDefault();
+            togglePause();
+            break
+            case 'Digit1':
+            updateScore('local', isSubtracting ? -1 : 1);
+            break;
+        case 'Digit2':
+            updateScore('local', isSubtracting ? -2 : 2);
+            break;
+        case 'Digit3':
+            updateScore('local', isSubtracting ? -3 : 3);
+            break;
+        case 'KeyQ':
+            updateScore('visitor', isSubtracting ? -1 : 1);
+            break;
+        case 'KeyW':
+            updateScore('visitor', isSubtracting ? -2 : 2);
+            break;
+        case 'KeyE':
+            updateScore('visitor', isSubtracting ? -3 : 3);
+            break;
+        case 'ArrowUp':
+            updateQuarter(1);
+            break;
+        case 'ArrowDown':
+            updateQuarter(-1);
+            break;
+        case 'ArrowLeft':
+            updateArrow('left');
+            break;
+        case 'ArrowRight':
+            updateArrow('right');
+            break;
+        case 'Digit9':
+            updateFouls('local', event.getModifierState('CapsLock') ? -1 : 1);
+            break;
+        case 'Digit0':
+            updateFouls('visitor', event.getModifierState('CapsLock') ? -1 : 1);
+            break;
+        default:
+            break;
+    }
+});
+
+document.addEventListener('keyup', function(event) {
+    if (event.code === 'CapsLock') {
+        toggleSubtracting();
+    }
+});
+
+function toggleSubtracting() {
+    isSubtracting = !isSubtracting;
+}
+
+
+</script>
+</body>
+</html>

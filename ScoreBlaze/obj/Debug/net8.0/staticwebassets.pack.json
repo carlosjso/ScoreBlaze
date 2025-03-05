@@ -1,8 +1,12 @@
 {
   "Files": [
     {
-      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\styles.css",
-      "PackagePath": "staticwebassets\\css\\styles.css"
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\inicio.css",
+      "PackagePath": "staticwebassets\\css\\inicio.css"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\marcador.css",
+      "PackagePath": "staticwebassets\\css\\marcador.css"
     },
     {
       "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\favicon.ico",

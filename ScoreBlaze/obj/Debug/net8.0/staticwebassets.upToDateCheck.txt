@@ -1,4 +1,5 @@
-wwwroot\css\styles.css
+wwwroot\css\inicio.css
+wwwroot\css\marcador.css
 wwwroot\favicon.ico
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap.css
