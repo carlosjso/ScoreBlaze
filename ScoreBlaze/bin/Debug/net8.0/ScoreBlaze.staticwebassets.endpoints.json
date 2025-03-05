@@ -2223,8 +2223,8 @@
       ]
     },
     {
-      "Route": "css/styles.css",
-      "AssetFile": "css/styles.css",
+      "Route": "css/inicio.css",
+      "AssetFile": "css/inicio.css",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -2249,7 +2249,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Wed, 05 Mar 2025 19:57:58 GMT"
+          "Value": "Wed, 05 Mar 2025 20:30:31 GMT"
         }
       ],
       "EndpointProperties": [
@@ -2260,8 +2260,8 @@
       ]
     },
     {
-      "Route": "css/styles.xd0zzf4epy.css",
-      "AssetFile": "css/styles.css",
+      "Route": "css/inicio.xd0zzf4epy.css",
+      "AssetFile": "css/inicio.css",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -2286,7 +2286,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Wed, 05 Mar 2025 19:57:58 GMT"
+          "Value": "Wed, 05 Mar 2025 20:30:31 GMT"
         }
       ],
       "EndpointProperties": [
@@ -2300,7 +2300,89 @@
         },
         {
           "Name": "label",
-          "Value": "css/styles.css"
+          "Value": "css/inicio.css"
+        }
+      ]
+    },
+    {
+      "Route": "css/marcador.css",
+      "AssetFile": "css/marcador.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "3384"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 05 Mar 2025 20:49:42 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU="
+        }
+      ]
+    },
+    {
+      "Route": "css/marcador.czwosrep9a.css",
+      "AssetFile": "css/marcador.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "3384"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 05 Mar 2025 20:49:42 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "czwosrep9a"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU="
+        },
+        {
+          "Name": "label",
+          "Value": "css/marcador.css"
         }
       ]
     },

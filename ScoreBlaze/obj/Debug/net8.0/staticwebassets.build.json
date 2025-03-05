@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "ow/lL09f1UMXlO97aIkuolKIbw+2cLrviduX+R6VCtg=",
+  "Hash": "1aEs+7G//AlnlNT6FRpnX1AxS5AJjPrbELp2bV8GC0Y=",
   "Source": "ScoreBlaze",
   "BasePath": "_content/ScoreBlaze",
   "Mode": "Default",
@@ -1277,12 +1277,12 @@
       "OriginalItemSpec": "C:\\Users\\carlo\\.nuget\\packages\\microsoft.aspnetcore.identity.ui\\8.0.13\\staticwebassets\\V5\\lib\\jquery-validation-unobtrusive\\LICENSE.txt"
     },
     {
-      "Identity": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\styles.css",
+      "Identity": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\inicio.css",
       "SourceId": "ScoreBlaze",
       "SourceType": "Discovered",
       "ContentRoot": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\",
       "BasePath": "_content/ScoreBlaze",
-      "RelativePath": "css/styles#[.{fingerprint}]?.css",
+      "RelativePath": "css/inicio#[.{fingerprint}]?.css",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -1295,7 +1295,28 @@
       "Integrity": "S7Tx421WU3yjuDEcwpOBez74UWsmucBDBoRLDi1vBkQ=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\css\\styles.css"
+      "OriginalItemSpec": "wwwroot\\css\\inicio.css"
+    },
+    {
+      "Identity": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\marcador.css",
+      "SourceId": "ScoreBlaze",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\",
+      "BasePath": "_content/ScoreBlaze",
+      "RelativePath": "css/marcador#[.{fingerprint}]?.css",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "czwosrep9a",
+      "Integrity": "+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\css\\marcador.css"
     },
     {
       "Identity": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\favicon.ico",
@@ -2539,8 +2560,8 @@
   ],
   "Endpoints": [
     {
-      "Route": "css/styles.css",
-      "AssetFile": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\styles.css",
+      "Route": "css/inicio.css",
+      "AssetFile": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\inicio.css",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -2561,7 +2582,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Wed, 05 Mar 2025 19:57:58 GMT"
+          "Value": "Wed, 05 Mar 2025 20:30:31 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2576,8 +2597,8 @@
       ]
     },
     {
-      "Route": "css/styles.xd0zzf4epy.css",
-      "AssetFile": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\styles.css",
+      "Route": "css/inicio.xd0zzf4epy.css",
+      "AssetFile": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\inicio.css",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -2598,7 +2619,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Wed, 05 Mar 2025 19:57:58 GMT"
+          "Value": "Wed, 05 Mar 2025 20:30:31 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2612,11 +2633,93 @@
         },
         {
           "Name": "label",
-          "Value": "css/styles.css"
+          "Value": "css/inicio.css"
         },
         {
           "Name": "integrity",
           "Value": "sha256-S7Tx421WU3yjuDEcwpOBez74UWsmucBDBoRLDi1vBkQ="
+        }
+      ]
+    },
+    {
+      "Route": "css/marcador.css",
+      "AssetFile": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\marcador.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "3384"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 05 Mar 2025 20:49:42 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU="
+        }
+      ]
+    },
+    {
+      "Route": "css/marcador.czwosrep9a.css",
+      "AssetFile": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\marcador.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "3384"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 05 Mar 2025 20:49:42 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "czwosrep9a"
+        },
+        {
+          "Name": "label",
+          "Value": "css/marcador.css"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-+MQWYCXvxz4XdIC0y7Tlwxp9+z6AaRaZIx3XxljKXpU="
         }
       ]
     },
