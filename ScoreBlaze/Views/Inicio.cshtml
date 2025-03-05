@@ -1,0 +1,51 @@
+﻿@{
+    Layout = null; // Quita esto si usas un Layout en el proyecto
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoreBlaze Announcement</title>
+    <link rel="stylesheet" href="~/css/styles.css" />
+</head>
+<body>
+    <div class="announcement">ScoreBlaze</div>
+    <script>
+        const ballImages = [
+            'https://upload.wikimedia.org/wikipedia/commons/7/7a/Basketball.png', // Basket ball
+            'https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg', // Soccer ball
+			'https://cdn1.iconfinder.com/data/icons/sports-balls-filled-outline-64-px/64/volleyball-ball-sport-volley-512.png', // Volley ball
+        ];
+
+        const numBalls = 15;  
+        const balls = [];
+
+        function createBall() {
+            let ball = document.createElement('div');
+            ball.classList.add('ball');
+            ball.style.left = `${Math.random() * 100}vw`;
+            ball.style.animationDuration = `${Math.random() * 2 + 1.5}s`;
+            ball.style.animationDelay = `${Math.random() * 5}s`;
+            let randomIndex = Math.floor(Math.random() * ballImages.length);
+            ball.style.backgroundImage = `url(${ballImages[randomIndex]})`;
+            document.body.appendChild(ball);
+            balls.push(ball);
+
+            // Remove the ball after it has fallen to prevent memory leaks
+            ball.addEventListener('animationend', () => {
+                ball.remove();
+            });
+        }
+
+        for (let i = 0; i < numBalls; i++) {
+            createBall();
+        }
+
+        document.addEventListener('click', () => {
+            window.location.href = 'menu.html';
+        });
+    </script>
+</body>
+</html>
