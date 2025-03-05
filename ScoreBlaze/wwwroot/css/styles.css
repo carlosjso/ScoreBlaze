@@ -1,0 +1,95 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    font-family: 'Russo One', sans-serif;
+}
+
+.announcement {
+    position: relative;
+    font-size: 12vw;
+    font-weight: bold;
+    color: #ffffff;
+    text-transform: capitalize;
+    text-align: center;
+    animation: bounce 2s infinite, fadeIn 1.5s ease-out;
+}
+
+    .announcement::before, .announcement::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 200%;
+        height: 5px;
+        background-color: #ff4500;
+        transform: translateY(-50%);
+        animation: slideIn 10s ease-out infinite;
+    }
+
+    .announcement::before {
+        left: -100%;
+    }
+
+    .announcement::after {
+        right: -100%;
+    }
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-30px);
+    }
+
+    60% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes fall {
+    from {
+        top: -10%;
+    }
+
+    to {
+        top: 110%;
+    }
+}
+
+.ball {
+    position: absolute;
+    top: -10%;
+    width: 50px;
+    height: 50px;
+    background-size: cover;
+    animation: fall 3s linear infinite;
+}
