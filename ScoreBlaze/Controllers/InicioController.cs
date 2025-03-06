@@ -15,7 +15,7 @@ public class InicioController : Controller
 
     public IActionResult Index()
     {
-        return View();
+        return View("~/Views/Inicio.cshtml");
     }
 
     public IActionResult Privacy()

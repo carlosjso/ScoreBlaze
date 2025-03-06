@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 wwwroot\css\styles.css
+=======
+wwwroot\css\inicio.css
+wwwroot\css\marcador.css
+>>>>>>> 0e646bb4350a9cbc1928b30f01355dcbb01a2a72
 wwwroot\favicon.ico
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap.css
