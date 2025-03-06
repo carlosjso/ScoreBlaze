@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: Microsoft.AspNetCore.Identity.UI.UIFrameworkAttribute("Bootstrap5")]
 [assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("aspnet-ScoreBlaze-202fb35e-a315-43f4-9478-15d2d552a026")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("ScoreBlaze")]
-[assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
+[assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1d9d0ed8c4cd87a25ff0ac30a4e0e3a147a8d45c")]
 [assembly: System.Reflection.AssemblyProductAttribute("ScoreBlaze")]
