@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ScoreBlaze")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3d4da98840fa0deeb29045dba2f8783c89e55cae")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0e646bb4350a9cbc1928b30f01355dcbb01a2a72")]
 [assembly: System.Reflection.AssemblyProductAttribute("ScoreBlaze")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ScoreBlaze")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -153,3 +153,5 @@ C:\Users\carlo\Desktop\ScoreBlaze\ScoreBlazeSolucionario\ScoreBlaze\obj\Debug\ne
 C:\Users\carlo\Desktop\ScoreBlaze\ScoreBlazeSolucionario\ScoreBlaze\obj\Debug\net8.0\ScoreBlaze.pdb
 C:\Users\carlo\Desktop\ScoreBlaze\ScoreBlazeSolucionario\ScoreBlaze\obj\Debug\net8.0\ScoreBlaze.genruntimeconfig.cache
 C:\Users\carlo\Desktop\ScoreBlaze\ScoreBlazeSolucionario\ScoreBlaze\obj\Debug\net8.0\ref\ScoreBlaze.dll
+C:\Users\carlo\Desktop\ScoreBlaze\ScoreBlazeSolucionario\ScoreBlaze\bin\Debug\net8.0\MySqlConnector.dll
+C:\Users\carlo\Desktop\ScoreBlaze\ScoreBlazeSolucionario\ScoreBlaze\bin\Debug\net8.0\Pomelo.EntityFrameworkCore.MySql.dll
