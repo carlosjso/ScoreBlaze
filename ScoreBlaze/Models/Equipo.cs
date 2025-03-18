@@ -10,5 +10,6 @@ namespace ScoreBlaze.Models
         public long Id { get; set; }
         [StringLength(250)]
         public string Nombre { get; set; } = string.Empty;
+        public byte[]? Logo { get; set; }
     }
 }
