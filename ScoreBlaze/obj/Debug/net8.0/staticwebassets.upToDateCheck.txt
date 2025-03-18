@@ -1,6 +1,10 @@
 wwwroot\css\inicio.css
 wwwroot\css\marcador.css
+wwwroot\css\menu.css
+wwwroot\css\partido.css
 wwwroot\favicon.ico
+wwwroot\js\menu.js
+wwwroot\js\partido.js
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap.css
 wwwroot\lib\bootstrap\dist\css\bootstrap.css.map

@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partido en curso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+    <link href="~/css/partido.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container">
+        <!-- Selección de partido en un solo dropdown -->
+        <div class="team-selection">
+            <label for="match">Seleccionar Partido:</label>
+            <select id="match">
+                <option value="Seleccionar">Seleccionar</option>
+                <option value="Lobos vs Pumas">Lobos vs Pumas</option>
+                <option value="Tigres vs Leones">Tigres vs Leones</option>
+                <option value="Águilas vs Halcones">Águilas vs Halcones</option>
+            </select>
+
+            <button onclick="startMatch()">Iniciar Partido</button>
+        </div>
+
+        <div class="header">Registro del Partido</div>
+        <div class="tables">
+            <table>
+                <tr>
+                    <th colspan="4" id="teamALabel">Tabla Local</th>
+                </tr>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Número</th>
+                    <th>Puntos</th>
+                    <th>Faltas</th>
+                </tr>
+                <tr onclick="selectRow(event)"><td>Jugador 1</td><td>10</td><td>0</td><td>0</td></tr>
+                <tr onclick="selectRow(event)"><td>Jugador 2</td><td>15</td><td>0</td><td>0</td></tr>
+            </table>
+            <table>
+                <tr>
+                    <th colspan="4" id="teamBLabel">Tabla Visitante</th>
+                </tr>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Número</th>
+                    <th>Puntos</th>
+                    <th>Faltas</th>
+                </tr>
+                <tr onclick="selectRow(event)"><td>Jugador 3</td><td>8</td><td>0</td><td>0</td></tr>
+                <tr onclick="selectRow(event)"><td>Jugador 4</td><td>12</td><td>0</td><td>0</td></tr>
+            </table>
+        </div>
+        <div class="buttons">
+            <button onclick="addPoints(1)">1</button>
+            <button onclick="addPoints(2)">2</button>
+            <button onclick="addPoints(3)">3</button>
+            <button onclick="addFoul()">Falta</button>
+        </div>
+        <div class="buttons">
+            <button style="margin-top:150px;" onclick="window.open('/Marcador', '_blank');">Marcador</button>
+        </div>
+    </div>
+    <script src="~/js/partido.js"></script>
+</body>
+</html>

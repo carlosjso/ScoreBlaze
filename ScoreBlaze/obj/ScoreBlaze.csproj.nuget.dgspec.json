@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\ScoreBlaze.csproj": {}
+    "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj": {}
   },
   "projects": {
-    "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\ScoreBlaze.csproj": {
+    "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\ScoreBlaze.csproj",
+        "projectUniqueName": "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
         "projectName": "ScoreBlaze",
-        "projectPath": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\ScoreBlaze.csproj",
-        "packagesPath": "C:\\Users\\carlo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\obj\\",
+        "projectPath": "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
+        "packagesPath": "C:\\Users\\ASUS GAMER\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "D:\\Program Files\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\carlo\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ASUS GAMER\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
