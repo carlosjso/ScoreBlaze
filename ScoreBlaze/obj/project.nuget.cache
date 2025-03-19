@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "x+rd6v27b4U=",
+  "dgSpecHash": "h7KZVVrQfZI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
+  "projectFilePath": "C:\\Users\\ASUS GAMER\\Source\\Repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ASUS GAMER\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\ASUS GAMER\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

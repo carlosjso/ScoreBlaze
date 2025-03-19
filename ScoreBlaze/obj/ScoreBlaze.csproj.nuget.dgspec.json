@@ -1,15 +1,15 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj": {}
+    "C:\\Users\\ASUS GAMER\\Source\\Repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj": {
+    "C:\\Users\\ASUS GAMER\\Source\\Repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
+        "projectUniqueName": "C:\\Users\\ASUS GAMER\\Source\\Repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
         "projectName": "ScoreBlaze",
-        "projectPath": "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
+        "projectPath": "C:\\Users\\ASUS GAMER\\Source\\Repos\\ScoreBlaze\\ScoreBlaze\\ScoreBlaze.csproj",
         "packagesPath": "C:\\Users\\ASUS GAMER\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\ASUS GAMER\\source\\repos\\ScoreBlaze\\ScoreBlaze\\obj\\",
         "projectStyle": "PackageReference",
