@@ -8,6 +8,6 @@
             title.style.color = '#333';
         }, 300);
     }, 5000);
-}
+} 
 
 animateTitle();

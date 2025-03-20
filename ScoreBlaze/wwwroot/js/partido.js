@@ -82,3 +82,4 @@ function startMatch() {
     document.getElementById("teamALabel").innerText = `Tabla Local - ${teams[0]}`;
     document.getElementById("teamBLabel").innerText = `Tabla Visitante - ${teams[1]}`;
 }
+

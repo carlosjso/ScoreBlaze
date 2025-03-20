@@ -47,7 +47,7 @@ h1 {
     align-items: center;
     gap: 20px;
     margin-top: 20px;
-    flex-wrap: wrap; /* Para permitir múltiples líneas de botones */
+    flex-wrap: wrap; /* Para permitir múltiples líneas de botones*/
 }
 
 .sport-button {
