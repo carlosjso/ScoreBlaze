@@ -31,3 +31,23 @@ build_metadata.AdditionalFiles.CssScope =
 [C:/Users/carlo/Desktop/ScoreBlaze/ScoreBlazeSolucionario/ScoreBlaze/Views/Marcador.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFyY2Fkb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/carlo/Desktop/ScoreBlaze/ScoreBlazeSolucionario/ScoreBlaze/Views/Menu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVudS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/carlo/Desktop/ScoreBlaze/ScoreBlazeSolucionario/ScoreBlaze/Views/MenuRegistro.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVudVJlZ2lzdHJvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/carlo/Desktop/ScoreBlaze/ScoreBlazeSolucionario/ScoreBlaze/Views/RegistroEquipo.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVnaXN0cm9FcXVpcG8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/carlo/Desktop/ScoreBlaze/ScoreBlazeSolucionario/ScoreBlaze/Views/RegistroJugador.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVnaXN0cm9KdWdhZG9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/carlo/Desktop/ScoreBlaze/ScoreBlazeSolucionario/ScoreBlaze/Views/RegistroPartido.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVnaXN0cm9QYXJ0aWRvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 

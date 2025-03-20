@@ -1,16 +1,64 @@
 {
   "Files": [
     {
-      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\inicio.css",
-      "PackagePath": "staticwebassets\\css\\inicio.css"
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\Inicio.css",
+      "PackagePath": "staticwebassets\\css\\Inicio.css"
     },
     {
-      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\marcador.css",
-      "PackagePath": "staticwebassets\\css\\marcador.css"
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\Marcador.css",
+      "PackagePath": "staticwebassets\\css\\Marcador.css"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\Menu.css",
+      "PackagePath": "staticwebassets\\css\\Menu.css"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\MenuRegistro.css",
+      "PackagePath": "staticwebassets\\css\\MenuRegistro.css"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\RegistroEquipo.css",
+      "PackagePath": "staticwebassets\\css\\RegistroEquipo.css"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\RegistroJugador.css",
+      "PackagePath": "staticwebassets\\css\\RegistroJugador.css"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\css\\RegistroPartido.css",
+      "PackagePath": "staticwebassets\\css\\RegistroPartido.css"
     },
     {
       "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\favicon.ico",
       "PackagePath": "staticwebassets\\favicon.ico"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\img\\equipo.png",
+      "PackagePath": "staticwebassets\\img\\equipo.png"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\img\\jugador.png",
+      "PackagePath": "staticwebassets\\img\\jugador.png"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\img\\marcador.png",
+      "PackagePath": "staticwebassets\\img\\marcador.png"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\img\\marcadorr.png",
+      "PackagePath": "staticwebassets\\img\\marcadorr.png"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\img\\partido.png",
+      "PackagePath": "staticwebassets\\img\\partido.png"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\img\\registro.png",
+      "PackagePath": "staticwebassets\\img\\registro.png"
+    },
+    {
+      "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\img\\registroo.png",
+      "PackagePath": "staticwebassets\\img\\registroo.png"
     },
     {
       "Id": "C:\\Users\\carlo\\Desktop\\ScoreBlaze\\ScoreBlazeSolucionario\\ScoreBlaze\\wwwroot\\js\\site.js",

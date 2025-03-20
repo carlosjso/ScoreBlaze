@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Equipos</title>
+    <link rel="stylesheet" href="~/css/RegistroEquipo.css">
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">SCOREBLAZE</h1>
+        <div class="underline"></div>
+    </div>
+
+    <div class="form-container">
+        <h2>REGISTRAR EQUIPO</h2>
+        <form action="#" method="post" id="registerForm">
+            <label for="nombre-equipo">Nombre del Equipo:</label>
+            <input type="text" id="nombre-equipo" name="nombre-equipo" placeholder="Ingrese el nombre del equipo" required>
+
+            <label for="logo">Logo:</label>
+            <input type="file" id="logo" name="logo" accept="image/*" required>
+
+            <button type="submit">Registrar Equipo</button>
+        </form>
+        <div class="error" id="error-message"></div>
+    </div>
+
+    <script>
+
+        document.getElementById('registerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const nombreEquipo = document.getElementById('nombre-equipo').value;
+            const logo = document.getElementById('logo').files.length;
+
+            let errorMessage = '';
+
+
+            if (!nombreEquipo) {
+                errorMessage += 'El nombre del equipo es obligatorio.<br>';
+            }
+
+
+            if (logo === 0) {
+                errorMessage += 'El logo es obligatorio.<br>';
+            }
+
+            if (errorMessage) {
+                document.getElementById('error-message').innerHTML = errorMessage;
+            } else {
+                document.getElementById('error-message').innerHTML = '';
+                alert('Equipo registrado con éxito!');
+
+            }
+        });
+    </script>
+
+</body>
+</html>
