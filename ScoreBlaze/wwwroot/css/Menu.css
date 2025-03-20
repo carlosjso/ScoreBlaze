@@ -1,0 +1,106 @@
+﻿body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+.menu {
+    margin-top: 50px;
+}
+
+h1 {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 80px;
+    margin-top: 50px;
+    margin-bottom: 30px;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 8px;
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+    z-index: 1;
+    overflow: hidden;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+    h1::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150%;
+        height: 3px;
+        background-color: #ff4500;
+        transition: width 0.3s ease, opacity 0.3s ease;
+        z-index: -1;
+        opacity: 0;
+    }
+
+.menu-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 70px;
+    margin-top: 100px;
+    flex-wrap: wrap;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    width: 300px;
+    height: 100px;
+    border: none;
+    background-color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.name {
+    width: 66%;
+    height: 100%;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    padding-left: 20px;
+    box-sizing: border-box;
+    z-index: 1;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.image {
+    width: 34%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: -100%;
+    background-size: cover;
+    transition: all 0.3s ease;
+}
+
+.button:hover .image {
+    right: 0;
+}
+
+.registro-btn .image {
+    background-image: url('/img/registroo.png');
+}
+
+.marcador-btn .image {
+    background-image: url('/img/marcador.png');
+}

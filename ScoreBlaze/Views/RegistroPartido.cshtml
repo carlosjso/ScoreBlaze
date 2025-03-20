@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Partidos</title>
+    <link rel="stylesheet" href="~/css/RegistroPartido.css">
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">SCOREBLAZE</h1>
+        <div class="underline"></div>
+    </div>
+
+    <div class="form-container">
+        <h2>REGRISTRO PARTIDO</h2>
+        <form action="#" method="post" id="registerForm">
+            <label for="equipoA">Seleccionar Equipo A:</label>
+            <select id="equipoA" name="equipoA" required>
+
+                <option value="1">Equipo A</option>
+                <option value="2">Equipo B</option>
+                <option value="3">Equipo C</option>
+
+            </select>
+
+            <label for="equipoB">Seleccionar Equipo B:</label>
+            <select id="equipoB" name="equipoB" required>
+
+                <option value="2">Equipo B</option>
+                <option value="3">Equipo C</option>
+                <option value="1">Equipo A</option>
+
+            </select>
+
+            <label for="fecha">Fecha del Partido:</label>
+            <input type="date" id="fecha" name="fecha" required>
+
+            <button type="submit">Registrar Partido</button>
+        </form>
+        <div class="error" id="error-message"></div>
+    </div>
+
+    <script>
+
+        document.getElementById('registerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const equipoA = document.getElementById('equipoA').value;
+            const equipoB = document.getElementById('equipoB').value;
+            const fecha = document.getElementById('fecha').value;
+
+            let errorMessage = '';
+
+
+            if (equipoA === equipoB) {
+                errorMessage += 'Los equipos no pueden ser los mismos.<br>';
+            }
+
+
+            if (!fecha) {
+                errorMessage += 'La fecha del partido es obligatoria.<br>';
+            }
+
+            if (errorMessage) {
+                document.getElementById('error-message').innerHTML = errorMessage;
+            } else {
+                document.getElementById('error-message').innerHTML = '';
+                alert('Partido registrado con éxito!');
+
+            }
+        });
+    </script>
+
+</body>
+</html>

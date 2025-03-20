@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Jugadores</title>
+    <link rel="stylesheet" href="~/css/RegistroJugador.css">
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">ScoreBlaze</h1>
+        <div class="underline"></div>
+    </div>
+
+    <div class="form-container">
+        <h2>REGISTRO JUGADOR</h2>
+        <form action="#" method="post" id="registerForm">
+            <label for="nombre">Nombre del Jugador:</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Ingrese el nombre del jugador" required>
+
+            <label for="num">Número del Jugador:</label>
+            <input type="number" id="num" name="num" placeholder="Ingrese el número del jugador" required>
+
+            <label for="equipo">Seleccionar Equipo:</label>
+            <select id="equipo" name="equipo" required>
+                <option value="1">Equipo A</option>
+                <option value="2">Equipo B</option>
+                <option value="3">Equipo C</option>
+            </select>
+
+            <button type="submit">Registrar Jugador</button>
+        </form>
+        <div class="error" id="error-message"></div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const nombre = document.getElementById('nombre').value;
+            const num = document.getElementById('num').value;
+            const equipo = document.getElementById('equipo').value;
+
+            let errorMessage = '';
+
+            if (!nombre) {
+                errorMessage += 'El nombre del jugador es obligatorio.<br>';
+            }
+
+            if (!num) {
+                errorMessage += 'El número del jugador es obligatorio.<br>';
+            }
+
+            if (!equipo) {
+                errorMessage += 'Debe seleccionar un equipo.<br>';
+            }
+
+            if (errorMessage) {
+                document.getElementById('error-message').innerHTML = errorMessage;
+            } else {
+                document.getElementById('error-message').innerHTML = '';
+                alert('Jugador registrado con éxito!');
+            }
+        });
+    </script>
+
+</body>
+</html>
