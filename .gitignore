@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.Python
+.venv/
+venv/
+pip-wheel-metadata/
+.mypy_cache/
+.pytest_cache/
+
+# Node/Frontend
+node_modules/
+.parcel-cache/
+dist/
+coverage/
+
+# Env & secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.docker
+.env.test
+.secrets
+.secrets.local
+.secrets.development
+.secrets.production
+.secrets.docker
+.secrets.test
+!.env.example
+!.secrets.example
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
