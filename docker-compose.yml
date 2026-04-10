@@ -1,19 +1,4 @@
-version: "3.9"
-
 services:
-  api:
-    build: ./backend
-    env_file:
-      - ./backend/.env.development
-      - ./backend/.secrets
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    volumes:
-      - ./backend:/app
-
   db:
     image: postgres:16-alpine
     environment:
@@ -21,7 +6,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

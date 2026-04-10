@@ -1,15 +1,11 @@
 from fastapi import FastAPI
 
-from config import settings
+from routers import api_router
 
 app = FastAPI(title="ScoreBlaze API", version="0.1.0")
+app.include_router(api_router)
 
 
-@app.get("/health", tags=["health"])
-def health_check():
-    return {"status": "ok", "env": settings.app_env}
-
-
-@app.get("/")
+@app.get("/", tags=["system"])
 def root():
     return {"message": "ScoreBlaze backend ready"}
