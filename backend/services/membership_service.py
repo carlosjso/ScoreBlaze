@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from data.entities import TeamMembership
 from data.models import TeamMembershipCreate, TeamMembershipUpdate
 from repositories import MembershipRepository, PlayerRepository, TeamRepository
