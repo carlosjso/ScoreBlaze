@@ -2,11 +2,15 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from database.alchemy import get_db
-from repositories import PlayerRepository, TeamRepository, MembershipRepository, UserRepository
-from services import PlayerService, TeamService, TeamMembershipService, UserService
+from repositories import MatchRepository, PlayerRepository, TeamRepository, MembershipRepository, UserRepository
+from services import MatchService, PlayerService, TeamService, TeamMembershipService, UserService
 
 
 # Repositorios
+def get_match_repository(db: Session = Depends(get_db)) -> MatchRepository:
+    return MatchRepository(db)
+
+
 def get_player_repository(db: Session = Depends(get_db)) -> PlayerRepository:
     return PlayerRepository(db)
 
@@ -24,6 +28,12 @@ def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
 
 
 # Servicios
+def get_match_service(
+    match_repo: MatchRepository = Depends(get_match_repository),
+) -> MatchService:
+    return MatchService(match_repo)
+
+
 def get_player_service(
     player_repo: PlayerRepository = Depends(get_player_repository),
     team_repo: TeamRepository = Depends(get_team_repository),
