@@ -2,8 +2,8 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from database.alchemy import get_db
-from repositories import PlayerRepository, TeamRepository, MembershipRepository
-from services import PlayerService, TeamService, TeamMembershipService
+from repositories import PlayerRepository, TeamRepository, MembershipRepository, UserRepository
+from services import PlayerService, TeamService, TeamMembershipService, UserService
 
 
 # Repositorios
@@ -17,6 +17,10 @@ def get_team_repository(db: Session = Depends(get_db)) -> TeamRepository:
 
 def get_membership_repository(db: Session = Depends(get_db)) -> MembershipRepository:
     return MembershipRepository(db)
+
+
+def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
+    return UserRepository(db)
 
 
 # Servicios
@@ -42,6 +46,12 @@ def get_team_membership_service(
     team_repo: TeamRepository = Depends(get_team_repository),
 ) -> TeamMembershipService:
     return TeamMembershipService(membership_repo, player_repo, team_repo)
+
+
+def get_user_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> UserService:
+    return UserService(user_repo)
 
 
 # Backward-compatible alias.

@@ -5,6 +5,7 @@ from .team_membership_model import (
     TeamMembershipUpdate,
     TeamMembershipOut,
 )
+from .user_model import UserCreate, UserUpdate, UserOut
 
 __all__ = [
     "PlayerCreate",
@@ -16,4 +17,7 @@ __all__ = [
     "TeamMembershipCreate",
     "TeamMembershipUpdate",
     "TeamMembershipOut",
+    "UserCreate",
+    "UserUpdate",
+    "UserOut",
 ]
