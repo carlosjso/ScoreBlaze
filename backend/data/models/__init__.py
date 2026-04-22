@@ -1,4 +1,5 @@
 from .match_model import MatchCreate, MatchUpdate, MatchOut
+from .match_event_model import MatchEventCreate, MatchEventUpdate, MatchEventOut
 from .player_model import PlayerCreate, PlayerUpdate, PlayerOut
 from .player_stat_model import PlayerStatCreate, PlayerStatUpdate, PlayerStatOut
 from .team_model import TeamCreate, TeamUpdate, TeamOut
@@ -14,6 +15,9 @@ __all__ = [
     "MatchCreate",
     "MatchUpdate",
     "MatchOut",
+    "MatchEventCreate",
+    "MatchEventUpdate",
+    "MatchEventOut",
     "PlayerCreate",
     "PlayerUpdate",
     "PlayerOut",

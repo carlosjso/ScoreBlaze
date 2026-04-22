@@ -1,4 +1,5 @@
 from .match_repository import MatchRepository
+from .match_event_repository import MatchEventRepository
 from .player_repository import PlayerRepository
 from .player_stat_repository import PlayerStatRepository
 from .team_repository import TeamRepository
@@ -8,6 +9,7 @@ from .user_repository import UserRepository
 
 __all__ = [
     "MatchRepository",
+    "MatchEventRepository",
     "PlayerRepository",
     "PlayerStatRepository",
     "TeamRepository",

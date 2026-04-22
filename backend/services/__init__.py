@@ -1,4 +1,5 @@
 from .match_service import MatchService
+from .match_event_service import MatchEventService
 from .player_service import PlayerService
 from .player_stat_service import PlayerStatService
 from .team_service import TeamService
@@ -8,6 +9,7 @@ from .user_service import UserService
 
 __all__ = [
     "MatchService",
+    "MatchEventService",
     "PlayerService",
     "PlayerStatService",
     "TeamService",

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from database.alchemy import get_db
 from repositories import (
+    MatchEventRepository,
     MatchRepository,
     MembershipRepository,
     PlayerRepository,
@@ -12,6 +13,7 @@ from repositories import (
     UserRepository,
 )
 from services import (
+    MatchEventService,
     MatchService,
     PlayerService,
     PlayerStatService,
@@ -25,6 +27,10 @@ from services import (
 # Repositorios
 def get_match_repository(db: Session = Depends(get_db)) -> MatchRepository:
     return MatchRepository(db)
+
+
+def get_match_event_repository(db: Session = Depends(get_db)) -> MatchEventRepository:
+    return MatchEventRepository(db)
 
 
 def get_player_repository(db: Session = Depends(get_db)) -> PlayerRepository:
@@ -56,6 +62,12 @@ def get_match_service(
     match_repo: MatchRepository = Depends(get_match_repository),
 ) -> MatchService:
     return MatchService(match_repo)
+
+
+def get_match_event_service(
+    match_event_repo: MatchEventRepository = Depends(get_match_event_repository),
+) -> MatchEventService:
+    return MatchEventService(match_event_repo)
 
 
 def get_player_service(

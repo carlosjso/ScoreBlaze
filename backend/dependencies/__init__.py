@@ -1,6 +1,7 @@
 from .database_dependencies import (
     get_db,
     get_match_repository,
+    get_match_event_repository,
     get_player_repository,
     get_player_stat_repository,
     get_team_repository,
@@ -8,6 +9,7 @@ from .database_dependencies import (
     get_membership_repository,
     get_user_repository,
     get_match_service,
+    get_match_event_service,
     get_player_service,
     get_player_stat_service,
     get_team_service,
@@ -20,6 +22,7 @@ from .database_dependencies import (
 __all__ = [
     "get_db",
     "get_match_repository",
+    "get_match_event_repository",
     "get_player_repository",
     "get_player_stat_repository",
     "get_team_repository",
@@ -27,6 +30,7 @@ __all__ = [
     "get_membership_repository",
     "get_user_repository",
     "get_match_service",
+    "get_match_event_service",
     "get_player_service",
     "get_player_stat_service",
     "get_team_service",
