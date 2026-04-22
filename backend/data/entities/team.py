@@ -16,6 +16,12 @@ class Team(Base):
         back_populates="team",
         cascade="all, delete-orphan",
     )
+    stats = relationship(
+        "TeamStat",
+        back_populates="team",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"Team(id={self.id}, name={self.name})"

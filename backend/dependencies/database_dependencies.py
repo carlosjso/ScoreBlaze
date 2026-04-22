@@ -8,6 +8,7 @@ from repositories import (
     PlayerRepository,
     PlayerStatRepository,
     TeamRepository,
+    TeamStatRepository,
     UserRepository,
 )
 from services import (
@@ -16,6 +17,7 @@ from services import (
     PlayerStatService,
     TeamMembershipService,
     TeamService,
+    TeamStatService,
     UserService,
 )
 
@@ -35,6 +37,10 @@ def get_player_stat_repository(db: Session = Depends(get_db)) -> PlayerStatRepos
 
 def get_team_repository(db: Session = Depends(get_db)) -> TeamRepository:
     return TeamRepository(db)
+
+
+def get_team_stat_repository(db: Session = Depends(get_db)) -> TeamStatRepository:
+    return TeamStatRepository(db)
 
 
 def get_membership_repository(db: Session = Depends(get_db)) -> MembershipRepository:
@@ -66,6 +72,12 @@ def get_team_service(
     membership_repo: MembershipRepository = Depends(get_membership_repository),
 ) -> TeamService:
     return TeamService(team_repo, player_repo, membership_repo)
+
+
+def get_team_stat_service(
+    team_stat_repo: TeamStatRepository = Depends(get_team_stat_repository),
+) -> TeamStatService:
+    return TeamStatService(team_stat_repo)
 
 
 def get_player_stat_service(
