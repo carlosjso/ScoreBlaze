@@ -2,8 +2,22 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from database.alchemy import get_db
-from repositories import MatchRepository, PlayerRepository, TeamRepository, MembershipRepository, UserRepository
-from services import MatchService, PlayerService, TeamService, TeamMembershipService, UserService
+from repositories import (
+    MatchRepository,
+    MembershipRepository,
+    PlayerRepository,
+    PlayerStatRepository,
+    TeamRepository,
+    UserRepository,
+)
+from services import (
+    MatchService,
+    PlayerService,
+    PlayerStatService,
+    TeamMembershipService,
+    TeamService,
+    UserService,
+)
 
 
 # Repositorios
@@ -13,6 +27,10 @@ def get_match_repository(db: Session = Depends(get_db)) -> MatchRepository:
 
 def get_player_repository(db: Session = Depends(get_db)) -> PlayerRepository:
     return PlayerRepository(db)
+
+
+def get_player_stat_repository(db: Session = Depends(get_db)) -> PlayerStatRepository:
+    return PlayerStatRepository(db)
 
 
 def get_team_repository(db: Session = Depends(get_db)) -> TeamRepository:
@@ -48,6 +66,12 @@ def get_team_service(
     membership_repo: MembershipRepository = Depends(get_membership_repository),
 ) -> TeamService:
     return TeamService(team_repo, player_repo, membership_repo)
+
+
+def get_player_stat_service(
+    player_stat_repo: PlayerStatRepository = Depends(get_player_stat_repository),
+) -> PlayerStatService:
+    return PlayerStatService(player_stat_repo)
 
 
 def get_team_membership_service(

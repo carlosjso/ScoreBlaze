@@ -1,5 +1,6 @@
 from .match_model import MatchCreate, MatchUpdate, MatchOut
 from .player_model import PlayerCreate, PlayerUpdate, PlayerOut
+from .player_stat_model import PlayerStatCreate, PlayerStatUpdate, PlayerStatOut
 from .team_model import TeamCreate, TeamUpdate, TeamOut
 from .team_membership_model import (
     TeamMembershipCreate,
@@ -15,6 +16,9 @@ __all__ = [
     "PlayerCreate",
     "PlayerUpdate",
     "PlayerOut",
+    "PlayerStatCreate",
+    "PlayerStatUpdate",
+    "PlayerStatOut",
     "TeamCreate",
     "TeamUpdate",
     "TeamOut",
