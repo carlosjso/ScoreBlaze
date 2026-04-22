@@ -20,15 +20,29 @@ class MatchEventService:
             raise LookupError("Player not found")
 
     @staticmethod
-    def _validate_actor(player_id: int | None, guest_name: str | None) -> None:
-        if player_id is None and not guest_name:
-            raise ValueError("Provide player_id or guest_name")
+    def _normalize_guest_name(guest_name: str | None) -> str | None:
+        if guest_name is None:
+            return None
+        normalized = guest_name.strip()
+        return normalized or None
+
+    @classmethod
+    def _validate_actor(cls, player_id: int | None, guest_name: str | None) -> str | None:
+        normalized_guest_name = cls._normalize_guest_name(guest_name)
+        has_player = player_id is not None
+        has_guest = normalized_guest_name is not None
+
+        if has_player == has_guest:
+            raise ValueError("Provide exactly one actor: player_id or guest_name")
+
+        return normalized_guest_name
 
     def create(self, data: MatchEventCreate) -> MatchEvent:
         self._validate_relations(data.match_id, data.team_id, data.player_id)
-        self._validate_actor(data.player_id, data.guest_name)
+        guest_name = self._validate_actor(data.player_id, data.guest_name)
 
         match_event = MatchEvent(**data.model_dump())
+        match_event.guest_name = guest_name
         self.match_event_repo.add(match_event)
         self.db.commit()
         self.db.refresh(match_event)
@@ -52,10 +66,12 @@ class MatchEventService:
         guest_name = changes.get("guest_name", match_event.guest_name)
 
         self._validate_relations(match_id, team_id, player_id)
-        self._validate_actor(player_id, guest_name)
+        normalized_guest_name = self._validate_actor(player_id, guest_name)
 
         for key, value in changes.items():
             setattr(match_event, key, value)
+        if "guest_name" in changes or "player_id" in changes:
+            match_event.guest_name = normalized_guest_name
 
         self.db.commit()
         self.db.refresh(match_event)

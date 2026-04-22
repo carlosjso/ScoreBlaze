@@ -1,7 +1,10 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+MatchEventType = Literal["point_1", "point_2", "point_3", "miss", "foul", "rebound", "assist"]
+MatchEventStatus = Literal["active", "voided"]
 
 
 class MatchEventBase(BaseModel):
@@ -9,11 +12,11 @@ class MatchEventBase(BaseModel):
     team_id: int
     player_id: Optional[int] = None
     guest_name: Optional[str] = Field(default=None, max_length=250)
-    event_type: str = Field(..., max_length=30)
-    period: int = Field(..., ge=0)
+    event_type: MatchEventType
+    period: int = Field(..., ge=1)
     elapsed_seconds: int = Field(..., ge=0)
     event_order: int = Field(..., ge=0)
-    status: str = Field(..., max_length=20)
+    status: MatchEventStatus = "active"
 
 
 class MatchEventCreate(MatchEventBase):
@@ -25,11 +28,11 @@ class MatchEventUpdate(BaseModel):
     team_id: Optional[int] = None
     player_id: Optional[int] = None
     guest_name: Optional[str] = Field(default=None, max_length=250)
-    event_type: Optional[str] = Field(default=None, max_length=30)
-    period: Optional[int] = Field(default=None, ge=0)
+    event_type: Optional[MatchEventType] = None
+    period: Optional[int] = Field(default=None, ge=1)
     elapsed_seconds: Optional[int] = Field(default=None, ge=0)
     event_order: Optional[int] = Field(default=None, ge=0)
-    status: Optional[str] = Field(default=None, max_length=20)
+    status: Optional[MatchEventStatus] = None
 
 
 class MatchEventOut(MatchEventBase):

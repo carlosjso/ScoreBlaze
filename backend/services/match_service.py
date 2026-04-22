@@ -90,6 +90,7 @@ class MatchService:
             is_draw=is_draw,
             court=data.court,
             tournament=data.tournament,
+            status=data.status,
         )
 
         self.match_repo.add(match)

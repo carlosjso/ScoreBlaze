@@ -1,7 +1,9 @@
 from datetime import date, time
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+MatchStatus = Literal["scheduled", "live", "finished"]
 
 
 class MatchBase(BaseModel):
@@ -12,6 +14,7 @@ class MatchBase(BaseModel):
     team_b_id: int
     court: Optional[str] = Field(default=None, max_length=250)
     tournament: Optional[str] = Field(default=None, max_length=250)
+    status: MatchStatus = "scheduled"
 
 
 class MatchCreate(MatchBase):
@@ -33,6 +36,7 @@ class MatchUpdate(BaseModel):
     is_draw: Optional[bool] = None
     court: Optional[str] = Field(default=None, max_length=250)
     tournament: Optional[str] = Field(default=None, max_length=250)
+    status: Optional[MatchStatus] = None
 
 
 class MatchOut(MatchBase):
