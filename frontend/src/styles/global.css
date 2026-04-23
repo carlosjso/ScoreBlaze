@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sb-bg: #f3f4f6;
+  --sb-surface: #ffffff;
+  --sb-panel: #ffffff;
+  --sb-border: #d1d5db;
+  --sb-text: #111111;
+  --sb-muted: #6b7280;
+
+  --sb-primary: #f97316;
+  --sb-primary-hover: #ea580c;
+  --sb-black: #111111;
+  --sb-danger: #ef4444;
+}
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--sb-text);
+    font-family: "Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(1300px 600px at 100% -20%, #fff4ea 12%, transparent 70%),
+      radial-gradient(1200px 500px at -20% 100%, #f5f6f8 20%, transparent 70%),
+      var(--sb-bg);
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply m-0 font-semibold tracking-tight text-slate-900;
+  }
+}
+
+@layer components {
+  .sb-page {
+    @apply p-4 sm:p-6;
+  }
+
+  .sb-page-shell {
+    @apply mx-auto w-full max-w-[1200px];
+  }
+
+  .sb-panel {
+    @apply rounded-[20px] border border-slate-300/90 bg-[var(--sb-panel)] p-4 shadow-sm;
+  }
+
+  .sb-filter-bar {
+    @apply mb-3 flex flex-col gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 shadow-sm sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .sb-table-wrap {
+    @apply rounded-[18px] border border-slate-300/90 bg-white shadow-sm;
+  }
+
+  .sb-filter-bar .sb-input {
+    @apply h-10 rounded-full border-slate-200 bg-slate-50 py-2 text-sm shadow-none;
+  }
+
+  .sb-filter-bar .sb-btn {
+    @apply h-10 rounded-full px-5 py-2 text-sm;
+  }
+
+  .sb-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .sb-btn-primary {
+    color: white;
+    background: linear-gradient(135deg, var(--sb-primary), #fb8c3a);
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.28);
+  }
+
+  .sb-btn-primary:hover {
+    background: linear-gradient(135deg, var(--sb-primary-hover), #f97316);
+  }
+
+  .sb-btn-secondary {
+    color: white;
+    background: linear-gradient(135deg, #111111, #222222);
+    box-shadow: 0 2px 6px rgba(17, 17, 17, 0.25);
+  }
+
+  .sb-btn-secondary:hover {
+    background: linear-gradient(135deg, #000000, #111111);
+  }
+
+  .sb-btn-outline {
+    @apply border border-slate-300 bg-white text-slate-700;
+  }
+
+  .sb-btn-outline:hover {
+    @apply bg-slate-100;
+  }
+
+  .sb-btn-ghost {
+    @apply bg-transparent text-slate-700;
+  }
+
+  .sb-btn-ghost:hover {
+    @apply bg-slate-100;
+  }
+
+  .sb-btn-danger {
+    background: var(--sb-danger);
+    color: white;
+  }
+
+  .sb-btn-danger:hover {
+    background: #b91c1c;
+  }
+
+  .sb-input {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100;
+  }
+}
