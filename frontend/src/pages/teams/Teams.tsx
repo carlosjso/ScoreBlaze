@@ -10,10 +10,11 @@ import { useTeamsModals } from "@/pages/teams/hooks/useTeamsModals";
 import { useTeamsMutations } from "@/pages/teams/hooks/useTeamsMutations";
 import type { SortDir, SortKey } from "@/pages/teams/Teams.types";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
+import { PageHeader, Panel } from "@/shared/components/ui";
 
 export default function Teams() {
   const navigate = useNavigate();
-  const [sortKey, setSortKey] = useState<SortKey>("id");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
@@ -91,35 +92,27 @@ export default function Teams() {
 
   return (
     <div className="sb-page">
-      <div className="sb-page-shell max-w-[1120px]">
-        <div className="mb-5">
-          <p className="m-0 text-[12px] font-medium text-slate-500">Listado de equipos</p>
-          <h1 className="mt-2 text-[34px] font-semibold tracking-tight text-slate-900 sm:text-[40px]">Equipos</h1>
-        </div>
+      <div className="sb-page-shell">
+        <PageHeader title="Equipos" subtitle="Gestiona equipos y revisa rapidamente su plantilla asignada." />
 
-        {panelError ? (
-          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {panelError}
-          </div>
-        ) : null}
+        <Panel>
+          {panelError ? (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {panelError}
+            </div>
+          ) : null}
 
-        <TeamsToolbar
-          sortKey={sortKey}
-          sortDir={sortDir}
-          onSortKeyChange={(value) => {
-            setSortKey(value);
-            setSortDir("asc");
-            setCurrentPage(1);
-          }}
-          onToggleSortDir={() => {
-            setSortDir((currentDir) => (currentDir === "asc" ? "desc" : "asc"));
-            setCurrentPage(1);
-          }}
-          onCreate={openCreate}
-        />
+          <TeamsToolbar
+            sortKey={sortKey}
+            onSortKeyChange={(value) => {
+              setSortKey(value);
+              setSortDir("asc");
+              setCurrentPage(1);
+            }}
+            onCreate={openCreate}
+          />
 
-        <section className="rounded-[28px] border border-slate-400 bg-[#f4f1eb] p-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:p-4">
-          <div className="rounded-[24px] border border-slate-300 bg-[#fbfbfa] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:p-4">
+          <div className="mt-4">
             <TeamsTable
               teams={paginatedTeams}
               loading={loading}
@@ -147,7 +140,7 @@ export default function Teams() {
               }}
             />
           </div>
-        </section>
+        </Panel>
       </div>
 
       <TeamFormModal

@@ -1,10 +1,11 @@
-import { ChevronLeft, ChevronRight, Eye, Pencil, Shield, Trash2, UsersRound } from "lucide-react";
-import type { ReactNode } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { SortDir, SortKey, TeamListItem } from "@/pages/teams/Teams.types";
+import { RowActions } from "@/shared/components/table/RowActions";
 import { SortHeaderButton } from "@/shared/components/table/SortHeaderButton";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { TableShell } from "@/shared/components/table/TableShell";
+import { tableCellClass, tableHeaderClass, tableRowClass } from "@/shared/components/table/tableStyles";
 import { cn } from "@/shared/utils/cn";
 
 type TeamsTableProps = {
@@ -37,32 +38,6 @@ const logoPalette = [
   "border-violet-200 bg-violet-50 text-violet-700",
 ];
 
-type TeamActionButtonProps = {
-  title: string;
-  onClick: () => void;
-  icon: ReactNode;
-  className: string;
-  disabled?: boolean;
-};
-
-function TeamActionButton({ title, onClick, icon, className, disabled }: TeamActionButtonProps) {
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-md border transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-    >
-      {icon}
-    </button>
-  );
-}
-
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -94,40 +69,40 @@ export function TeamsTable({
   const canGoForward = currentPage < totalPages;
 
   return (
-    <TableShell className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.08)]">
-      <table className="w-full min-w-[860px] border-collapse">
+    <TableShell className="min-h-[460px]">
+      <table className="w-full min-w-[860px] table-fixed border-collapse">
         <colgroup>
-          <col style={{ width: "130px" }} />
           <col style={{ width: "110px" }} />
+          <col style={{ width: "90px" }} />
+          <col style={{ width: "260px" }} />
           <col style={{ width: "280px" }} />
-          <col style={{ width: "250px" }} />
-          <col style={{ width: "210px" }} />
+          <col style={{ width: "230px" }} />
         </colgroup>
         <thead>
-          <tr className="border-b border-slate-200 bg-[#f8f8f8] text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-            <th className="px-5 py-4">Logo</th>
-            <th className="px-5 py-4">
+          <tr className={tableHeaderClass}>
+            <th className={tableCellClass}>LOGO</th>
+            <th className={tableCellClass}>
               <SortHeaderButton label="ID" sortKey="id" activeKey={sortKey} direction={sortDir} onToggle={onToggleSort} />
             </th>
-            <th className="px-5 py-4">
-              <SortHeaderButton label="Nombre" sortKey="name" activeKey={sortKey} direction={sortDir} onToggle={onToggleSort} />
+            <th className={tableCellClass}>
+              <SortHeaderButton label="NOMBRE" sortKey="name" activeKey={sortKey} direction={sortDir} onToggle={onToggleSort} />
             </th>
-            <th className="px-5 py-4">
+            <th className={tableCellClass}>
               <SortHeaderButton
-                label="Plantilla"
+                label="PLANTILLA"
                 sortKey="players"
                 activeKey={sortKey}
                 direction={sortDir}
                 onToggle={onToggleSort}
               />
             </th>
-            <th className="px-5 py-4 text-right">Eliminar</th>
+            <th className={`${tableCellClass} text-right`}>ACCIONES</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={5}>
+              <td className="px-4 py-6 text-center text-sm text-slate-500" colSpan={5}>
                 Cargando equipos...
               </td>
             </tr>
@@ -135,30 +110,29 @@ export function TeamsTable({
 
           {!loading &&
             teams.map((team) => (
-              <tr
-                key={team.id}
-                className="border-b border-slate-200/80 text-sm text-slate-700 transition-colors hover:bg-orange-50/40 last:border-b-0"
-              >
-                <td className="px-5 py-3">
+              <tr key={team.id} className={tableRowClass}>
+                <td className={tableCellClass}>
                   <div
                     className={cn(
-                      "flex h-11 w-11 items-center justify-center rounded-2xl border text-xs font-bold shadow-sm",
+                      "flex h-10 w-10 items-center justify-center rounded-xl border text-xs font-bold shadow-sm",
                       logoPalette[team.id % logoPalette.length]
                     )}
                   >
                     {getInitials(team.name)}
                   </div>
                 </td>
-                <td className="px-5 py-3 font-semibold text-slate-800">{team.id}</td>
-                <td className="px-5 py-3">
+                <td className={`${tableCellClass} font-semibold text-slate-800`}>{team.id}</td>
+                <td className={tableCellClass}>
                   <div className="space-y-1">
-                    <p className="text-[15px] font-semibold text-slate-900">{team.name}</p>
+                    <p className="truncate font-medium text-slate-900" title={team.name}>
+                      {team.name}
+                    </p>
                     <p className="text-xs text-slate-500">
                       {team.playerCount} {team.playerCount === 1 ? "jugador asignado" : "jugadores asignados"}
                     </p>
                   </div>
                 </td>
-                <td className="px-5 py-3">
+                <td className={tableCellClass}>
                   <div className="space-y-1">
                     <span
                       className={cn(
@@ -173,51 +147,25 @@ export function TeamsTable({
                     </p>
                   </div>
                 </td>
-                <td className="px-5 py-3">
-                  <div className="flex justify-end gap-2">
-                    <TeamActionButton
-                      title="Ver detalle"
-                      onClick={() => onView(team)}
-                      icon={<Eye size={14} />}
-                      className="border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
-                      disabled={deletingTeamId === team.id}
-                    />
-                    <TeamActionButton
-                      title="Editar"
-                      onClick={() => onEdit(team)}
-                      icon={<Pencil size={14} />}
-                      className="border-orange-200 bg-orange-500 text-white hover:bg-orange-600"
-                      disabled={deletingTeamId === team.id}
-                    />
-                    <TeamActionButton
-                      title="Ver jugadores"
-                      onClick={() => onManage(team)}
-                      icon={<UsersRound size={14} />}
-                      className="border-sky-200 bg-sky-500 text-white hover:bg-sky-600"
-                      disabled={deletingTeamId === team.id}
-                    />
-                    <TeamActionButton
-                      title="Ver equipo"
-                      onClick={() => onView(team)}
-                      icon={<Shield size={14} />}
-                      className="border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
-                      disabled={deletingTeamId === team.id}
-                    />
-                    <TeamActionButton
-                      title="Eliminar"
-                      onClick={() => onDelete(team)}
-                      icon={<Trash2 size={14} />}
-                      className="border-red-200 bg-red-500 text-white hover:bg-red-600"
-                      disabled={deletingTeamId === team.id}
-                    />
-                  </div>
+                <td className={`${tableCellClass} text-right`}>
+                  <RowActions<TeamListItem>
+                    row={team}
+                    onView={onView}
+                    onEdit={onEdit}
+                    onManage={onManage}
+                    manageLabel="Ver jugadores"
+                    onSecurity={onView}
+                    securityLabel="Ver equipo"
+                    onDelete={onDelete}
+                    disabled={deletingTeamId === team.id}
+                  />
                 </td>
               </tr>
             ))}
 
           {!loading && teams.length === 0 ? (
             <tr>
-              <td className="px-3 py-8 text-center" colSpan={5}>
+              <td className="px-3 py-4 text-center" colSpan={5}>
                 <TableEmptyState
                   mode="empty"
                   title="No hay equipos registrados"
@@ -229,12 +177,12 @@ export function TeamsTable({
 
           {!loading && teams.length > 0
             ? Array.from({ length: emptyRowsCount }).map((_, index) => (
-                <tr key={`empty-row-${index}`} className="border-b border-slate-200/80 last:border-b-0">
-                  <td className="px-5 py-3">&nbsp;</td>
-                  <td className="px-5 py-3">&nbsp;</td>
-                  <td className="px-5 py-3">&nbsp;</td>
-                  <td className="px-5 py-3">&nbsp;</td>
-                  <td className="px-5 py-3">&nbsp;</td>
+                <tr key={`empty-row-${index}`} className={tableRowClass}>
+                  <td className={tableCellClass}>&nbsp;</td>
+                  <td className={tableCellClass}>&nbsp;</td>
+                  <td className={tableCellClass}>&nbsp;</td>
+                  <td className={tableCellClass}>&nbsp;</td>
+                  <td className={tableCellClass}>&nbsp;</td>
                 </tr>
               ))
             : null}
@@ -242,7 +190,7 @@ export function TeamsTable({
       </table>
 
       {!loading ? (
-        <div className="flex flex-col gap-3 border-t border-slate-200 bg-[#faf9f7] px-5 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
           <p className="m-0 text-xs font-medium text-slate-500">
             Pagina {currentPage} de {totalPages}
           </p>
@@ -252,19 +200,19 @@ export function TeamsTable({
               type="button"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={!canGoBack}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Pagina anterior"
             >
               <ChevronLeft size={14} />
             </button>
-            <span className="inline-flex min-w-[36px] items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <span className="inline-flex min-w-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
               {currentPage}
             </span>
             <button
               type="button"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={!canGoForward}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Pagina siguiente"
             >
               <ChevronRight size={14} />
@@ -273,7 +221,7 @@ export function TeamsTable({
             <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-8 rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100"
+              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100"
               aria-label="Filas por pagina"
             >
               <option value={6}>6</option>
