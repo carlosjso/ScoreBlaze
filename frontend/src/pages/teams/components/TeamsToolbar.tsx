@@ -65,10 +65,11 @@ export function TeamsToolbar({
       <div className="lg:justify-self-end">
         <Button
           variant="primary"
-          size="sm"
-          leftIcon={<CirclePlus size={15} />}
+          size="lg"
+          leftIcon={<CirclePlus size={18} />}
+          expandOnHover
           onClick={onCreate}
-          className="h-12 min-w-[132px] rounded-full px-7 shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
+          className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
         >
           Crear
         </Button>

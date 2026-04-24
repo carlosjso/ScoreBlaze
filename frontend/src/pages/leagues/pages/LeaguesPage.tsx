@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { CirclePlus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { mockLeagues } from "@/pages/leagues/data/mockLeagues";
@@ -207,10 +207,12 @@ export default function LeaguesPage() {
             <div className="sm:justify-self-end">
               <Button
                 variant="primary"
-                size="sm"
-                leftIcon={<Plus size={14} />}
+                size="lg"
+                leftIcon={<CirclePlus size={18} />}
+                expandOnHover
                 onClick={openCreate}
                 disabled={teamsLoading || teams.length < 2}
+                className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
               >
                 Crear liga
               </Button>

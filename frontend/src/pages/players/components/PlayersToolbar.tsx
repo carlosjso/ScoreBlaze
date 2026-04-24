@@ -36,7 +36,14 @@ export function PlayersToolbar({
         <SearchInput value={search} onChange={onSearchChange} placeholder="Buscar por nombre, correo, telefono o equipo" />
       </div>
 
-      <Button variant="primary" size="sm" leftIcon={<CirclePlus size={14} />} onClick={onCreate}>
+      <Button
+        variant="primary"
+        size="lg"
+        leftIcon={<CirclePlus size={18} />}
+        expandOnHover
+        onClick={onCreate}
+        className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
+      >
         Crear jugador
       </Button>
     </div>

@@ -72,6 +72,54 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
+  .sb-btn-expandable {
+    @apply inline-flex min-w-0 items-center gap-0 overflow-hidden rounded-full whitespace-nowrap px-0 py-0;
+  }
+
+  .sb-btn-expandable-icon {
+    @apply inline-flex shrink-0 items-center justify-center rounded-full;
+  }
+
+  .sb-btn-expandable-sm {
+    @apply h-10;
+  }
+
+  .sb-btn-expandable-md {
+    @apply h-11;
+  }
+
+  .sb-btn-expandable-lg {
+    @apply h-12;
+  }
+
+  .sb-filter-bar .sb-btn-expandable {
+    @apply px-0 py-0;
+  }
+
+  .sb-filter-bar .sb-btn-expandable-sm {
+    @apply h-10;
+  }
+
+  .sb-filter-bar .sb-btn-expandable-md {
+    @apply h-11;
+  }
+
+  .sb-filter-bar .sb-btn-expandable-lg {
+    @apply h-12;
+  }
+
+  .sb-btn-expandable-label {
+    @apply inline-flex items-center overflow-hidden text-sm opacity-100 transition-[max-width,opacity,padding,transform] duration-300 ease-out;
+    max-width: 14rem;
+    padding-right: 1rem;
+  }
+
+  .sb-btn-expandable-trailing {
+    @apply inline-flex items-center overflow-hidden opacity-100 transition-[max-width,opacity,padding,transform] duration-300 ease-out;
+    max-width: 2.5rem;
+    padding-right: 1rem;
+  }
+
   .sb-btn-primary {
     color: white;
     background: linear-gradient(135deg, var(--sb-primary), #fb8c3a);
@@ -119,5 +167,40 @@
 
   .sb-input {
     @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  @layer components {
+    .sb-btn-expandable-label,
+    .sb-btn-expandable-trailing {
+      max-width: 0;
+      opacity: 0;
+      padding-right: 0;
+      transform: translateX(-6px);
+    }
+
+    .sb-btn-expandable:hover .sb-btn-expandable-label,
+    .sb-btn-expandable:hover .sb-btn-expandable-trailing,
+    .sb-btn-expandable:focus-visible .sb-btn-expandable-label,
+    .sb-btn-expandable:focus-visible .sb-btn-expandable-trailing,
+    .sb-btn-expandable:active .sb-btn-expandable-label,
+    .sb-btn-expandable:active .sb-btn-expandable-trailing {
+      opacity: 1;
+      padding-right: 1rem;
+      transform: translateX(0);
+    }
+
+    .sb-btn-expandable:hover .sb-btn-expandable-label,
+    .sb-btn-expandable:focus-visible .sb-btn-expandable-label,
+    .sb-btn-expandable:active .sb-btn-expandable-label {
+      max-width: 14rem;
+    }
+
+    .sb-btn-expandable:hover .sb-btn-expandable-trailing,
+    .sb-btn-expandable:focus-visible .sb-btn-expandable-trailing,
+    .sb-btn-expandable:active .sb-btn-expandable-trailing {
+      max-width: 2.5rem;
+    }
   }
 }

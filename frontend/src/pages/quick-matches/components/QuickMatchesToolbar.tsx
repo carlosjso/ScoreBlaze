@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { CirclePlus } from "lucide-react";
 
 import type { MatchStatusFilter } from "@/pages/quick-matches/QuickMatches.types";
 import { Button, SearchInput, Select } from "@/shared/components/ui";
@@ -39,10 +39,12 @@ export function QuickMatchesToolbar({
 
       <Button
         variant="primary"
-        size="sm"
-        leftIcon={<Plus size={14} />}
+        size="lg"
+        leftIcon={<CirclePlus size={18} />}
+        expandOnHover
         onClick={onCreate}
         disabled={disabled}
+        className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
       >
         Crear partido
       </Button>
