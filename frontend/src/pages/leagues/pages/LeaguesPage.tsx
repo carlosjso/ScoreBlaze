@@ -1,9 +1,9 @@
-import { Plus } from "lucide-react";
+import { CirclePlus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { mockLeagues } from "@/pages/leagues/data/mockLeagues";
 import type { League, LeagueStatus } from "@/pages/leagues/types/league";
-import { mockTeams } from "@/pages/teams/data/mockTeams";
+import { useTeamsData } from "@/pages/teams/hooks/useTeamsData";
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { RowActions } from "@/shared/components/table/RowActions";
@@ -29,6 +29,7 @@ const emptyForm: LeagueForm = {
 };
 
 export default function LeaguesPage() {
+  const { teams, loading: teamsLoading, error: teamsError } = useTeamsData();
   const [leagues, setLeagues] = useState<League[]>(mockLeagues);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -43,7 +44,7 @@ export default function LeaguesPage() {
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [form, setForm] = useState<LeagueForm>(emptyForm);
 
-  const teamById = useMemo(() => new Map(mockTeams.map((team) => [team.id, team])), []);
+  const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
 
   const filteredLeagues = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -152,6 +153,7 @@ export default function LeaguesPage() {
   const minVisibleRows = 7;
   const emptyRowsCount = Math.max(0, minVisibleRows - filteredLeagues.length);
   const hasActiveFilters = Boolean(search.trim()) || statusFilter !== "all";
+  const panelError = teamsError;
 
   return (
     <div className="sb-page">
@@ -178,6 +180,18 @@ export default function LeaguesPage() {
         </div>
 
         <Panel>
+          {panelError ? (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {panelError}
+            </div>
+          ) : null}
+
+          {!panelError && teams.length < 2 ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Necesitas al menos 2 equipos reales en el backend para crear ligas.
+            </div>
+          ) : null}
+
           <div className="sb-filter-bar gap-2 sm:grid sm:grid-cols-[minmax(280px,1.8fr)_minmax(180px,0.8fr)_auto] sm:items-center">
             <div className="w-full min-w-0">
               <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nombre, categoria o equipo" />
@@ -191,7 +205,15 @@ export default function LeaguesPage() {
             </Select>
 
             <div className="sm:justify-self-end">
-              <Button variant="primary" size="sm" leftIcon={<Plus size={14} />} onClick={openCreate}>
+              <Button
+                variant="primary"
+                size="lg"
+                leftIcon={<CirclePlus size={18} />}
+                expandOnHover
+                onClick={openCreate}
+                disabled={teamsLoading || teams.length < 2}
+                className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
+              >
                 Crear liga
               </Button>
             </div>
@@ -365,7 +387,7 @@ export default function LeaguesPage() {
         <div className="mt-4">
           <p className="mb-2 text-xs font-semibold text-slate-600">Equipos participantes</p>
           <div className="grid max-h-48 grid-cols-1 gap-2 overflow-y-auto rounded-xl border border-slate-300 bg-white p-3 sm:grid-cols-2">
-            {mockTeams.map((team) => {
+            {teams.map((team) => {
               const active = form.teamIds.includes(team.id);
               return (
                 <button
@@ -380,7 +402,7 @@ export default function LeaguesPage() {
                   )}
                 >
                   <p className="font-medium">{team.name}</p>
-                  <p className="text-xs text-slate-500">{team.playersCount} jugadores</p>
+                  <p className="text-xs text-slate-500">{team.playerCount} jugadores</p>
                 </button>
               );
             })}

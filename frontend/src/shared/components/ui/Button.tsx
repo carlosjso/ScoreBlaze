@@ -19,11 +19,18 @@ const sizeMap: Record<ButtonSize, string> = {
   lg: "px-5 py-2.5 text-sm",
 };
 
+const expandableIconSizeMap: Record<ButtonSize, string> = {
+  sm: "h-10 w-10",
+  md: "h-11 w-11",
+  lg: "h-12 w-12",
+};
+
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  expandOnHover?: boolean;
 };
 
 export function Button({
@@ -32,9 +39,24 @@ export function Button({
   className,
   leftIcon,
   rightIcon,
+  expandOnHover = false,
   children,
   ...props
 }: ButtonProps) {
+  if (expandOnHover) {
+    return (
+      <button
+        type={props.type ?? "button"}
+        {...props}
+        className={cn(variantMap[variant], "sb-btn-expandable", `sb-btn-expandable-${size}`, className)}
+      >
+        <span className={cn("sb-btn-expandable-icon", expandableIconSizeMap[size])}>{leftIcon}</span>
+        <span className="sb-btn-expandable-label">{children}</span>
+        {rightIcon ? <span className="sb-btn-expandable-trailing">{rightIcon}</span> : null}
+      </button>
+    );
+  }
+
   return (
     <button
       type={props.type ?? "button"}

@@ -14,6 +14,7 @@ export default defineConfig({
       "/players": "http://localhost:8000",
       "/teams": "http://localhost:8000",
       "/team-memberships": "http://localhost:8000",
+      "/matches": "http://localhost:8000",
     },
   },
 });
