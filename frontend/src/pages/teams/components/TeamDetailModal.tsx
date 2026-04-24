@@ -1,33 +1,59 @@
-import { Mail, Phone, UserCircle2 } from "lucide-react";
+import { CircleUserRound, Hash, Mail, UsersRound } from "lucide-react";
 
-import type { Team } from "@/pages/teams/types/team";
-import { StatusBadge } from "@/shared/components/badges/StatusBadge";
+import type { TeamListItem } from "@/pages/teams/Teams.types";
 import { Button, Input, Modal } from "@/shared/components/ui";
 
 type TeamDetailModalProps = {
-  team: Team | null;
+  team: TeamListItem | null;
   isOpen: boolean;
   onClose: () => void;
 };
 
 export function TeamDetailModal({ team, isOpen, onClose }: TeamDetailModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Ver equipo" maxWidthClassName="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Equipo" maxWidthClassName="max-w-lg">
       {team ? (
-        <div>
-          <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-300 bg-slate-100 text-sm font-bold text-slate-600">
-            {team.name.slice(0, 3).toUpperCase()}
+        <div className="space-y-4">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-300 bg-slate-100 text-sm font-bold text-slate-600">
+            {team.name
+              .split(" ")
+              .map((part) => part[0])
+              .join("")
+              .slice(0, 3)
+              .toUpperCase()}
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            <Input label="Nombre" value={team.name} disabled leftIcon={<UserCircle2 size={14} />} />
-            <div>
-              <p className="mb-1 text-xs font-semibold text-slate-600">Estatus</p>
-              <StatusBadge status={team.status} />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input label="Nombre" value={team.name} disabled leftIcon={<CircleUserRound size={14} />} />
+            <Input label="ID" value={String(team.id)} disabled leftIcon={<Hash size={14} />} />
+            <Input
+              label="Plantilla"
+              value={`${team.playerCount} ${team.playerCount === 1 ? "jugador" : "jugadores"}`}
+              disabled
+              leftIcon={<UsersRound size={14} />}
+            />
+            <Input label="Estado" value={team.rosterStatus} disabled leftIcon={<Hash size={14} />} />
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold text-slate-600">Jugadores</p>
+            <div className="rounded-2xl border border-slate-200 bg-white/80 p-3">
+              {team.players.length > 0 ? (
+                <div className="space-y-2">
+                  {team.players.map((player) => (
+                    <div key={player.id} className="rounded-xl border border-slate-200 px-3 py-2">
+                      <p className="text-sm font-medium text-slate-800">{player.name}</p>
+                      <p className="text-xs text-slate-500">
+                        <Mail size={12} className="mr-1 inline" />
+                        {player.email}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Este equipo todavia no tiene jugadores asignados.</p>
+              )}
             </div>
-            <Input label="Responsable" value={team.responsibleName} disabled leftIcon={<UserCircle2 size={14} />} />
-            <Input label="Telefono" value={team.responsiblePhone} disabled leftIcon={<Phone size={14} />} />
-            <Input label="Correo" value={team.responsibleEmail} disabled leftIcon={<Mail size={14} />} />
           </div>
         </div>
       ) : null}

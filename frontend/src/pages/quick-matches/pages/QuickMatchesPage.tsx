@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 
 import { mockQuickMatches } from "@/pages/quick-matches/data/mockQuickMatches";
 import type { QuickMatch, QuickMatchStatus } from "@/pages/quick-matches/types/quickMatch";
-import { mockTeams } from "@/pages/teams/data/mockTeams";
+import { useTeamsData } from "@/pages/teams/hooks/useTeamsData";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { RowActions } from "@/shared/components/table/RowActions";
 import { SortHeaderButton } from "@/shared/components/table/SortHeaderButton";
@@ -19,8 +19,8 @@ type SortDir = "asc" | "desc";
 type QuickMatchForm = Omit<QuickMatch, "id">;
 
 const emptyForm: QuickMatchForm = {
-  homeTeamId: mockTeams[0]?.id ?? 1,
-  awayTeamId: mockTeams[1]?.id ?? 1,
+  homeTeamId: 0,
+  awayTeamId: 0,
   scheduledAt: "",
   status: "Programado",
   notes: "",
@@ -44,6 +44,7 @@ function formatScheduledAt(value: string) {
 }
 
 export default function QuickMatchesPage() {
+  const { teams, loading: teamsLoading, error: teamsError } = useTeamsData();
   const [matches, setMatches] = useState<QuickMatch[]>(mockQuickMatches);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -58,9 +59,17 @@ export default function QuickMatchesPage() {
   const [editingMatch, setEditingMatch] = useState<QuickMatch | null>(null);
   const [form, setForm] = useState<QuickMatchForm>(emptyForm);
 
-  const teamNameById = useMemo(
-    () => new Map(mockTeams.map((team) => [team.id, team.name])),
-    []
+  const teamNameById = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
+
+  const defaultForm = useMemo<QuickMatchForm>(
+    () => ({
+      homeTeamId: teams[0]?.id ?? 0,
+      awayTeamId: teams[1]?.id ?? teams[0]?.id ?? 0,
+      scheduledAt: "",
+      status: "Programado",
+      notes: "",
+    }),
+    [teams]
   );
 
   const filteredMatches = useMemo(() => {
@@ -105,11 +114,7 @@ export default function QuickMatchesPage() {
   const openCreate = () => {
     setFormMode("create");
     setEditingMatch(null);
-    setForm({
-      ...emptyForm,
-      homeTeamId: mockTeams[0]?.id ?? 1,
-      awayTeamId: mockTeams[1]?.id ?? mockTeams[0]?.id ?? 1,
-    });
+    setForm(defaultForm);
     setFormOpen(true);
   };
 
@@ -126,7 +131,12 @@ export default function QuickMatchesPage() {
     setFormOpen(true);
   };
 
-  const canSubmitForm = form.homeTeamId !== form.awayTeamId && Boolean(form.scheduledAt);
+  const canSubmitForm =
+    teams.length >= 2 &&
+    form.homeTeamId > 0 &&
+    form.awayTeamId > 0 &&
+    form.homeTeamId !== form.awayTeamId &&
+    Boolean(form.scheduledAt);
 
   const submitForm = () => {
     if (!canSubmitForm) return;
@@ -152,6 +162,7 @@ export default function QuickMatchesPage() {
   const minVisibleRows = 7;
   const emptyRowsCount = Math.max(0, minVisibleRows - filteredMatches.length);
   const hasActiveFilters = Boolean(search.trim()) || statusFilter !== "all";
+  const panelError = teamsError;
 
   return (
     <div className="sb-page">
@@ -159,6 +170,18 @@ export default function QuickMatchesPage() {
         <PageHeader title="Partido rapido" subtitle="Programa partidos amistosos entre dos equipos." />
 
         <Panel>
+          {panelError ? (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {panelError}
+            </div>
+          ) : null}
+
+          {!panelError && teams.length < 2 ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Necesitas al menos 2 equipos reales en el backend para programar partidos.
+            </div>
+          ) : null}
+
           <div className="sb-filter-bar gap-2 sm:grid sm:grid-cols-[minmax(280px,1.8fr)_minmax(180px,0.8fr)_auto] sm:items-center">
             <div className="w-full min-w-0">
               <SearchInput value={search} onChange={setSearch} placeholder="Buscar por equipo, estatus o fecha" />
@@ -173,7 +196,13 @@ export default function QuickMatchesPage() {
             </Select>
 
             <div className="sm:justify-self-end">
-              <Button variant="primary" size="sm" leftIcon={<Plus size={14} />} onClick={openCreate}>
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={14} />}
+                onClick={openCreate}
+                disabled={teamsLoading || teams.length < 2}
+              >
                 Crear partido
               </Button>
             </div>
@@ -219,7 +248,8 @@ export default function QuickMatchesPage() {
                     <td className={tableCellClass}>{match.id}</td>
                     <td className={tableCellClass}>
                       <p className="truncate font-medium text-slate-900">
-                        {teamNameById.get(match.homeTeamId)} vs {teamNameById.get(match.awayTeamId)}
+                        {teamNameById.get(match.homeTeamId) ?? `Equipo #${match.homeTeamId}`} vs{" "}
+                        {teamNameById.get(match.awayTeamId) ?? `Equipo #${match.awayTeamId}`}
                       </p>
                       <p className="truncate text-xs text-slate-500">{match.notes || "Sin notas"}</p>
                     </td>
@@ -294,7 +324,7 @@ export default function QuickMatchesPage() {
             value={String(form.homeTeamId)}
             onChange={(event) => setForm((prev) => ({ ...prev, homeTeamId: Number(event.target.value) }))}
           >
-            {mockTeams.map((team) => (
+            {teams.map((team) => (
               <option key={team.id} value={team.id}>
                 {team.name}
               </option>
@@ -305,7 +335,7 @@ export default function QuickMatchesPage() {
             value={String(form.awayTeamId)}
             onChange={(event) => setForm((prev) => ({ ...prev, awayTeamId: Number(event.target.value) }))}
           >
-            {mockTeams.map((team) => (
+            {teams.map((team) => (
               <option key={team.id} value={team.id}>
                 {team.name}
               </option>
@@ -361,7 +391,7 @@ export default function QuickMatchesPage() {
           <div className="grid grid-cols-1 gap-3">
             <Input
               label="Partido"
-              value={`${teamNameById.get(detailMatch.homeTeamId)} vs ${teamNameById.get(detailMatch.awayTeamId)}`}
+              value={`${teamNameById.get(detailMatch.homeTeamId) ?? `Equipo #${detailMatch.homeTeamId}`} vs ${teamNameById.get(detailMatch.awayTeamId) ?? `Equipo #${detailMatch.awayTeamId}`}`}
               disabled
             />
             <Input label="Fecha y hora" value={formatScheduledAt(detailMatch.scheduledAt)} disabled />
@@ -381,7 +411,7 @@ export default function QuickMatchesPage() {
         title="Eliminar partido rapido"
         message={
           deleteMatch
-            ? `Seguro que deseas eliminar el partido ${teamNameById.get(deleteMatch.homeTeamId)} vs ${teamNameById.get(deleteMatch.awayTeamId)}. Esta accion no se puede deshacer.`
+            ? `Seguro que deseas eliminar el partido ${teamNameById.get(deleteMatch.homeTeamId) ?? `Equipo #${deleteMatch.homeTeamId}`} vs ${teamNameById.get(deleteMatch.awayTeamId) ?? `Equipo #${deleteMatch.awayTeamId}`}. Esta accion no se puede deshacer.`
             : "Seguro que deseas eliminar este partido. Esta accion no se puede deshacer."
         }
         onCancel={() => setDeleteMatch(null)}
