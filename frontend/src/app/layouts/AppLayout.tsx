@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 import Sidebar from "@/app/layouts/Sidebar";
-import { routes } from "@/app/routing/routes";
+import { sidebarRoutes } from "@/app/navigation/sidebarRoutes";
 import { IconButton } from "@/shared/components/ui";
 import { cn } from "@/shared/utils/cn";
 
@@ -41,7 +41,7 @@ export default function AppLayout() {
 
   const menuRoutes = useMemo(
     () =>
-      routes.filter((route) => {
+      sidebarRoutes.filter((route) => {
         if (basketballPaths.has(location.pathname)) return route.sidebarContext === "basketball";
         return route.sidebarContext === "home";
       }),

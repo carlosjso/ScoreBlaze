@@ -9,4 +9,11 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/players": "http://localhost:8000",
+      "/teams": "http://localhost:8000",
+      "/team-memberships": "http://localhost:8000",
+    },
+  },
 });

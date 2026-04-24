@@ -22,13 +22,13 @@ class PlayerRepository:
     def get(self, player_id: int) -> Optional[Player]:
         stmt = (
             select(Player)
-            .options(selectinload(Player.team_links))
+            .options(selectinload(Player.team_memberships))
             .where(Player.id == player_id)
         )
         return self.db.scalar(stmt)
 
     def list(self) -> list[Player]:
-        stmt = select(Player).options(selectinload(Player.team_links)).order_by(Player.id.asc())
+        stmt = select(Player).options(selectinload(Player.team_memberships)).order_by(Player.id.asc())
         return list(self.db.scalars(stmt).all())
 
     def get_by_email(self, email: str) -> Optional[Player]:
@@ -38,5 +38,5 @@ class PlayerRepository:
     def get_many_by_ids(self, ids: list[int]) -> list[Player]:
         if not ids:
             return []
-        stmt = select(Player).options(selectinload(Player.team_links)).where(Player.id.in_(ids))
+        stmt = select(Player).options(selectinload(Player.team_memberships)).where(Player.id.in_(ids))
         return list(self.db.scalars(stmt).all())

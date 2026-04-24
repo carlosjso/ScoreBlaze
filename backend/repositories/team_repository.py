@@ -22,13 +22,13 @@ class TeamRepository:
     def get(self, team_id: int) -> Optional[Team]:
         stmt = (
             select(Team)
-            .options(selectinload(Team.player_links))
+            .options(selectinload(Team.team_memberships))
             .where(Team.id == team_id)
         )
         return self.db.scalar(stmt)
 
     def list(self) -> list[Team]:
-        stmt = select(Team).options(selectinload(Team.player_links)).order_by(Team.id.asc())
+        stmt = select(Team).options(selectinload(Team.team_memberships)).order_by(Team.id.asc())
         return list(self.db.scalars(stmt).all())
 
     def get_by_name(self, name: str) -> Optional[Team]:
@@ -38,5 +38,5 @@ class TeamRepository:
     def get_many_by_ids(self, ids: list[int]) -> list[Team]:
         if not ids:
             return []
-        stmt = select(Team).options(selectinload(Team.player_links)).where(Team.id.in_(ids))
+        stmt = select(Team).options(selectinload(Team.team_memberships)).where(Team.id.in_(ids))
         return list(self.db.scalars(stmt).all())
