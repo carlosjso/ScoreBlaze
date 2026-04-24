@@ -11,7 +11,7 @@ import { QueryProvider } from "@/app/providers/QueryProvider";
 import BasketballHubPage from "@/pages/basketball/pages/BasketballHubPage";
 import LeaguesPage from "@/pages/leagues/pages/LeaguesPage";
 import Players from "@/pages/players/Players";
-import QuickMatchesPage from "@/pages/quick-matches/pages/QuickMatchesPage";
+import QuickMatches from "@/pages/quick-matches/QuickMatches";
 import SportDashboardPage from "@/pages/sports/pages/SportDashboardPage";
 import SportsPage from "@/pages/sports/pages/SportsPage";
 import Teams from "@/pages/teams/Teams";
@@ -28,7 +28,7 @@ export default function App() {
             <Route path="/basketball" element={<BasketballHubPage />} />
             <Route path="/team-players" element={<Players />} />
             <Route path="/teams" element={<Teams />} />
-            <Route path="/quick-match" element={<QuickMatchesPage />} />
+            <Route path="/quick-match" element={<QuickMatches />} />
             <Route path="/leagues" element={<LeaguesPage />} />
             <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
             <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />

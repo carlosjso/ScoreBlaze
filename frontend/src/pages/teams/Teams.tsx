@@ -1,5 +1,4 @@
-import { ShieldCheck, ShieldX, UsersRound } from "lucide-react";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { TeamDetailModal } from "@/pages/teams/components/TeamDetailModal";
@@ -9,18 +8,15 @@ import { TeamsToolbar } from "@/pages/teams/components/TeamsToolbar";
 import { useTeamsData } from "@/pages/teams/hooks/useTeamsData";
 import { useTeamsModals } from "@/pages/teams/hooks/useTeamsModals";
 import { useTeamsMutations } from "@/pages/teams/hooks/useTeamsMutations";
-import type { SortDir, SortKey, TeamRosterFilter } from "@/pages/teams/Teams.types";
+import type { SortDir, SortKey } from "@/pages/teams/Teams.types";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
-import { PageHeader, Panel } from "@/shared/components/ui";
 
 export default function Teams() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [rosterFilter, setRosterFilter] = useState<TeamRosterFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-
-  const deferredSearch = useDeferredValue(search);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
 
   const { teams, players, loading, error } = useTeamsData();
   const modals = useTeamsModals();
@@ -33,67 +29,36 @@ export default function Teams() {
     deleteTeam,
   } = useTeamsMutations();
 
-  const filteredTeams = useMemo(() => {
-    const normalizedSearch = deferredSearch.trim().toLowerCase();
-    let baseTeams = [...teams];
-
-    if (rosterFilter === "with_players") {
-      baseTeams = baseTeams.filter((team) => team.playerCount > 0);
-    } else if (rosterFilter === "without_players") {
-      baseTeams = baseTeams.filter((team) => team.playerCount === 0);
-    }
-
-    if (normalizedSearch) {
-      baseTeams = baseTeams.filter((team) => {
-        const playersText = team.players.map((player) => `${player.name} ${player.email}`.toLowerCase()).join(" ");
-        return (
-          String(team.id).includes(normalizedSearch) ||
-          team.name.toLowerCase().includes(normalizedSearch) ||
-          String(team.playerCount).includes(normalizedSearch) ||
-          team.rosterStatus.toLowerCase().includes(normalizedSearch) ||
-          playersText.includes(normalizedSearch)
-        );
-      });
-    }
-
-    const sortedTeams = [...baseTeams].sort((left, right) => {
+  const orderedTeams = useMemo(() => {
+    const sortedTeams = [...teams].sort((left, right) => {
       if (sortKey === "id") return left.id - right.id;
       if (sortKey === "players") return left.playerCount - right.playerCount;
       return left.name.localeCompare(right.name, "es", { sensitivity: "base" });
     });
 
     return sortDir === "asc" ? sortedTeams : sortedTeams.reverse();
-  }, [deferredSearch, rosterFilter, sortDir, sortKey, teams]);
+  }, [sortDir, sortKey, teams]);
 
-  const hasActiveFilters = Boolean(search.trim()) || rosterFilter !== "all";
+  const totalPages = Math.max(1, Math.ceil(orderedTeams.length / pageSize));
+  const paginatedTeams = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return orderedTeams.slice(start, start + pageSize);
+  }, [currentPage, orderedTeams, pageSize]);
 
-  const totalTeams = teams.length;
-  const totalAssignments = useMemo(
-    () => teams.reduce((total, team) => total + team.playerCount, 0),
-    [teams]
-  );
-  const uniquePlayersAssigned = useMemo(
-    () => new Set(teams.flatMap((team) => team.playerIds)).size,
-    [teams]
-  );
-  const teamsWithoutPlayers = useMemo(
-    () => teams.filter((team) => team.playerCount === 0).length,
-    [teams]
-  );
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey !== key) {
       setSortKey(key);
       setSortDir("asc");
+      setCurrentPage(1);
       return;
     }
 
     setSortDir((currentDir) => (currentDir === "asc" ? "desc" : "asc"));
-  };
-
-  const resetFilters = () => {
-    setSearch("");
-    setRosterFilter("all");
+    setCurrentPage(1);
   };
 
   const openCreate = () => {
@@ -126,62 +91,50 @@ export default function Teams() {
 
   return (
     <div className="sb-page">
-      <div className="sb-page-shell">
-        <PageHeader
-          title="Equipos"
-          subtitle="Gestiona equipos reales y sus plantillas a partir del backend de ScoreBlaze."
-        />
-
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-slate-300 bg-white p-3 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Equipos</p>
-            <p className="mt-1 text-2xl font-bold text-slate-900">{totalTeams}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-300 bg-white p-3 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Asignaciones</p>
-            <p className="mt-1 text-2xl font-bold text-slate-900">{totalAssignments}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-300 bg-white p-3 shadow-sm">
-            <p className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-              <ShieldCheck size={12} />
-              Jugadores vinculados
-            </p>
-            <p className="mt-1 text-2xl font-bold text-emerald-700">{uniquePlayersAssigned}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-300 bg-white p-3 shadow-sm">
-            <p className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-              <ShieldX size={12} />
-              Sin jugadores
-            </p>
-            <p className="mt-1 text-2xl font-bold text-slate-700">{teamsWithoutPlayers}</p>
-          </div>
+      <div className="sb-page-shell max-w-[1120px]">
+        <div className="mb-5">
+          <p className="m-0 text-[12px] font-medium text-slate-500">Listado de equipos</p>
+          <h1 className="mt-2 text-[34px] font-semibold tracking-tight text-slate-900 sm:text-[40px]">Equipos</h1>
         </div>
 
-        <Panel>
-          {panelError ? (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {panelError}
-            </div>
-          ) : null}
+        {panelError ? (
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {panelError}
+          </div>
+        ) : null}
 
-          <TeamsToolbar
-            search={search}
-            rosterFilter={rosterFilter}
-            onSearchChange={setSearch}
-            onRosterFilterChange={setRosterFilter}
-            onCreate={openCreate}
-          />
+        <TeamsToolbar
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSortKeyChange={(value) => {
+            setSortKey(value);
+            setSortDir("asc");
+            setCurrentPage(1);
+          }}
+          onToggleSortDir={() => {
+            setSortDir((currentDir) => (currentDir === "asc" ? "desc" : "asc"));
+            setCurrentPage(1);
+          }}
+          onCreate={openCreate}
+        />
 
-          <div className="mt-4">
+        <section className="rounded-[28px] border border-slate-400 bg-[#f4f1eb] p-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:p-4">
+          <div className="rounded-[24px] border border-slate-300 bg-[#fbfbfa] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:p-4">
             <TeamsTable
-              teams={filteredTeams}
+              teams={paginatedTeams}
               loading={loading}
               sortKey={sortKey}
               sortDir={sortDir}
-              hasActiveFilters={hasActiveFilters}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
               deletingTeamId={deletingTeamId}
               onToggleSort={toggleSort}
-              onClearFilters={resetFilters}
+              onPageChange={(page) => setCurrentPage(Math.max(1, Math.min(page, totalPages)))}
+              onPageSizeChange={(nextPageSize) => {
+                setPageSize(nextPageSize);
+                setCurrentPage(1);
+              }}
               onView={modals.openDetail}
               onEdit={(team) => {
                 clearMutationError();
@@ -194,7 +147,7 @@ export default function Teams() {
               }}
             />
           </div>
-        </Panel>
+        </section>
       </div>
 
       <TeamFormModal
