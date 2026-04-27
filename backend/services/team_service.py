@@ -24,8 +24,11 @@ class TeamService:
     def _decode_logo(logo_base64: str | None) -> bytes | None:
         if not logo_base64:
             return None
+        payload = logo_base64.strip()
+        if payload.startswith("data:") and "," in payload:
+            payload = payload.split(",", 1)[1]
         try:
-            return base64.b64decode(logo_base64)
+            return base64.b64decode(payload, validate=True)
         except Exception as exc:  # pragma: no cover
             raise ValueError("Invalid logo. Could not decode Base64") from exc
 

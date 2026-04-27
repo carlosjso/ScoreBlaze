@@ -21,6 +21,7 @@ export const apiPlayerSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
   phone: z.number().int().nullable(),
+  photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
 }) satisfies z.ZodType<ApiPlayer>;
 
 export const apiPlayersSchema = z.array(apiPlayerSchema);
@@ -48,6 +49,7 @@ export const playerFormSchema = z.object({
     .min(1, "El correo es obligatorio.")
     .email("Ingresa un correo valido."),
   phone: z.string().trim().regex(/^\d*$/, "El telefono solo debe contener numeros."),
+  photoBase64: z.string().nullable(),
   teamIds: z.array(z.number().int()),
 }) satisfies z.ZodType<PlayerFormValues>;
 
@@ -98,6 +100,7 @@ export function buildPlayersView(
       name: player.name,
       email: player.email,
       phone: player.phone === null ? "" : String(player.phone),
+      photoBase64: player.photo_base64,
       teamIds,
       teamNames,
       teamLabel: teamNames.length > 0 ? teamNames.join(", ") : "Sin equipo",
@@ -113,6 +116,7 @@ export function toPlayerFormValues(player?: PlayerListItem | null, defaultTeamId
       name: player.name,
       email: player.email,
       phone: player.phone,
+      photoBase64: player.photoBase64,
       teamIds: sanitizeTeamIds(player.teamIds),
     };
   }
@@ -121,6 +125,7 @@ export function toPlayerFormValues(player?: PlayerListItem | null, defaultTeamId
     name: "",
     email: "",
     phone: "",
+    photoBase64: null,
     teamIds: sanitizeTeamIds(defaultTeamIds),
   };
 }
@@ -133,6 +138,7 @@ export function toPlayerMutationPayload(values: PlayerFormValues): PlayerMutatio
     name: normalizedValues.name.trim(),
     email: normalizedValues.email.trim().toLowerCase(),
     phone: normalizedPhone ? Number(normalizedPhone) : null,
+    photo_base64: normalizedValues.photoBase64?.trim() ? normalizedValues.photoBase64.trim() : null,
     team_ids: sanitizeTeamIds(normalizedValues.teamIds),
   };
 }

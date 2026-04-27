@@ -3,7 +3,6 @@ import type { ZodType } from "zod";
 import { apiClient, getApiErrorMessage } from "@/shared/api/client";
 import type { TeamMutationPayload, TeamsSnapshot } from "@/pages/teams/Teams.types";
 import {
-  apiPlayerSchema,
   apiPlayersSchema,
   apiTeamMembershipsSchema,
   apiTeamsSchema,

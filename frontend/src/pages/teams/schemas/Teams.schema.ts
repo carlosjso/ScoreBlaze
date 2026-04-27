@@ -19,6 +19,7 @@ const idSchema = z.coerce.number().int();
 export const apiTeamSchema = z.object({
   id: idSchema,
   name: z.string().trim().min(1),
+  logo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
 }) satisfies z.ZodType<ApiTeam>;
 
 export const apiTeamsSchema = z.array(apiTeamSchema);
@@ -42,6 +43,7 @@ export const apiTeamMembershipsSchema = z.array(apiTeamMembershipSchema);
 
 export const teamFormSchema = z.object({
   name: z.string().trim().min(1, "El nombre del equipo es obligatorio."),
+  logoBase64: z.string().nullable(),
   playerIds: z.array(z.number().int()),
 }) satisfies z.ZodType<TeamFormValues>;
 
@@ -74,6 +76,7 @@ export function buildTeamsView(
     return {
       id: team.id,
       name: team.name,
+      logoBase64: team.logo_base64,
       playerIds,
       playerCount: teamPlayers.length,
       players: teamPlayers,
@@ -87,12 +90,14 @@ export function toTeamFormValues(team?: TeamListItem | null, defaultPlayerIds: n
   if (team) {
     return {
       name: team.name,
+      logoBase64: team.logoBase64,
       playerIds: sanitizePlayerIds(team.playerIds),
     };
   }
 
   return {
     name: "",
+    logoBase64: null,
     playerIds: sanitizePlayerIds(defaultPlayerIds),
   };
 }
@@ -102,7 +107,7 @@ export function toTeamMutationPayload(values: TeamFormValues): TeamMutationPaylo
 
   return {
     name: normalizedValues.name.trim(),
-    logo_base64: null,
+    logo_base64: normalizedValues.logoBase64?.trim() ? normalizedValues.logoBase64.trim() : null,
     player_ids: sanitizePlayerIds(normalizedValues.playerIds),
   };
 }

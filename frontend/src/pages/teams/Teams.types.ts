@@ -7,6 +7,7 @@ export type TeamFormMode = "create" | "edit";
 export type ApiTeam = {
   id: number;
   name: string;
+  logo_base64: string | null;
 };
 
 export type ApiPlayer = {
@@ -38,6 +39,7 @@ export type TeamPlayerSummary = {
 export type TeamListItem = {
   id: number;
   name: string;
+  logoBase64: string | null;
   playerIds: number[];
   playerCount: number;
   players: TeamPlayerSummary[];
@@ -47,6 +49,7 @@ export type TeamListItem = {
 
 export type TeamFormValues = {
   name: string;
+  logoBase64: string | null;
   playerIds: number[];
 };
 

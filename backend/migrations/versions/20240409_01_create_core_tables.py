@@ -24,6 +24,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=250), nullable=False),
         sa.Column("email", sa.String(length=250), nullable=False),
         sa.Column("phone", sa.BigInteger(), nullable=True),
+        sa.Column("photo", sa.LargeBinary(), nullable=True),
         sa.UniqueConstraint("email", name="uq_players_email"),
     )
     op.create_index("ix_players_email", "players", ["email"])

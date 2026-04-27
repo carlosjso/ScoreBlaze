@@ -1,5 +1,6 @@
 import { CircleUserRound, Hash, Mail, UsersRound } from "lucide-react";
 
+import { TeamLogo } from "@/pages/teams/components/TeamLogo";
 import type { TeamListItem } from "@/pages/teams/Teams.types";
 import { Button, Input, Modal } from "@/shared/components/ui";
 
@@ -14,14 +15,14 @@ export function TeamDetailModal({ team, isOpen, onClose }: TeamDetailModalProps)
     <Modal isOpen={isOpen} onClose={onClose} title="Equipo" maxWidthClassName="max-w-lg">
       {team ? (
         <div className="space-y-4">
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-300 bg-slate-100 text-sm font-bold text-slate-600">
-            {team.name
-              .split(" ")
-              .map((part) => part[0])
-              .join("")
-              .slice(0, 3)
-              .toUpperCase()}
-          </div>
+          <TeamLogo
+            name={team.name}
+            logoBase64={team.logoBase64}
+            seed={team.id}
+            className="mx-auto h-24 w-24 rounded-2xl text-base"
+            imageClassName="p-3"
+            emptyClassName="text-slate-600"
+          />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Nombre" value={team.name} disabled leftIcon={<CircleUserRound size={14} />} />
