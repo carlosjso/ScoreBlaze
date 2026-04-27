@@ -16,6 +16,7 @@ export default function Teams() {
   const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
 
@@ -67,7 +68,9 @@ export default function Teams() {
     modals.openCreate();
   };
 
-  const handleSubmit = async (values: Parameters<typeof saveTeam>[0]["values"]) => {
+  const handleSubmit = async (
+    values: Parameters<typeof saveTeam>[0]["values"],
+  ) => {
     await saveTeam({
       mode: modals.formMode,
       teamId: modals.editingTeam?.id,
@@ -93,7 +96,10 @@ export default function Teams() {
   return (
     <div className="sb-page">
       <div className="sb-page-shell">
-        <PageHeader title="Equipos" subtitle="Gestiona equipos y revisa rapidamente su plantilla asignada." />
+        <PageHeader
+          title="Equipos"
+          subtitle="Gestiona equipos y revisa rapidamente su plantilla asignada."
+        />
 
         <Panel>
           {panelError ? (
@@ -107,6 +113,11 @@ export default function Teams() {
             onSortKeyChange={(value) => {
               setSortKey(value);
               setSortDir("asc");
+              setCurrentPage(1);
+            }}
+            search={search}
+            onSearchChange={(value) => {
+              setSearch(value);
               setCurrentPage(1);
             }}
             onCreate={openCreate}
@@ -123,7 +134,9 @@ export default function Teams() {
               pageSize={pageSize}
               deletingTeamId={deletingTeamId}
               onToggleSort={toggleSort}
-              onPageChange={(page) => setCurrentPage(Math.max(1, Math.min(page, totalPages)))}
+              onPageChange={(page) =>
+                setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+              }
               onPageSizeChange={(nextPageSize) => {
                 setPageSize(nextPageSize);
                 setCurrentPage(1);
@@ -158,7 +171,11 @@ export default function Teams() {
         onSubmit={handleSubmit}
       />
 
-      <TeamDetailModal team={modals.detailTeam} isOpen={modals.detailTeam !== null} onClose={modals.closeDetail} />
+      <TeamDetailModal
+        team={modals.detailTeam}
+        isOpen={modals.detailTeam !== null}
+        onClose={modals.closeDetail}
+      />
 
       <ConfirmModal
         isOpen={modals.deleteTeam !== null}
