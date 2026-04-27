@@ -23,5 +23,6 @@ class TeamUpdate(BaseModel):
 
 class TeamOut(TeamBase):
     id: int
+    logo_base64: Optional[str] = Field(default=None, description="Optional logo encoded in Base64.")
 
     model_config = ConfigDict(from_attributes=True)

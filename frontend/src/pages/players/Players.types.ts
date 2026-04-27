@@ -9,6 +9,7 @@ export type ApiPlayer = {
   name: string;
   email: string;
   phone: number | null;
+  photo_base64: string | null;
 };
 
 export type ApiTeam = {
@@ -33,6 +34,7 @@ export type PlayerListItem = {
   name: string;
   email: string;
   phone: string;
+  photoBase64: string | null;
   teamIds: number[];
   teamNames: string[];
   teamLabel: string;
@@ -44,6 +46,7 @@ export type PlayerFormValues = {
   name: string;
   email: string;
   phone: string;
+  photoBase64: string | null;
   teamIds: number[];
 };
 
@@ -51,6 +54,7 @@ export type PlayerMutationPayload = {
   name: string;
   email: string;
   phone: number | null;
+  photo_base64: string | null;
   team_ids: number[];
 };
 

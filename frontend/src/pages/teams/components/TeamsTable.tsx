@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { SortDir, SortKey, TeamListItem } from "@/pages/teams/Teams.types";
+import { TeamLogo } from "@/pages/teams/components/TeamLogo";
 import { RowActions } from "@/shared/components/table/RowActions";
 import { SortHeaderButton } from "@/shared/components/table/SortHeaderButton";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
@@ -31,22 +32,6 @@ const rosterClass: Record<"Con jugadores" | "Sin jugadores", string> = {
   "Sin jugadores": "border-slate-200 bg-slate-100 text-slate-600",
 };
 
-const logoPalette = [
-  "border-orange-200 bg-orange-50 text-orange-700",
-  "border-sky-200 bg-sky-50 text-sky-700",
-  "border-emerald-200 bg-emerald-50 text-emerald-700",
-  "border-violet-200 bg-violet-50 text-violet-700",
-];
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
 export function TeamsTable({
   teams,
   loading,
@@ -72,18 +57,18 @@ export function TeamsTable({
     <TableShell className="min-h-[460px]">
       <table className="w-full min-w-[860px] table-fixed border-collapse">
         <colgroup>
-          <col style={{ width: "110px" }} />
           <col style={{ width: "90px" }} />
+          <col style={{ width: "124px" }} />
           <col style={{ width: "260px" }} />
           <col style={{ width: "280px" }} />
           <col style={{ width: "230px" }} />
         </colgroup>
         <thead>
           <tr className={tableHeaderClass}>
-            <th className={tableCellClass}>LOGO</th>
             <th className={tableCellClass}>
               <SortHeaderButton label="ID" sortKey="id" activeKey={sortKey} direction={sortDir} onToggle={onToggleSort} />
             </th>
+            <th className={tableCellClass}>LOGO</th>
             <th className={tableCellClass}>
               <SortHeaderButton label="NOMBRE" sortKey="name" activeKey={sortKey} direction={sortDir} onToggle={onToggleSort} />
             </th>
@@ -109,59 +94,58 @@ export function TeamsTable({
           ) : null}
 
           {!loading &&
-            teams.map((team) => (
-              <tr key={team.id} className={tableRowClass}>
-                <td className={tableCellClass}>
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-xl border text-xs font-bold shadow-sm",
-                      logoPalette[team.id % logoPalette.length]
-                    )}
-                  >
-                    {getInitials(team.name)}
-                  </div>
-                </td>
-                <td className={`${tableCellClass} font-semibold text-slate-800`}>{team.id}</td>
-                <td className={tableCellClass}>
-                  <div className="space-y-1">
-                    <p className="truncate font-medium text-slate-900" title={team.name}>
-                      {team.name}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {team.playerCount} {team.playerCount === 1 ? "jugador asignado" : "jugadores asignados"}
-                    </p>
-                  </div>
-                </td>
-                <td className={tableCellClass}>
-                  <div className="space-y-1">
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold",
-                        rosterClass[team.rosterStatus]
-                      )}
-                    >
-                      {team.rosterStatus}
-                    </span>
-                    <p className="truncate text-sm text-slate-700" title={team.playersLabel}>
-                      {team.players.length > 0 ? team.playersLabel : "Sin jugadores asignados"}
-                    </p>
-                  </div>
-                </td>
-                <td className={`${tableCellClass} text-right`}>
+            teams.map((team) => {
+              return (
+                <tr key={team.id} className={tableRowClass}>
+                  <td className={`${tableCellClass} font-semibold text-slate-800`}>{team.id}</td>
+                  <td className={tableCellClass}>
+                    <TeamLogo
+                      name={team.name}
+                      logoBase64={team.logoBase64}
+                      seed={team.id}
+                      className="h-12 w-12 rounded-2xl text-sm"
+                      imageClassName="p-0.5"
+                    />
+                  </td>
+                  <td className={tableCellClass}>
+                    <div className="space-y-1">
+                      <p className="truncate font-medium text-slate-900" title={team.name}>
+                        {team.name}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {team.playerCount} {team.playerCount === 1 ? "jugador asignado" : "jugadores asignados"}
+                      </p>
+                    </div>
+                  </td>
+                  <td className={tableCellClass}>
+                    <div className="space-y-1">
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                          rosterClass[team.rosterStatus]
+                        )}
+                      >
+                        {team.rosterStatus}
+                      </span>
+                      <p className="truncate text-sm text-slate-700" title={team.playersLabel}>
+                        {team.players.length > 0 ? team.playersLabel : "Sin jugadores asignados"}
+                      </p>
+                    </div>
+                  </td>
+                  <td className={`${tableCellClass} text-right`}>
                   <RowActions<TeamListItem>
                     row={team}
                     onView={onView}
                     onEdit={onEdit}
                     onManage={onManage}
                     manageLabel="Ver jugadores"
-                    onSecurity={onView}
-                    securityLabel="Ver equipo"
                     onDelete={onDelete}
                     disabled={deletingTeamId === team.id}
                   />
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
 
           {!loading && teams.length === 0 ? (
             <tr>

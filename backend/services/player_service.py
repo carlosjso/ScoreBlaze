@@ -1,3 +1,5 @@
+import base64
+
 from data.entities import Player
 from data.models import PlayerCreate, PlayerUpdate
 from repositories import MembershipRepository, PlayerRepository, TeamRepository
@@ -18,6 +20,18 @@ class PlayerService:
     def db(self):
         return self.player_repo.db
 
+    @staticmethod
+    def _decode_photo(photo_base64: str | None) -> bytes | None:
+        if not photo_base64:
+            return None
+        payload = photo_base64.strip()
+        if payload.startswith("data:") and "," in payload:
+            payload = payload.split(",", 1)[1]
+        try:
+            return base64.b64decode(payload, validate=True)
+        except Exception as exc:  # pragma: no cover
+            raise ValueError("Invalid photo. Could not decode Base64") from exc
+
     def _validate_team_ids(self, team_ids: list[int]) -> list[int]:
         unique_ids = sorted(set(team_ids))
         if not unique_ids:
@@ -35,7 +49,7 @@ class PlayerService:
             raise ValueError("Email already exists")
 
         validated_team_ids = self._validate_team_ids(data.team_ids)
-        player = Player(name=data.name, email=data.email, phone=data.phone)
+        player = Player(name=data.name, email=data.email, phone=data.phone, photo=self._decode_photo(data.photo_base64))
         self.player_repo.add(player)
         self.db.flush()
 
@@ -67,6 +81,9 @@ class PlayerService:
         if team_ids is not None:
             validated_team_ids = self._validate_team_ids(team_ids)
             self.membership_repo.replace_team_ids_for_player(player_id, validated_team_ids)
+
+        if "photo_base64" in changes:
+            player.photo = self._decode_photo(changes.pop("photo_base64"))
 
         for key, value in changes.items():
             setattr(player, key, value)

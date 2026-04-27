@@ -1,3 +1,5 @@
+import base64
+
 from sqlalchemy import BigInteger, Column, LargeBinary, String
 from sqlalchemy.orm import relationship
 
@@ -22,6 +24,12 @@ class Team(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+
+    @property
+    def logo_base64(self) -> str | None:
+        if self.logo is None:
+            return None
+        return base64.b64encode(self.logo).decode("utf-8")
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"Team(id={self.id}, name={self.name})"

@@ -1,12 +1,16 @@
+import type { ChangeEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleUserRound, Mail, Phone, Shield } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { CircleUserRound, ImagePlus, Mail, Phone, Shield, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { FormErrors } from "@/pages/players/components/FormErrors";
+import { PlayerPhoto } from "@/pages/players/components/PlayerPhoto";
 import { getPlayerStatus, type ApiTeam, type PlayerFormValues, type PlayerListItem } from "@/pages/players/Players.types";
 import { playerFormSchema, toPlayerFormValues } from "@/pages/players/schemas/Players.schema";
 import { Button, Input, Modal } from "@/shared/components/ui";
+import { imageFileToPngBase64 } from "@/shared/utils/base64Image";
+import { cn } from "@/shared/utils/cn";
 
 type PlayerFormModalProps = {
   isOpen: boolean;
@@ -41,30 +45,70 @@ export function PlayerFormModal({
     resolver: zodResolver(playerFormSchema),
     defaultValues: toPlayerFormValues(null),
   });
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
-  const selectedTeamIds = watch("teamIds") ?? [];
+  const selectedTeamIds = watch("teamIds");
+  const playerName = watch("name") ?? "";
+  const photoBase64 = watch("photoBase64");
 
   useEffect(() => {
     if (isOpen) {
+      setPhotoError(null);
       reset(toPlayerFormValues(initialPlayer, defaultTeamIds));
       return;
     }
 
+    setPhotoError(null);
     reset(toPlayerFormValues(null));
   }, [defaultTeamIds, initialPlayer, isOpen, reset]);
 
-  const status = useMemo(() => getPlayerStatus(selectedTeamIds), [selectedTeamIds]);
+  const normalizedSelectedTeamIds = useMemo(() => selectedTeamIds ?? [], [selectedTeamIds]);
+  const status = useMemo(() => getPlayerStatus(normalizedSelectedTeamIds), [normalizedSelectedTeamIds]);
 
   const toggleTeam = (teamId: number) => {
-    const nextTeamIds = selectedTeamIds.includes(teamId)
-      ? selectedTeamIds.filter((currentId) => currentId !== teamId)
-      : [...selectedTeamIds, teamId];
+    const nextTeamIds = normalizedSelectedTeamIds.includes(teamId)
+      ? normalizedSelectedTeamIds.filter((currentId) => currentId !== teamId)
+      : [...normalizedSelectedTeamIds, teamId];
 
     setValue(
       "teamIds",
       nextTeamIds.sort((left, right) => left - right),
       { shouldDirty: true, shouldValidate: true }
     );
+  };
+
+  const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Selecciona un archivo de imagen valido.");
+      return;
+    }
+
+    setPhotoError(null);
+
+    try {
+      const nextPhotoBase64 = await imageFileToPngBase64(file);
+      setValue("photoBase64", nextPhotoBase64, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : "No se pudo cargar la foto.");
+    }
+  };
+
+  const clearPhoto = () => {
+    setPhotoError(null);
+    setValue("photoBase64", null, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const submitForm = async (values: PlayerFormValues) => {
@@ -135,18 +179,62 @@ export function PlayerFormModal({
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div>
+              <p className="text-xs font-semibold text-slate-600">Foto</p>
+              <p className="text-xs text-slate-500">Opcional. Puedes subir una foto del jugador y cambiarla despues.</p>
+            </div>
+            {photoBase64 ? (
+              <button
+                type="button"
+                onClick={clearPhoto}
+                disabled={loading}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 size={12} />
+                Quitar foto
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/80 p-3 sm:flex-row sm:items-center">
+            <PlayerPhoto
+              name={playerName || "Jugador"}
+              photoBase64={photoBase64}
+              className="h-24 w-24 shrink-0 text-sm"
+              emptyClassName="text-slate-600"
+            />
+
+            <div className="min-w-0 flex-1">
+              <label
+                className={cn(
+                  "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",
+                  loading && "pointer-events-none opacity-50"
+                )}
+              >
+                <ImagePlus size={16} />
+                Seleccionar foto
+                <input type="file" accept="image/*" className="sr-only" disabled={loading} onChange={handlePhotoChange} />
+              </label>
+              <p className="mt-2 text-xs text-slate-500">Este campo no es obligatorio. La foto se guarda en formato PNG.</p>
+              {photoError ? <p className="mt-1 text-xs font-medium text-red-600">{photoError}</p> : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
               <p className="text-xs font-semibold text-slate-600">Equipos</p>
               <p className="text-xs text-slate-500">Puedes dejarlo sin equipo o asignarlo a varios.</p>
             </div>
             <p className="text-xs text-slate-500">
-              {selectedTeamIds.length} {selectedTeamIds.length === 1 ? "seleccionado" : "seleccionados"}
+              {normalizedSelectedTeamIds.length} {normalizedSelectedTeamIds.length === 1 ? "seleccionado" : "seleccionados"}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white/80 p-3 sm:grid-cols-2">
             {teams.length > 0 ? (
               teams.map((team) => {
-                const checked = selectedTeamIds.includes(team.id);
+                const checked = normalizedSelectedTeamIds.includes(team.id);
                 return (
                   <label
                     key={team.id}

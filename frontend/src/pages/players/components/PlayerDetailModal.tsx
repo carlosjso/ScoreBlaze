@@ -1,5 +1,6 @@
 import { CircleUserRound, Hash, Mail, Phone } from "lucide-react";
 
+import { PlayerPhoto } from "@/pages/players/components/PlayerPhoto";
 import type { PlayerListItem } from "@/pages/players/Players.types";
 import { Button, Input, Modal } from "@/shared/components/ui";
 
@@ -14,14 +15,12 @@ export function PlayerDetailModal({ player, isOpen, onClose }: PlayerDetailModal
     <Modal isOpen={isOpen} onClose={onClose} title="Jugador" maxWidthClassName="max-w-lg">
       {player ? (
         <div className="space-y-4">
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600">
-            {player.name
-              .split(" ")
-              .map((chunk) => chunk[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase()}
-          </div>
+          <PlayerPhoto
+            name={player.name}
+            photoBase64={player.photoBase64}
+            className="mx-auto h-24 w-24 text-base"
+            emptyClassName="text-slate-600"
+          />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Nombre" value={player.name} disabled leftIcon={<CircleUserRound size={14} />} />
