@@ -1,12 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-
-import type { ScoreboardState } from "@/pages/scoreboard/Scoreboard.types";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+
+import { LiveCenterPanel } from "@/pages/scoreboard/components/live/LiveCenterPanel";
 import { LiveClockBar } from "@/pages/scoreboard/components/live/LiveClockBar";
+import { LiveFooterStats } from "@/pages/scoreboard/components/live/LiveFooterStats";
 import { LiveMetaBar } from "@/pages/scoreboard/components/live/LiveMetaBar";
 import { LiveTeamCard } from "@/pages/scoreboard/components/live/LiveTeamCard";
-import { LiveCenterPanel } from "@/pages/scoreboard/components/live/LiveCenterPanel";
-import { LiveFooterStats } from "@/pages/scoreboard/components/live/LiveFooterStats";
+import {
+  buildScoreboardWebSocketUrl,
+  parseScoreboardRealtimeMessage,
+} from "@/pages/scoreboard/ScoreboardRealtime.service";
+import { getScoreboardSnapshot } from "@/pages/scoreboard/Scoreboard.service";
+import type { ScoreboardState } from "@/pages/scoreboard/Scoreboard.types";
 
 function createFallbackPlayers(team: "A" | "B") {
   return Array.from({ length: 5 }, (_, index) => {
@@ -65,8 +70,16 @@ function readStoredState(storageKey: string): ScoreboardState {
       ...JSON.parse(rawState),
     };
   } catch (error) {
-    console.error("No se pudo leer el estado del marcador visual:", error);
+    console.error("No se pudo leer el estado local del marcador visual:", error);
     return createFallbackState();
+  }
+}
+
+function persistStoredState(storageKey: string, state: ScoreboardState) {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  } catch (error) {
+    console.error("No se pudo guardar el estado local del marcador visual:", error);
   }
 }
 
@@ -90,33 +103,108 @@ function getLastEventText(state: ScoreboardState) {
 
 export default function LiveScoreboard() {
   const { matchId } = useParams<{ matchId: string }>();
-
-  const storageKey = matchId
-    ? `scoreboard.state.v1.${matchId}`
+  const numericMatchId = matchId ? Number(matchId) : undefined;
+  const storageKey = numericMatchId
+    ? `scoreboard.state.v1.${numericMatchId}`
     : "scoreboard.state.v1";
 
   const [state, setState] = useState<ScoreboardState>(() =>
     readStoredState(storageKey),
   );
+  const hasReceivedRealtimeStateRef = useRef(false);
+  const reconnectTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setState(readStoredState(storageKey));
-    }, 300);
+    hasReceivedRealtimeStateRef.current = false;
+    setState(readStoredState(storageKey));
+  }, [storageKey]);
 
-    function handleStorageChange(event: StorageEvent) {
-      if (event.key === storageKey) {
-        setState(readStoredState(storageKey));
-      }
+  useEffect(() => {
+    if (!numericMatchId) {
+      return;
     }
 
-    window.addEventListener("storage", handleStorageChange);
+    const abortController = new AbortController();
+
+    void getScoreboardSnapshot(numericMatchId, abortController.signal)
+      .then((snapshotState) => {
+        if (hasReceivedRealtimeStateRef.current) {
+          return;
+        }
+
+        setState(snapshotState);
+        persistStoredState(storageKey, snapshotState);
+      })
+      .catch((error) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        console.error("No se pudo cargar el snapshot inicial del marcador live:", error);
+      });
 
     return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener("storage", handleStorageChange);
+      abortController.abort();
     };
-  }, [storageKey]);
+  }, [numericMatchId, storageKey]);
+
+  useEffect(() => {
+    if (!numericMatchId) {
+      return;
+    }
+
+    let cancelled = false;
+    let socket: WebSocket | null = null;
+
+    const clearReconnectTimeout = () => {
+      if (reconnectTimeoutRef.current !== null) {
+        window.clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+
+    const connect = () => {
+      if (cancelled) {
+        return;
+      }
+
+      socket = new WebSocket(buildScoreboardWebSocketUrl(numericMatchId, "live"));
+
+      socket.onmessage = (event) => {
+        const nextState = parseScoreboardRealtimeMessage(event.data);
+        if (!nextState) {
+          return;
+        }
+
+        hasReceivedRealtimeStateRef.current = true;
+        setState(nextState);
+        persistStoredState(storageKey, nextState);
+      };
+
+      socket.onerror = () => {
+        console.error("Fallo la conexion realtime de la pantalla live.");
+      };
+
+      socket.onclose = () => {
+        if (cancelled) {
+          return;
+        }
+
+        clearReconnectTimeout();
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          connect();
+        }, 1500);
+      };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      clearReconnectTimeout();
+      socket?.close();
+    };
+  }, [numericMatchId, storageKey]);
 
   const clockText = useMemo(
     () => formatClock(state.clockSeconds),
@@ -126,7 +214,6 @@ export default function LiveScoreboard() {
     () => formatShotClock(state.shotClockSeconds),
     [state.shotClockSeconds],
   );
-
   const lastEventText = useMemo(() => getLastEventText(state), [state]);
   const arrowToA = state.arrow === "A";
 

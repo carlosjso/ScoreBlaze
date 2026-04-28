@@ -5,6 +5,10 @@ import {
   saveMatchEvent,
   undoMatchEvent,
 } from "@/pages/scoreboard/Scoreboard.service";
+import {
+  buildScoreboardWebSocketUrl,
+  createScoreboardRealtimeMessage,
+} from "@/pages/scoreboard/ScoreboardRealtime.service";
 
 import type {
   ScoreboardHistoryEvent,
@@ -380,8 +384,11 @@ export function useScoreboard({
   const [syncError, setSyncError] = useState<string | null>(null);
 
   const intervalRef = useRef<number | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const stateRef = useRef(state);
   const mutationQueueRef = useRef(Promise.resolve<void>(undefined));
+  const realtimeSocketRef = useRef<WebSocket | null>(null);
+  const pendingRealtimeStateRef = useRef<ScoreboardState | null>(null);
   const hasLoadedSnapshotRef = useRef(false);
   const hasAppliedMatchSetupRef = useRef(false);
   const lastMatchIdRef = useRef(matchId);
@@ -411,6 +418,25 @@ export function useScoreboard({
     }
   }, []);
 
+  const clearReconnectTimeout = useCallback(() => {
+    if (reconnectTimeoutRef.current !== null) {
+      window.clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
+
+  const broadcastRealtimeState = useCallback((nextState: ScoreboardState) => {
+    pendingRealtimeStateRef.current = nextState;
+
+    const socket = realtimeSocketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    socket.send(createScoreboardRealtimeMessage(nextState));
+    pendingRealtimeStateRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (lastMatchIdRef.current === matchId) {
       return;
@@ -420,11 +446,20 @@ export function useScoreboard({
     hasLoadedSnapshotRef.current = false;
     hasAppliedMatchSetupRef.current = false;
     mutationQueueRef.current = Promise.resolve<void>(undefined);
+    pendingRealtimeStateRef.current = null;
     clearClockInterval();
+    clearReconnectTimeout();
     commitState(getInitialState(storageKey, matchSetup));
     setSyncError(null);
     setLoading(Boolean(matchId));
-  }, [clearClockInterval, commitState, matchId, matchSetup, storageKey]);
+  }, [
+    clearClockInterval,
+    clearReconnectTimeout,
+    commitState,
+    matchId,
+    matchSetup,
+    storageKey,
+  ]);
 
   useEffect(() => {
     if (
@@ -475,6 +510,71 @@ export function useScoreboard({
       abortController.abort();
     };
   }, [matchId, commitState]);
+
+  useEffect(() => {
+    if (!matchId) {
+      if (realtimeSocketRef.current) {
+        realtimeSocketRef.current.close();
+        realtimeSocketRef.current = null;
+      }
+      clearReconnectTimeout();
+      return;
+    }
+
+    let cancelled = false;
+
+    const connect = () => {
+      if (cancelled) {
+        return;
+      }
+
+      const socket = new WebSocket(
+        buildScoreboardWebSocketUrl(matchId, "control"),
+      );
+      realtimeSocketRef.current = socket;
+
+      socket.onopen = () => {
+        const latestState = pendingRealtimeStateRef.current ?? stateRef.current;
+        if (!latestState) {
+          return;
+        }
+
+        socket.send(createScoreboardRealtimeMessage(latestState));
+        pendingRealtimeStateRef.current = null;
+      };
+
+      socket.onerror = () => {
+        console.error("Fallo la conexion realtime del marcador.");
+      };
+
+      socket.onclose = () => {
+        if (realtimeSocketRef.current === socket) {
+          realtimeSocketRef.current = null;
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        clearReconnectTimeout();
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          connect();
+        }, 1500);
+      };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      clearReconnectTimeout();
+
+      if (realtimeSocketRef.current) {
+        realtimeSocketRef.current.close();
+        realtimeSocketRef.current = null;
+      }
+    };
+  }, [clearReconnectTimeout, matchId]);
 
   const enqueueServerSync = useCallback(
     (task: () => Promise<ScoreboardState | null>) => {
@@ -794,6 +894,14 @@ export function useScoreboard({
       console.error("No se pudo guardar el estado del marcador:", error);
     }
   }, [state, storageKey]);
+
+  useEffect(() => {
+    if (!matchId) {
+      return;
+    }
+
+    broadcastRealtimeState(state);
+  }, [broadcastRealtimeState, matchId, state]);
 
   return {
     state,
