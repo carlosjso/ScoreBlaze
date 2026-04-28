@@ -29,6 +29,7 @@ export const apiPlayersSchema = z.array(apiPlayerSchema);
 export const apiTeamSchema = z.object({
   id: idSchema,
   name: z.string().trim().min(1),
+  logo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
 }) satisfies z.ZodType<ApiTeam>;
 
 export const apiTeamsSchema = z.array(apiTeamSchema);
@@ -93,7 +94,16 @@ export function buildPlayersView(
 
   return players.map((player) => {
     const teamIds = sanitizeTeamIds(teamIdsByPlayerId.get(player.id) ?? []);
-    const teamNames = teamIds.map((teamId) => teamById.get(teamId)?.name ?? `Equipo #${teamId}`);
+    const playerTeams = teamIds.map((teamId) => {
+      const team = teamById.get(teamId);
+
+      return {
+        id: teamId,
+        name: team?.name ?? `Equipo #${teamId}`,
+        logoBase64: team?.logo_base64 ?? null,
+      };
+    });
+    const teamNames = playerTeams.map((team) => team.name);
 
     return {
       id: player.id,
@@ -103,6 +113,7 @@ export function buildPlayersView(
       photoBase64: player.photo_base64,
       teamIds,
       teamNames,
+      teams: playerTeams,
       teamLabel: teamNames.length > 0 ? teamNames.join(", ") : "Sin equipo",
       teamsCount: teamNames.length,
       status: getPlayerStatus(teamIds),
@@ -110,7 +121,7 @@ export function buildPlayersView(
   });
 }
 
-export function toPlayerFormValues(player?: PlayerListItem | null, defaultTeamIds: number[] = []): PlayerFormValues {
+export function toPlayerFormValues(player?: PlayerListItem | null): PlayerFormValues {
   if (player) {
     return {
       name: player.name,
@@ -126,7 +137,7 @@ export function toPlayerFormValues(player?: PlayerListItem | null, defaultTeamId
     email: "",
     phone: "",
     photoBase64: null,
-    teamIds: sanitizeTeamIds(defaultTeamIds),
+    teamIds: [],
   };
 }
 

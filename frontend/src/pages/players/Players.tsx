@@ -103,7 +103,7 @@ export default function Players() {
 
   const openCreate = () => {
     clearMutationError();
-    modals.openCreate(selectedTeamId !== null ? [selectedTeamId] : []);
+    modals.openCreate();
   };
 
   const handleSubmit = async (values: Parameters<typeof savePlayer>[0]["values"]) => {
@@ -178,8 +178,6 @@ export default function Players() {
         isOpen={modals.formOpen}
         mode={modals.formMode}
         initialPlayer={modals.editingPlayer}
-        teams={teams}
-        defaultTeamIds={modals.defaultTeamIds}
         loading={submitting}
         apiError={mutationError}
         onClose={() => {

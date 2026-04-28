@@ -15,6 +15,7 @@ export type ApiPlayer = {
 export type ApiTeam = {
   id: number;
   name: string;
+  logo_base64: string | null;
 };
 
 export type ApiTeamMembership = {
@@ -37,6 +38,11 @@ export type PlayerListItem = {
   photoBase64: string | null;
   teamIds: number[];
   teamNames: string[];
+  teams: {
+    id: number;
+    name: string;
+    logoBase64: string | null;
+  }[];
   teamLabel: string;
   teamsCount: number;
   status: PlayerStatus;

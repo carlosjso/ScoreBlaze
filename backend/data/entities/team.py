@@ -11,6 +11,9 @@ class Team(Base):
 
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
     name = Column(String(250), nullable=False, unique=True)
+    responsible_name = Column(String(250), nullable=True)
+    responsible_phone = Column(String(30), nullable=True)
+    responsible_email = Column(String(250), nullable=True)
     logo = Column(LargeBinary, nullable=True)
 
     team_memberships = relationship(

@@ -11,8 +11,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      "/ws": {
+        target: "ws://localhost:8000",
+        ws: true,
+      },
+      "/match-events": "http://localhost:8000",
+      "/player-stats": "http://localhost:8000",
       "/players": "http://localhost:8000",
       "/teams": "http://localhost:8000",
+      "/team-stats": "http://localhost:8000",
       "/team-memberships": "http://localhost:8000",
       "/matches": "http://localhost:8000",
     },
