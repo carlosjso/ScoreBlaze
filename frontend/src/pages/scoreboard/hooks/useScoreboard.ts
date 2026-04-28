@@ -101,14 +101,53 @@ function getPointEventType(points: number) {
 }
 type UseScoreboardParams = {
   matchId?: number;
+  matchSetup?: {
+    teamAId: number;
+    teamBId: number;
+    teamAName: string;
+    teamBName: string;
+    scoreTeamA: number | null;
+    scoreTeamB: number | null;
+  } | null;
 };
 
-export function useScoreboard({ matchId }: UseScoreboardParams = {}) {
+export function useScoreboard({
+  matchId,
+  matchSetup,
+}: UseScoreboardParams = {}) {
   const storageKey = matchId
     ? `${BASE_STORAGE_KEY}.${matchId}`
     : BASE_STORAGE_KEY;
   const [state, setState] = useState<ScoreboardState>(() =>
-    getInitialState(storageKey),
+    matchSetup
+      ? {
+          teamA: {
+            key: "A",
+            name: matchSetup.teamAName,
+            logo: undefined,
+            score: matchSetup.scoreTeamA || 0,
+            fouls: 0,
+            selectedPlayer: "A1",
+            players: ["A1", "A2", "A3", "A4", "A9"],
+          },
+          teamB: {
+            key: "B",
+            name: matchSetup.teamBName,
+            logo: undefined,
+            score: matchSetup.scoreTeamB || 0,
+            fouls: 0,
+            selectedPlayer: "B1",
+            players: ["B1", "B2", "B3", "B4", "B9"],
+          },
+          history: [],
+          arrow: "A",
+          controlMode: "buttons",
+          period: 1,
+          clockSeconds: 600,
+          shotClockSeconds: 24,
+          clockRunning: false,
+        }
+      : getInitialState(storageKey),
   );
   const intervalRef = useRef<number | null>(null);
 

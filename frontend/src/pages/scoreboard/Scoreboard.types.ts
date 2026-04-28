@@ -25,6 +25,7 @@ export type ScoreboardHistoryEvent = {
 };
 
 export type ScoreboardTeamState = {
+  id?: number;
   key: ScoreboardTeamKey;
   name: string;
   logo?: string;
