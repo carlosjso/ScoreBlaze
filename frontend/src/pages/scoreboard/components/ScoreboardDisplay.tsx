@@ -15,13 +15,15 @@ export function ScoreboardDisplay({
     <div className="rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
       <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
         <div className="rounded-2xl bg-white/10 p-5">
-          <p className="text-sm uppercase tracking-[0.2em] text-white/60">
+          <p className="text-sm uppercase tracking-[0.2em] text-white/75">
             Equipo A
           </p>
 
-          <h2 className="mt-2 text-3xl font-black">{state.teamA.name}</h2>
+          <h2 className="mt-2 text-4xl font-black tracking-tight text-white">
+            {state.teamA.name}
+          </h2>
 
-          <p className="mt-3 text-sm text-white/70">
+          <p className="mt-3 text-sm font-semibold text-white/80">
             Faltas: {state.teamA.fouls}
           </p>
         </div>
@@ -45,19 +47,21 @@ export function ScoreboardDisplay({
             </span>
 
             <span className="rounded-full bg-white/10 px-4 py-2">
-              Posesión: {state.arrow}
+              Posesion: {state.arrow}
             </span>
           </div>
         </div>
 
         <div className="rounded-2xl bg-white/10 p-5 text-right">
-          <p className="text-sm uppercase tracking-[0.2em] text-white/60">
+          <p className="text-sm uppercase tracking-[0.2em] text-white/75">
             Equipo B
           </p>
 
-          <h2 className="mt-2 text-3xl font-black">{state.teamB.name}</h2>
+          <h2 className="mt-2 text-4xl font-black tracking-tight text-white">
+            {state.teamB.name}
+          </h2>
 
-          <p className="mt-3 text-sm text-white/70">
+          <p className="mt-3 text-sm font-semibold text-white/80">
             Faltas: {state.teamB.fouls}
           </p>
         </div>

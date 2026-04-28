@@ -57,32 +57,6 @@ function createFallbackState(): ScoreboardState {
   };
 }
 
-function readStoredState(storageKey: string): ScoreboardState {
-  try {
-    const rawState = localStorage.getItem(storageKey);
-
-    if (!rawState) {
-      return createFallbackState();
-    }
-
-    return {
-      ...createFallbackState(),
-      ...JSON.parse(rawState),
-    };
-  } catch (error) {
-    console.error("No se pudo leer el estado local del marcador visual:", error);
-    return createFallbackState();
-  }
-}
-
-function persistStoredState(storageKey: string, state: ScoreboardState) {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(state));
-  } catch (error) {
-    console.error("No se pudo guardar el estado local del marcador visual:", error);
-  }
-}
-
 function formatClock(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds));
   const minutes = Math.floor(safeSeconds / 60);
@@ -104,20 +78,16 @@ function getLastEventText(state: ScoreboardState) {
 export default function LiveScoreboard() {
   const { matchId } = useParams<{ matchId: string }>();
   const numericMatchId = matchId ? Number(matchId) : undefined;
-  const storageKey = numericMatchId
-    ? `scoreboard.state.v1.${numericMatchId}`
-    : "scoreboard.state.v1";
-
-  const [state, setState] = useState<ScoreboardState>(() =>
-    readStoredState(storageKey),
-  );
+  const [state, setState] = useState<ScoreboardState>(() => createFallbackState());
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const hasReceivedRealtimeStateRef = useRef(false);
   const reconnectTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     hasReceivedRealtimeStateRef.current = false;
-    setState(readStoredState(storageKey));
-  }, [storageKey]);
+    setRealtimeConnected(false);
+    setState(createFallbackState());
+  }, [numericMatchId]);
 
   useEffect(() => {
     if (!numericMatchId) {
@@ -133,7 +103,6 @@ export default function LiveScoreboard() {
         }
 
         setState(snapshotState);
-        persistStoredState(storageKey, snapshotState);
       })
       .catch((error) => {
         if (abortController.signal.aborted) {
@@ -146,7 +115,7 @@ export default function LiveScoreboard() {
     return () => {
       abortController.abort();
     };
-  }, [numericMatchId, storageKey]);
+  }, [numericMatchId]);
 
   useEffect(() => {
     if (!numericMatchId) {
@@ -170,6 +139,10 @@ export default function LiveScoreboard() {
 
       socket = new WebSocket(buildScoreboardWebSocketUrl(numericMatchId, "live"));
 
+      socket.onopen = () => {
+        setRealtimeConnected(true);
+      };
+
       socket.onmessage = (event) => {
         const nextState = parseScoreboardRealtimeMessage(event.data);
         if (!nextState) {
@@ -178,14 +151,15 @@ export default function LiveScoreboard() {
 
         hasReceivedRealtimeStateRef.current = true;
         setState(nextState);
-        persistStoredState(storageKey, nextState);
       };
 
       socket.onerror = () => {
+        setRealtimeConnected(false);
         console.error("Fallo la conexion realtime de la pantalla live.");
       };
 
       socket.onclose = () => {
+        setRealtimeConnected(false);
         if (cancelled) {
           return;
         }
@@ -204,7 +178,7 @@ export default function LiveScoreboard() {
       clearReconnectTimeout();
       socket?.close();
     };
-  }, [numericMatchId, storageKey]);
+  }, [numericMatchId]);
 
   const clockText = useMemo(
     () => formatClock(state.clockSeconds),
@@ -217,9 +191,40 @@ export default function LiveScoreboard() {
   const lastEventText = useMemo(() => getLastEventText(state), [state]);
   const arrowToA = state.arrow === "A";
 
+  if (!numericMatchId) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-slate-100 p-6 text-slate-800">
+        <div className="max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">
+            Marcador live
+          </p>
+          <h1 className="mt-3 text-2xl font-black text-slate-950">
+            Falta el ID del partido
+          </h1>
+          <p className="mt-3 text-sm text-slate-500">
+            Abre esta vista con una ruta como <code>/scoreboard/live/12</code> para recibir datos en tiempo real.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.08),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.06),transparent_22%),linear-gradient(145deg,#f6f7f9,#eceff4)] p-2 text-slate-800 sm:p-3">
       <section className="mx-auto grid min-h-[calc(100vh-28px)] w-full max-w-[1500px] grid-rows-[auto_auto_1fr_auto] gap-5 rounded-[30px] border border-slate-200 bg-white/85 p-5 shadow-[0_10px_30px_rgba(17,24,39,0.08)]">
+        <div className="flex justify-end">
+          <span
+            className={[
+              "rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.16em]",
+              realtimeConnected
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-amber-100 text-amber-700",
+            ].join(" ")}
+          >
+            {realtimeConnected ? "Realtime conectado" : "Reconectando"}
+          </span>
+        </div>
+
         <LiveClockBar clockText={clockText} shotClockText={shotClockText} />
 
         <LiveMetaBar period={state.period} lastEventText={lastEventText} />

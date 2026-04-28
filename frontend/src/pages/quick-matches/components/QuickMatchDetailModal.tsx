@@ -10,6 +10,32 @@ type QuickMatchDetailModalProps = {
 };
 
 export function QuickMatchDetailModal({ match, isOpen, onClose }: QuickMatchDetailModalProps) {
+  const openMatchTab = (path: string) => {
+    const url = new URL(path, window.location.origin);
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
+  };
+
+  const openControl = () => {
+    if (!match) {
+      return;
+    }
+
+    openMatchTab(`/scoreboard/${match.id}`);
+  };
+
+  const openLive = () => {
+    if (!match) {
+      return;
+    }
+
+    openMatchTab(`/scoreboard/live/${match.id}`);
+  };
+
+  const openBoth = () => {
+    openControl();
+    openLive();
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalle de partido rapido" maxWidthClassName="max-w-lg">
       {match ? (
@@ -24,7 +50,16 @@ export function QuickMatchDetailModal({ match, isOpen, onClose }: QuickMatchDeta
         </div>
       ) : null}
 
-      <div className="mt-5 flex justify-end">
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
+        <Button variant="outline" onClick={openControl} disabled={!match}>
+          Abrir control
+        </Button>
+        <Button variant="outline" onClick={openLive} disabled={!match}>
+          Abrir live
+        </Button>
+        <Button onClick={openBoth} disabled={!match}>
+          Abrir ambos
+        </Button>
         <Button variant="secondary" onClick={onClose}>
           Cerrar
         </Button>

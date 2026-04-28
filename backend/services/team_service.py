@@ -49,7 +49,13 @@ class TeamService:
             raise ValueError("Team name already exists")
 
         validated_player_ids = self._validate_player_ids(data.player_ids)
-        team = Team(name=data.name, logo=self._decode_logo(data.logo_base64))
+        team = Team(
+            name=data.name,
+            responsible_name=data.responsible_name,
+            responsible_phone=data.responsible_phone,
+            responsible_email=data.responsible_email,
+            logo=self._decode_logo(data.logo_base64),
+        )
         self.team_repo.add(team)
         self.db.flush()
 

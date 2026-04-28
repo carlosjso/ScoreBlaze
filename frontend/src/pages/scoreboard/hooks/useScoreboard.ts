@@ -8,9 +8,11 @@ import {
 import {
   buildScoreboardWebSocketUrl,
   createScoreboardRealtimeMessage,
+  parseScoreboardRealtimeMessage,
 } from "@/pages/scoreboard/ScoreboardRealtime.service";
 
 import type {
+  ScoreboardControlMode,
   ScoreboardHistoryEvent,
   ScoreboardPlayerOption,
   ScoreboardState,
@@ -22,8 +24,6 @@ const START_CLOCK_SECONDS = 10 * 60;
 const START_SHOT_CLOCK_SECONDS = 24;
 const SHOT_CLOCK_RESET_SECONDS = 14;
 const CLOCK_TICK_MS = 1000;
-
-const BASE_STORAGE_KEY = "scoreboard.state.v1";
 
 const DEFAULT_PLAYERS_A = createGuestPlayers("A");
 const DEFAULT_PLAYERS_B = createGuestPlayers("B");
@@ -41,6 +41,12 @@ type UseScoreboardParams = {
   matchId?: number;
   matchSetup?: MatchSetup | null;
 };
+
+export type ScoreboardRealtimeStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "reconnecting";
 
 function createGuestPlayers(team: ScoreboardTeamKey): ScoreboardPlayerOption[] {
   return Array.from({ length: 5 }, (_, index) => {
@@ -109,143 +115,6 @@ const createInitialState = (matchSetup?: MatchSetup | null): ScoreboardState => 
   clockRunning: false,
 });
 
-function getInitialState(storageKey: string, matchSetup?: MatchSetup | null): ScoreboardState {
-  try {
-    const rawState = localStorage.getItem(storageKey);
-
-    if (!rawState) {
-      return createInitialState(matchSetup);
-    }
-
-    const parsedState = JSON.parse(rawState) as Partial<ScoreboardState>;
-    return normalizeStoredState(parsedState, matchSetup);
-  } catch (error) {
-    console.error("No se pudo leer el estado del marcador:", error);
-    return createInitialState(matchSetup);
-  }
-}
-
-function normalizeStoredPlayers(
-  team: ScoreboardTeamKey,
-  players: unknown,
-): ScoreboardPlayerOption[] {
-  if (!Array.isArray(players) || players.length === 0) {
-    return team === "A" ? DEFAULT_PLAYERS_A : DEFAULT_PLAYERS_B;
-  }
-
-  if (typeof players[0] === "string") {
-    return (players as string[]).map((player, index) => ({
-      key: `legacy:${team}:${index}:${player}`,
-      playerId: null,
-      label: player,
-      name: player,
-      shirtNumber: null,
-    }));
-  }
-
-  return (players as ScoreboardPlayerOption[]).map((player, index) => ({
-    key: typeof player.key === "string" && player.key.trim()
-      ? player.key
-      : player.playerId !== null && player.playerId !== undefined
-        ? `player:${player.playerId}`
-        : `guest:${team}:${index}`,
-    playerId: typeof player.playerId === "number" ? player.playerId : null,
-    label: player.label || player.name || `${team}${index + 1}`,
-    name: player.name || player.label || `${team}${index + 1}`,
-    shirtNumber: player.shirtNumber ?? null,
-  }));
-}
-
-function normalizeStoredHistory(history: unknown): ScoreboardHistoryEvent[] {
-  if (!Array.isArray(history)) {
-    return [];
-  }
-
-  const normalizedHistory: ScoreboardHistoryEvent[] = [];
-
-  history.forEach((event, index) => {
-    const candidate = event as Partial<ScoreboardHistoryEvent>;
-
-    if (!candidate || (candidate.team !== "A" && candidate.team !== "B")) {
-      return;
-    }
-
-    normalizedHistory.push({
-      id: typeof candidate.id === "string" ? candidate.id : createHistoryId(),
-      type: candidate.type ?? "MISSED_SHOT",
-      team: candidate.team,
-      teamId: typeof candidate.teamId === "number" ? candidate.teamId : undefined,
-      player: candidate.player ?? "Invitado",
-      playerId: typeof candidate.playerId === "number" ? candidate.playerId : null,
-      points: candidate.points,
-      text: candidate.text ?? candidate.player ?? "Evento",
-      period: typeof candidate.period === "number" ? candidate.period : 1,
-      elapsedSeconds:
-        typeof candidate.elapsedSeconds === "number" ? candidate.elapsedSeconds : 0,
-      eventOrder:
-        typeof candidate.eventOrder === "number" ? candidate.eventOrder : index + 1,
-      createdAt:
-        typeof candidate.createdAt === "number" ? candidate.createdAt : Date.now(),
-      backendEventId:
-        typeof candidate.backendEventId === "number"
-          ? candidate.backendEventId
-          : undefined,
-      status: candidate.status === "voided" ? "voided" : "active",
-    });
-  });
-
-  return normalizedHistory;
-}
-
-function normalizeStoredState(
-  parsedState: Partial<ScoreboardState>,
-  matchSetup?: MatchSetup | null,
-): ScoreboardState {
-  const fallback = createInitialState(matchSetup);
-  const teamAPlayers = normalizeStoredPlayers("A", parsedState.teamA?.players);
-  const teamBPlayers = normalizeStoredPlayers("B", parsedState.teamB?.players);
-
-  return {
-    teamA: buildTeamState(
-      "A",
-      parsedState.teamA?.name ?? fallback.teamA.name,
-      parsedState.teamA?.score ?? fallback.teamA.score,
-      {
-        id: parsedState.teamA?.id ?? fallback.teamA.id,
-        logo: parsedState.teamA?.logo ?? fallback.teamA.logo,
-        fouls: parsedState.teamA?.fouls ?? fallback.teamA.fouls,
-        players: teamAPlayers,
-        selectedPlayer: parsedState.teamA?.selectedPlayer ?? fallback.teamA.selectedPlayer,
-      },
-    ),
-    teamB: buildTeamState(
-      "B",
-      parsedState.teamB?.name ?? fallback.teamB.name,
-      parsedState.teamB?.score ?? fallback.teamB.score,
-      {
-        id: parsedState.teamB?.id ?? fallback.teamB.id,
-        logo: parsedState.teamB?.logo ?? fallback.teamB.logo,
-        fouls: parsedState.teamB?.fouls ?? fallback.teamB.fouls,
-        players: teamBPlayers,
-        selectedPlayer: parsedState.teamB?.selectedPlayer ?? fallback.teamB.selectedPlayer,
-      },
-    ),
-    history: normalizeStoredHistory(parsedState.history),
-    arrow: parsedState.arrow === "B" ? "B" : "A",
-    controlMode: parsedState.controlMode === "keyboard" ? "keyboard" : "buttons",
-    period: typeof parsedState.period === "number" ? parsedState.period : fallback.period,
-    clockSeconds:
-      typeof parsedState.clockSeconds === "number"
-        ? parsedState.clockSeconds
-        : fallback.clockSeconds,
-    shotClockSeconds:
-      typeof parsedState.shotClockSeconds === "number"
-        ? parsedState.shotClockSeconds
-        : fallback.shotClockSeconds,
-    clockRunning: false,
-  };
-}
-
 function resolveSelectedPlayer(
   selectedPlayer: string | null,
   players: ScoreboardPlayerOption[],
@@ -290,6 +159,17 @@ function mergeServerState(
     ...serverState,
     teamA: mergedTeamA,
     teamB: mergedTeamB,
+  };
+}
+
+function mergeSnapshotState(
+  current: ScoreboardState,
+  snapshotState: ScoreboardState,
+): ScoreboardState {
+  const mergedRealtimeState = mergeServerState(current, snapshotState);
+
+  return {
+    ...mergedRealtimeState,
     arrow: current.arrow,
     controlMode: current.controlMode,
     period: current.period,
@@ -374,23 +254,27 @@ export function useScoreboard({
   matchId,
   matchSetup,
 }: UseScoreboardParams = {}) {
-  const storageKey = matchId
-    ? `${BASE_STORAGE_KEY}.${matchId}`
-    : BASE_STORAGE_KEY;
   const [state, setState] = useState<ScoreboardState>(() =>
-    getInitialState(storageKey, matchSetup),
+    createInitialState(matchSetup),
   );
   const [loading, setLoading] = useState(Boolean(matchId));
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [realtimeStatus, setRealtimeStatus] = useState<ScoreboardRealtimeStatus>(
+    matchId ? "connecting" : "idle",
+  );
 
   const intervalRef = useRef<number | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
+  const realtimeBootstrapTimeoutRef = useRef<number | null>(null);
   const stateRef = useRef(state);
   const mutationQueueRef = useRef(Promise.resolve<void>(undefined));
   const realtimeSocketRef = useRef<WebSocket | null>(null);
   const pendingRealtimeStateRef = useRef<ScoreboardState | null>(null);
   const hasLoadedSnapshotRef = useRef(false);
   const hasAppliedMatchSetupRef = useRef(false);
+  const hasHydratedFromRealtimeRef = useRef(false);
+  const canPublishRealtimeRef = useRef(false);
+  const skipNextRealtimePublishRef = useRef(false);
   const lastMatchIdRef = useRef(matchId);
 
   const commitState = useCallback((nextState: ScoreboardState) => {
@@ -425,7 +309,19 @@ export function useScoreboard({
     }
   }, []);
 
-  const broadcastRealtimeState = useCallback((nextState: ScoreboardState) => {
+  const clearRealtimeBootstrapTimeout = useCallback(() => {
+    if (realtimeBootstrapTimeoutRef.current !== null) {
+      window.clearTimeout(realtimeBootstrapTimeoutRef.current);
+      realtimeBootstrapTimeoutRef.current = null;
+    }
+  }, []);
+
+  const broadcastRealtimeState = useCallback(() => {
+    if (!canPublishRealtimeRef.current) {
+      return;
+    }
+
+    const nextState = pendingRealtimeStateRef.current ?? stateRef.current;
     pendingRealtimeStateRef.current = nextState;
 
     const socket = realtimeSocketRef.current;
@@ -445,20 +341,25 @@ export function useScoreboard({
     lastMatchIdRef.current = matchId;
     hasLoadedSnapshotRef.current = false;
     hasAppliedMatchSetupRef.current = false;
+    hasHydratedFromRealtimeRef.current = false;
+    canPublishRealtimeRef.current = false;
+    skipNextRealtimePublishRef.current = false;
     mutationQueueRef.current = Promise.resolve<void>(undefined);
     pendingRealtimeStateRef.current = null;
     clearClockInterval();
     clearReconnectTimeout();
-    commitState(getInitialState(storageKey, matchSetup));
+    clearRealtimeBootstrapTimeout();
+    commitState(createInitialState(matchSetup));
     setSyncError(null);
     setLoading(Boolean(matchId));
+    setRealtimeStatus(matchId ? "connecting" : "idle");
   }, [
     clearClockInterval,
     clearReconnectTimeout,
+    clearRealtimeBootstrapTimeout,
     commitState,
     matchId,
     matchSetup,
-    storageKey,
   ]);
 
   useEffect(() => {
@@ -487,18 +388,19 @@ export function useScoreboard({
     void getScoreboardSnapshot(matchId, abortController.signal)
       .then((serverState) => {
         hasLoadedSnapshotRef.current = true;
-        commitState(mergeServerState(stateRef.current, serverState));
+        if (hasHydratedFromRealtimeRef.current) {
+          return;
+        }
+
+        commitState(mergeSnapshotState(stateRef.current, serverState));
       })
       .catch((error) => {
         if (abortController.signal.aborted) {
           return;
         }
 
-        const message =
-          error instanceof Error
-            ? error.message
-            : "No se pudo cargar el marcador del backend.";
-        setSyncError(message);
+        console.error("No se pudo abrir el marcador del partido:", error);
+        setSyncError("No pudimos abrir el marcador de este partido.");
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
@@ -517,11 +419,16 @@ export function useScoreboard({
         realtimeSocketRef.current.close();
         realtimeSocketRef.current = null;
       }
+      canPublishRealtimeRef.current = false;
+      hasHydratedFromRealtimeRef.current = false;
       clearReconnectTimeout();
+      clearRealtimeBootstrapTimeout();
+      setRealtimeStatus("idle");
       return;
     }
 
     let cancelled = false;
+    setRealtimeStatus("connecting");
 
     const connect = () => {
       if (cancelled) {
@@ -534,16 +441,35 @@ export function useScoreboard({
       realtimeSocketRef.current = socket;
 
       socket.onopen = () => {
-        const latestState = pendingRealtimeStateRef.current ?? stateRef.current;
-        if (!latestState) {
+        setRealtimeStatus("connected");
+        hasHydratedFromRealtimeRef.current = false;
+        canPublishRealtimeRef.current = false;
+        clearRealtimeBootstrapTimeout();
+        realtimeBootstrapTimeoutRef.current = window.setTimeout(() => {
+          if (hasHydratedFromRealtimeRef.current) {
+            return;
+          }
+
+          canPublishRealtimeRef.current = true;
+          broadcastRealtimeState();
+        }, 250);
+      };
+
+      socket.onmessage = (event) => {
+        const nextState = parseScoreboardRealtimeMessage(event.data);
+        if (!nextState) {
           return;
         }
 
-        socket.send(createScoreboardRealtimeMessage(latestState));
-        pendingRealtimeStateRef.current = null;
+        hasHydratedFromRealtimeRef.current = true;
+        canPublishRealtimeRef.current = true;
+        clearRealtimeBootstrapTimeout();
+        skipNextRealtimePublishRef.current = true;
+        commitState(mergeServerState(stateRef.current, nextState));
       };
 
       socket.onerror = () => {
+        setRealtimeStatus("reconnecting");
         console.error("Fallo la conexion realtime del marcador.");
       };
 
@@ -552,10 +478,14 @@ export function useScoreboard({
           realtimeSocketRef.current = null;
         }
 
+        canPublishRealtimeRef.current = false;
+        clearRealtimeBootstrapTimeout();
+
         if (cancelled) {
           return;
         }
 
+        setRealtimeStatus("reconnecting");
         clearReconnectTimeout();
         reconnectTimeoutRef.current = window.setTimeout(() => {
           connect();
@@ -568,13 +498,14 @@ export function useScoreboard({
     return () => {
       cancelled = true;
       clearReconnectTimeout();
+      clearRealtimeBootstrapTimeout();
 
       if (realtimeSocketRef.current) {
         realtimeSocketRef.current.close();
         realtimeSocketRef.current = null;
       }
     };
-  }, [clearReconnectTimeout, matchId]);
+  }, [broadcastRealtimeState, clearReconnectTimeout, clearRealtimeBootstrapTimeout, commitState, matchId]);
 
   const enqueueServerSync = useCallback(
     (task: () => Promise<ScoreboardState | null>) => {
@@ -589,14 +520,13 @@ export function useScoreboard({
               return;
             }
 
-            commitState(mergeServerState(stateRef.current, serverState));
+            commitState(mergeSnapshotState(stateRef.current, serverState));
             setSyncError(null);
           } catch (error) {
-            const message =
-              error instanceof Error
-                ? error.message
-                : "No se pudo sincronizar el marcador con el backend.";
-            setSyncError(message);
+            console.error("No se pudo guardar el cambio del marcador:", error);
+            setSyncError(
+              "No pudimos guardar el cambio del marcador. Intenta de nuevo.",
+            );
           }
         });
     },
@@ -817,14 +747,21 @@ export function useScoreboard({
     }));
   }, [updateState]);
 
+  const setControlMode = useCallback((mode: ScoreboardControlMode) => {
+    updateState((current) => {
+      if (current.controlMode === mode) {
+        return current;
+      }
+
+      return {
+        ...current,
+        controlMode: mode,
+      };
+    });
+  }, [updateState]);
+
   const resetGame = useCallback(() => {
     clearClockInterval();
-
-    try {
-      localStorage.removeItem(storageKey);
-    } catch (error) {
-      console.error("No se pudo limpiar el estado del marcador:", error);
-    }
 
     const current = stateRef.current;
     const nextState: ScoreboardState = {
@@ -846,7 +783,7 @@ export function useScoreboard({
     if (matchId) {
       enqueueServerSync(() => resetMatchScoreboard(matchId));
     }
-  }, [clearClockInterval, commitState, enqueueServerSync, matchId, matchSetup, storageKey]);
+  }, [clearClockInterval, commitState, enqueueServerSync, matchId, matchSetup]);
 
   useEffect(() => {
     if (!state.clockRunning) {
@@ -888,25 +825,25 @@ export function useScoreboard({
   );
 
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(state));
-    } catch (error) {
-      console.error("No se pudo guardar el estado del marcador:", error);
-    }
-  }, [state, storageKey]);
-
-  useEffect(() => {
     if (!matchId) {
       return;
     }
 
-    broadcastRealtimeState(state);
+    pendingRealtimeStateRef.current = state;
+
+    if (skipNextRealtimePublishRef.current) {
+      skipNextRealtimePublishRef.current = false;
+      return;
+    }
+
+    broadcastRealtimeState();
   }, [broadcastRealtimeState, matchId, state]);
 
   return {
     state,
     loading,
     syncError,
+    realtimeStatus,
     formattedClock,
     formattedShotClock,
     selectPlayer,
@@ -923,6 +860,7 @@ export function useScoreboard({
     setShotClock14,
     nextPeriod,
     toggleArrow,
+    setControlMode,
     resetGame,
   };
 }

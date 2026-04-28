@@ -20,7 +20,7 @@ export default function Teams() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
 
-  const { teams, players, loading, error } = useTeamsData();
+  const { teams, loading, error } = useTeamsData();
   const modals = useTeamsModals();
   const {
     submitting,
@@ -160,8 +160,6 @@ export default function Teams() {
         isOpen={modals.formOpen}
         mode={modals.formMode}
         initialTeam={modals.editingTeam}
-        players={players}
-        defaultPlayerIds={modals.defaultPlayerIds}
         loading={submitting}
         apiError={mutationError}
         onClose={() => {

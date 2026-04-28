@@ -3,6 +3,17 @@ import { z } from "zod";
 import type { ScoreboardState } from "@/pages/scoreboard/Scoreboard.types";
 
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const nullableOptionalIntSchema = z
+  .number()
+  .int()
+  .nullable()
+  .optional()
+  .transform((value) => value ?? undefined);
+const nullableOptionalStringSchema = z
+  .string()
+  .nullable()
+  .optional()
+  .transform((value) => value ?? undefined);
 const scoreboardTeamKeySchema = z.enum(["A", "B"]);
 const scoreboardControlModeSchema = z.enum(["buttons", "keyboard"]);
 const scoreboardEventTypeSchema = z.enum([
@@ -28,24 +39,33 @@ const scoreboardHistoryEventSchema = z.object({
   id: z.string().min(1),
   type: scoreboardEventTypeSchema,
   team: scoreboardTeamKeySchema,
-  teamId: z.number().int().optional(),
+  teamId: nullableOptionalIntSchema,
   player: z.string().min(1),
   playerId: z.number().int().nullable().optional(),
-  points: z.number().int().min(0).optional(),
+  points: z
+    .number()
+    .int()
+    .min(0)
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
   text: z.string().min(1),
   period: z.number().int().min(1),
   elapsedSeconds: z.number().int().min(0),
   eventOrder: z.number().int().min(0),
   createdAt: z.number().int().min(0),
-  backendEventId: z.number().int().optional(),
-  status: scoreboardEventStatusSchema.optional(),
+  backendEventId: nullableOptionalIntSchema,
+  status: scoreboardEventStatusSchema
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
 });
 
 const scoreboardTeamStateSchema = z.object({
-  id: z.number().int().optional(),
+  id: nullableOptionalIntSchema,
   key: scoreboardTeamKeySchema,
   name: z.string().min(1),
-  logo: z.string().optional(),
+  logo: nullableOptionalStringSchema,
   score: z.number().int().min(0),
   fouls: z.number().int().min(0),
   selectedPlayer: z.string().nullable(),

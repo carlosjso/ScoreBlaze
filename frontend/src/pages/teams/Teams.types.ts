@@ -7,6 +7,9 @@ export type TeamFormMode = "create" | "edit";
 export type ApiTeam = {
   id: number;
   name: string;
+  responsible_name: string | null;
+  responsible_phone: string | null;
+  responsible_email: string | null;
   logo_base64: string | null;
 };
 
@@ -39,6 +42,9 @@ export type TeamPlayerSummary = {
 export type TeamListItem = {
   id: number;
   name: string;
+  responsibleName: string;
+  responsiblePhone: string;
+  responsibleEmail: string;
   logoBase64: string | null;
   playerIds: number[];
   playerCount: number;
@@ -49,12 +55,18 @@ export type TeamListItem = {
 
 export type TeamFormValues = {
   name: string;
+  responsibleName: string;
+  responsiblePhone: string;
+  responsibleEmail: string;
   logoBase64: string | null;
   playerIds: number[];
 };
 
 export type TeamMutationPayload = {
   name: string;
+  responsible_name: string;
+  responsible_phone: string;
+  responsible_email: string;
   logo_base64: string | null;
   player_ids: number[];
 };
