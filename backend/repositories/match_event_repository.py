@@ -43,6 +43,19 @@ class MatchEventRepository:
         )
         return list(self.db.scalars(stmt).all())
 
+    def list_by_match(self, match_id: int) -> list[MatchEvent]:
+        stmt = (
+            select(MatchEvent)
+            .options(
+                selectinload(MatchEvent.match),
+                selectinload(MatchEvent.team),
+                selectinload(MatchEvent.player),
+            )
+            .where(MatchEvent.match_id == match_id)
+            .order_by(MatchEvent.event_order.asc(), MatchEvent.id.asc())
+        )
+        return list(self.db.scalars(stmt).all())
+
     def get_existing_match_ids(self, match_ids: list[int]) -> set[int]:
         if not match_ids:
             return set()

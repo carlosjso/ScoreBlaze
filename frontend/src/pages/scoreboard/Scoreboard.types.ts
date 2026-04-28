@@ -11,17 +11,31 @@ export type ScoreboardEventType =
   | "REBOUND"
   | "FOUL";
 
+export type ScoreboardEventStatus = "active" | "voided";
+
+export type ScoreboardPlayerOption = {
+  key: string;
+  playerId: number | null;
+  label: string;
+  name: string;
+  shirtNumber: string | null;
+};
+
 export type ScoreboardHistoryEvent = {
   id: string;
   type: ScoreboardEventType;
   team: ScoreboardTeamKey;
+  teamId?: number;
   player: string;
+  playerId?: number | null;
   points?: number;
   text: string;
   period: number;
   elapsedSeconds: number;
   eventOrder: number;
   createdAt: number;
+  backendEventId?: number;
+  status?: ScoreboardEventStatus;
 };
 
 export type ScoreboardTeamState = {
@@ -32,7 +46,7 @@ export type ScoreboardTeamState = {
   score: number;
   fouls: number;
   selectedPlayer: string | null;
-  players: string[];
+  players: ScoreboardPlayerOption[];
 };
 
 export type ScoreboardState = {

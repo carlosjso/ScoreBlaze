@@ -17,6 +17,7 @@ from services import (
     MatchService,
     PlayerService,
     PlayerStatService,
+    ScoreboardService,
     TeamMembershipService,
     TeamService,
     TeamStatService,
@@ -68,6 +69,26 @@ def get_match_event_service(
     match_event_repo: MatchEventRepository = Depends(get_match_event_repository),
 ) -> MatchEventService:
     return MatchEventService(match_event_repo)
+
+
+def get_scoreboard_service(
+    match_repo: MatchRepository = Depends(get_match_repository),
+    match_event_repo: MatchEventRepository = Depends(get_match_event_repository),
+    team_repo: TeamRepository = Depends(get_team_repository),
+    player_repo: PlayerRepository = Depends(get_player_repository),
+    team_stat_repo: TeamStatRepository = Depends(get_team_stat_repository),
+    player_stat_repo: PlayerStatRepository = Depends(get_player_stat_repository),
+    membership_repo: MembershipRepository = Depends(get_membership_repository),
+) -> ScoreboardService:
+    return ScoreboardService(
+        match_repo=match_repo,
+        match_event_repo=match_event_repo,
+        team_repo=team_repo,
+        player_repo=player_repo,
+        team_stat_repo=team_stat_repo,
+        player_stat_repo=player_stat_repo,
+        membership_repo=membership_repo,
+    )
 
 
 def get_player_service(

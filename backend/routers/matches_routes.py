@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from data.models import MatchCreate, MatchOut, MatchUpdate
-from dependencies import get_match_service
-from services import MatchService
+from data.models import MatchCreate, MatchOut, MatchUpdate, ScoreboardEventCreate, ScoreboardSnapshotOut
+from dependencies import get_match_service, get_scoreboard_service
+from services import MatchService, ScoreboardService
 
 router = APIRouter(prefix="/matches", tags=["matches"])
 
@@ -28,6 +28,59 @@ def get_match(match_id: int, service: MatchService = Depends(get_match_service))
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
     return match
+
+
+@router.get("/{match_id}/scoreboard", response_model=ScoreboardSnapshotOut)
+def get_match_scoreboard(
+    match_id: int,
+    service: ScoreboardService = Depends(get_scoreboard_service),
+):
+    try:
+        return service.get_snapshot(match_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post(
+    "/{match_id}/scoreboard/events",
+    response_model=ScoreboardSnapshotOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_match_scoreboard_event(
+    match_id: int,
+    payload: ScoreboardEventCreate,
+    service: ScoreboardService = Depends(get_scoreboard_service),
+):
+    try:
+        return service.record_event(match_id, payload)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.post("/{match_id}/scoreboard/undo", response_model=ScoreboardSnapshotOut)
+def undo_match_scoreboard_event(
+    match_id: int,
+    service: ScoreboardService = Depends(get_scoreboard_service),
+):
+    try:
+        return service.undo_last_event(match_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.post("/{match_id}/scoreboard/reset", response_model=ScoreboardSnapshotOut)
+def reset_match_scoreboard(
+    match_id: int,
+    service: ScoreboardService = Depends(get_scoreboard_service),
+):
+    try:
+        return service.reset(match_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.put("/{match_id}", response_model=MatchOut)

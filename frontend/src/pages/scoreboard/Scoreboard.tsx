@@ -1,10 +1,11 @@
-import { useScoreboard } from "@/pages/scoreboard/hooks/useScoreboard";
-import { ScoreboardDisplay } from "@/pages/scoreboard/components/ScoreboardDisplay";
+import { useParams } from "react-router-dom";
+
 import { TeamControlPanel } from "@/pages/scoreboard/components/TeamControlPanel";
 import { GeneralControls } from "@/pages/scoreboard/components/GeneralControls";
-import { useScoreboardKeyboard } from "@/pages/scoreboard/hooks/useScoreboardKeyboard";
 import { KeyboardHelp } from "@/pages/scoreboard/components/KeyboardHelp";
-import { useParams } from "react-router-dom";
+import { ScoreboardDisplay } from "@/pages/scoreboard/components/ScoreboardDisplay";
+import { useScoreboard } from "@/pages/scoreboard/hooks/useScoreboard";
+import { useScoreboardKeyboard } from "@/pages/scoreboard/hooks/useScoreboardKeyboard";
 import { useQuickMatchesData } from "@/pages/quick-matches/hooks/useQuickMatchesData";
 
 export default function Scoreboard() {
@@ -20,10 +21,10 @@ export default function Scoreboard() {
     ? matches.find((match) => match.id === numericMatchId)
     : null;
 
-  console.log("[scoreboard] Partido actual:", currentMatch);
-
   const {
     state,
+    loading: loadingScoreboard,
+    syncError,
     formattedClock,
     formattedShotClock,
     selectPlayer,
@@ -40,7 +41,19 @@ export default function Scoreboard() {
     nextPeriod,
     toggleArrow,
     resetGame,
-  } = useScoreboard({ matchId: numericMatchId });
+  } = useScoreboard({
+    matchId: numericMatchId,
+    matchSetup: currentMatch
+      ? {
+          teamAId: currentMatch.teamAId,
+          teamBId: currentMatch.teamBId,
+          teamAName: currentMatch.teamAName,
+          teamBName: currentMatch.teamBName,
+          scoreTeamA: currentMatch.scoreTeamA,
+          scoreTeamB: currentMatch.scoreTeamB,
+        }
+      : null,
+  });
 
   const historyA = state.history
     .filter((event) => event.team === "A")
@@ -50,8 +63,9 @@ export default function Scoreboard() {
     .filter((event) => event.team === "B")
     .slice()
     .reverse();
+
   useScoreboardKeyboard({
-    enabled: true,
+    enabled: !loadingScoreboard,
     onAddPoints: addPoints,
     onMiss: miss,
     onFoul: foul,
@@ -79,8 +93,9 @@ export default function Scoreboard() {
         </h1>
 
         <p className="mt-2 max-w-2xl text-sm text-slate-500">
-          Primera migración del marcador HTML a React con estado local.
+          Marcador conectado al backend para cargar roster real y guardar eventos del partido.
         </p>
+
         {numericMatchId ? (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
             {loadingMatches ? (
@@ -91,9 +106,21 @@ export default function Scoreboard() {
               `Partido: ${currentMatch.teamAName} vs ${currentMatch.teamBName}`
             ) : (
               <span className="text-red-600">
-                No se encontró el partido #{numericMatchId}
+                No se encontro el partido #{numericMatchId}
               </span>
             )}
+          </div>
+        ) : null}
+
+        {loadingScoreboard ? (
+          <div className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700">
+            Sincronizando marcador y jugadores desde backend...
+          </div>
+        ) : null}
+
+        {syncError ? (
+          <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {syncError}
           </div>
         ) : null}
       </div>
@@ -108,6 +135,7 @@ export default function Scoreboard() {
         <TeamControlPanel
           team={state.teamA}
           history={historyA}
+          disabled={loadingScoreboard}
           onSelectPlayer={selectPlayer}
           onAddPoints={addPoints}
           onMiss={miss}
@@ -127,9 +155,11 @@ export default function Scoreboard() {
           onUndo={undo}
           onResetGame={resetGame}
         />
+
         <TeamControlPanel
           team={state.teamB}
           history={historyB}
+          disabled={loadingScoreboard}
           onSelectPlayer={selectPlayer}
           onAddPoints={addPoints}
           onMiss={miss}
@@ -138,6 +168,7 @@ export default function Scoreboard() {
           onAssist={assist}
         />
       </div>
+
       <KeyboardHelp />
     </section>
   );

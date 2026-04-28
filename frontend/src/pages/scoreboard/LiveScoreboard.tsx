@@ -8,6 +8,20 @@ import { LiveTeamCard } from "@/pages/scoreboard/components/live/LiveTeamCard";
 import { LiveCenterPanel } from "@/pages/scoreboard/components/live/LiveCenterPanel";
 import { LiveFooterStats } from "@/pages/scoreboard/components/live/LiveFooterStats";
 
+function createFallbackPlayers(team: "A" | "B") {
+  return Array.from({ length: 5 }, (_, index) => {
+    const label = `${team}${index + 1}`;
+
+    return {
+      key: `live:${team}:${index + 1}`,
+      playerId: null,
+      label,
+      name: label,
+      shirtNumber: null,
+    };
+  });
+}
+
 function createFallbackState(): ScoreboardState {
   return {
     teamA: {
@@ -16,8 +30,8 @@ function createFallbackState(): ScoreboardState {
       logo: undefined,
       score: 0,
       fouls: 0,
-      selectedPlayer: "A1",
-      players: ["A1", "A2", "A3", "A4", "A5"],
+      selectedPlayer: "live:A:1",
+      players: createFallbackPlayers("A"),
     },
     teamB: {
       key: "B",
@@ -25,8 +39,8 @@ function createFallbackState(): ScoreboardState {
       logo: undefined,
       score: 0,
       fouls: 0,
-      selectedPlayer: "B1",
-      players: ["B1", "B2", "B3", "B4", "B5"],
+      selectedPlayer: "live:B:1",
+      players: createFallbackPlayers("B"),
     },
     history: [],
     arrow: "A",

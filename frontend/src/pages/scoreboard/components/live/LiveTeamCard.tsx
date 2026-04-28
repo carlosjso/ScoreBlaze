@@ -1,4 +1,5 @@
 import type { ScoreboardTeamState } from "@/pages/scoreboard/Scoreboard.types";
+import { getBase64ImageSrc } from "@/shared/utils/base64Image";
 
 type LiveTeamCardProps = {
   team: ScoreboardTeamState;
@@ -6,6 +7,8 @@ type LiveTeamCardProps = {
 };
 
 export function LiveTeamCard({ team, hasPossession }: LiveTeamCardProps) {
+  const logoSrc = getBase64ImageSrc(team.logo);
+
   return (
     <article
       className={[
@@ -14,9 +17,9 @@ export function LiveTeamCard({ team, hasPossession }: LiveTeamCardProps) {
       ].join(" ")}
     >
       <div className="grid aspect-square w-[188px] place-items-center overflow-hidden rounded-full border border-slate-200 bg-slate-50 p-2">
-        {team.logo ? (
+        {logoSrc ? (
           <img
-            src={team.logo}
+            src={logoSrc}
             alt={team.name}
             className="h-[92%] w-[92%] object-contain drop-shadow"
           />

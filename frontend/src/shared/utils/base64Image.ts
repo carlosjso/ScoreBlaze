@@ -58,5 +58,23 @@ export async function imageFileToPngBase64(file: File): Promise<string> {
 }
 
 export function getBase64ImageSrc(base64?: string | null, mimeType = "image/png"): string | null {
-  return base64 ? `data:${mimeType};base64,${base64}` : null;
+  if (!base64) {
+    return null;
+  }
+
+  const normalized = base64.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  if (
+    normalized.startsWith("data:") ||
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("blob:")
+  ) {
+    return normalized;
+  }
+
+  return `data:${mimeType};base64,${normalized}`;
 }
