@@ -8,15 +8,15 @@ import "@/styles/global.css";
 
 import AppLayout from "@/app/layouts/AppLayout";
 import { QueryProvider } from "@/app/providers/QueryProvider";
-import BasketballHubPage from "@/pages/basketball/pages/BasketballHubPage";
-import LeaguesPage from "@/pages/leagues/pages/LeaguesPage";
-import Players from "@/pages/players/Players";
-import QuickMatches from "@/pages/quick-matches/QuickMatches";
-import Scoreboard from "@/pages/scoreboard/Scoreboard";
-import LiveScoreboard from "@/pages/scoreboard/LiveScoreboard";
-import SportDashboardPage from "@/pages/sports/pages/SportDashboardPage";
-import SportsPage from "@/pages/sports/pages/SportsPage";
-import Teams from "@/pages/teams/Teams";
+import BasketballHubPage from "@/features/basketball/BasketballHubPage";
+import LeaguesPage from "@/features/leagues/LeaguesPage";
+import Players from "@/features/players/Players";
+import QuickMatches from "@/features/quick-matches/QuickMatches";
+import Scoreboard from "@/features/scoreboard/Scoreboard";
+import LiveScoreboard from "@/features/scoreboard/LiveScoreboard";
+import SportDashboardPage from "@/features/sports/SportDashboardPage";
+import SportsPage from "@/features/sports/SportsPage";
+import Teams from "@/features/teams/Teams";
 
 export default function App() {
   return (
@@ -59,3 +59,4 @@ export default function App() {
     </QueryProvider>
   );
 }
+
