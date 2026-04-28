@@ -5,10 +5,23 @@ import { GeneralControls } from "@/pages/scoreboard/components/GeneralControls";
 import { useScoreboardKeyboard } from "@/pages/scoreboard/hooks/useScoreboardKeyboard";
 import { KeyboardHelp } from "@/pages/scoreboard/components/KeyboardHelp";
 import { useParams } from "react-router-dom";
+import { useQuickMatchesData } from "@/pages/quick-matches/hooks/useQuickMatchesData";
 
 export default function Scoreboard() {
   const { matchId } = useParams();
   const numericMatchId = matchId ? Number(matchId) : undefined;
+  const {
+    matches,
+    loading: loadingMatches,
+    error: matchesError,
+  } = useQuickMatchesData();
+
+  const currentMatch = numericMatchId
+    ? matches.find((match) => match.id === numericMatchId)
+    : null;
+
+  console.log("[scoreboard] Partido actual:", currentMatch);
+
   const {
     state,
     formattedClock,
@@ -68,6 +81,21 @@ export default function Scoreboard() {
         <p className="mt-2 max-w-2xl text-sm text-slate-500">
           Primera migración del marcador HTML a React con estado local.
         </p>
+        {numericMatchId ? (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+            {loadingMatches ? (
+              "Cargando partido..."
+            ) : matchesError ? (
+              <span className="text-red-600">{matchesError}</span>
+            ) : currentMatch ? (
+              `Partido: ${currentMatch.teamAName} vs ${currentMatch.teamBName}`
+            ) : (
+              <span className="text-red-600">
+                No se encontró el partido #{numericMatchId}
+              </span>
+            )}
+          </div>
+        ) : null}
       </div>
 
       <ScoreboardDisplay
