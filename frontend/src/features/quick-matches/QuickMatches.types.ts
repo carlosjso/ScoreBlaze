@@ -8,6 +8,7 @@ export type MatchFormMode = "create" | "edit";
 export type ApiTeamOption = {
   id: number;
   name: string;
+  logo_base64: string | null;
 };
 
 export type ApiMatch = {
@@ -37,6 +38,8 @@ export type QuickMatchListItem = {
   teamBId: number;
   teamAName: string;
   teamBName: string;
+  teamALogoBase64: string | null;
+  teamBLogoBase64: string | null;
   matchupLabel: string;
   matchDate: string;
   dateLabel: string;
