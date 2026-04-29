@@ -18,6 +18,7 @@ export type ApiPlayer = {
   name: string;
   email: string;
   phone: number | null;
+  photo_base64: string | null;
 };
 
 export type ApiTeamMembership = {
@@ -37,6 +38,7 @@ export type TeamPlayerSummary = {
   name: string;
   email: string;
   phone: string;
+  photoBase64: string | null;
 };
 
 export type TeamListItem = {

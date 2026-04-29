@@ -24,7 +24,7 @@ export const sidebarRoutes: SidebarRouteItem[] = [
     sidebarContext: "none",
   },
   {
-    path: "/team-players",
+    path: "/players",
     label: "Jugadores",
     icon: <UsersRound size={16} />,
     sidebarContext: "basketball",

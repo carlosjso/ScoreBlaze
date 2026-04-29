@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { playersQueryKeys } from "@/features/players/Players.service";
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import type { TeamFormMode, TeamFormValues } from "@/features/teams/Teams.types";
 import { toTeamMutationPayload } from "@/features/teams/schemas/Teams.schema";
@@ -33,12 +34,18 @@ export function useTeamsMutations() {
 
       return teamsService.updateTeam(teamId, payload);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (teamId: number) => teamsService.deleteTeam(teamId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+    },
   });
 
   const clearMutationError = () => {

@@ -32,6 +32,7 @@ export const apiPlayerSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
   phone: z.number().int().nullable(),
+  photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
 }) satisfies z.ZodType<ApiPlayer>;
 
 export const apiPlayersSchema = z.array(apiPlayerSchema);
@@ -77,6 +78,7 @@ export function buildTeamsView(
         name: player.name,
         email: player.email,
         phone: player.phone === null ? "" : String(player.phone),
+        photoBase64: player.photo_base64,
       }));
 
     return {

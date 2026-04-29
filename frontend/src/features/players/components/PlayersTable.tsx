@@ -1,3 +1,5 @@
+import { Shield } from "lucide-react";
+
 import type { SortDir, SortKey, PlayerListItem } from "@/features/players/Players.types";
 import { RowActions } from "@/shared/components/table/RowActions";
 import { SortHeaderButton } from "@/shared/components/table/SortHeaderButton";
@@ -17,6 +19,7 @@ type PlayersTableProps = {
   onClearFilters: () => void;
   onView: (player: PlayerListItem) => void;
   onEdit: (player: PlayerListItem) => void;
+  onManage: (player: PlayerListItem) => void;
   onDelete: (player: PlayerListItem) => void;
 };
 
@@ -36,6 +39,7 @@ export function PlayersTable({
   onClearFilters,
   onView,
   onEdit,
+  onManage,
   onDelete,
 }: PlayersTableProps) {
   const minVisibleRows = 8;
@@ -51,7 +55,7 @@ export function PlayersTable({
           <col style={{ width: "120px" }} />
           <col style={{ width: "110px" }} />
           <col style={{ width: "210px" }} />
-          <col style={{ width: "140px" }} />
+          <col style={{ width: "190px" }} />
         </colgroup>
         <thead>
           <tr className={tableHeaderClass}>
@@ -114,6 +118,9 @@ export function PlayersTable({
                     row={player}
                     onView={onView}
                     onEdit={onEdit}
+                    onManage={onManage}
+                    manageLabel="Asignar equipo"
+                    manageIcon={<Shield size={14} />}
                     onDelete={onDelete}
                     disabled={deletingPlayerId === player.id}
                   />
@@ -130,7 +137,7 @@ export function PlayersTable({
                   description={
                     hasActiveFilters
                       ? "Prueba otra busqueda o limpia filtros para volver a ver todos los jugadores."
-                      : "Crea tu primer jugador y asignale uno o varios equipos desde el formulario."
+                      : "Crea tu primer jugador. La asignacion a equipos se hace desde la plantilla de cada equipo."
                   }
                   actionLabel={hasActiveFilters ? "Limpiar filtros" : undefined}
                   onAction={hasActiveFilters ? onClearFilters : undefined}

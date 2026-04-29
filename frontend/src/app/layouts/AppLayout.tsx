@@ -16,7 +16,9 @@ function isBasketballPath(pathname: string) {
   return (
     pathname === "/basketball" ||
     pathname === "/teams" ||
-    pathname === "/team-players" ||
+    pathname.startsWith("/teams/") ||
+    pathname === "/players" ||
+    pathname.startsWith("/players/") ||
     pathname === "/quick-match" ||
     pathname.startsWith("/quick-match/") ||
     pathname === "/leagues" ||
@@ -29,7 +31,7 @@ const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
   "/dashboard": [{ label: "Inicio" }],
   "/basketball": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet" }],
   "/teams": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Equipos" }],
-  "/team-players": [
+  "/players": [
     { label: "Inicio", to: "/dashboard" },
     { label: "Basquet", to: "/basketball" },
     { label: "Jugadores" },
@@ -60,7 +62,29 @@ export default function AppLayout() {
   );
 
   const breadcrumbs =
-    location.pathname.startsWith("/quick-match/") && location.pathname.endsWith("/stats")
+    location.pathname.startsWith("/players/") && location.pathname.endsWith("/teams")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Jugadores", to: "/players" },
+          { label: "Asignar equipo" },
+        ]
+      : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster/manage")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Equipos", to: "/teams" },
+          { label: "Plantilla", to: location.pathname.replace(/\/manage$/, "") },
+          { label: "Asignar jugadores" },
+        ]
+      : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Equipos", to: "/teams" },
+          { label: "Plantilla" },
+        ]
+      : location.pathname.startsWith("/quick-match/") && location.pathname.endsWith("/stats")
       ? [
           { label: "Inicio", to: "/dashboard" },
           { label: "Basquet", to: "/basketball" },

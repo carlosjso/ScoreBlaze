@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Shirt } from "lucide-react";
 
 import type { SortDir, SortKey, TeamListItem } from "@/features/teams/Teams.types";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
@@ -31,6 +31,10 @@ const rosterClass: Record<"Con jugadores" | "Sin jugadores", string> = {
   "Con jugadores": "border-emerald-200 bg-emerald-50 text-emerald-700",
   "Sin jugadores": "border-slate-200 bg-slate-100 text-slate-600",
 };
+
+function SkeletonCell({ className }: { className?: string }) {
+  return <div className={cn("h-4 animate-pulse rounded-full bg-slate-200/80", className)} />;
+}
 
 export function TeamsTable({
   teams,
@@ -86,11 +90,38 @@ export function TeamsTable({
         </thead>
         <tbody>
           {loading ? (
-            <tr>
-              <td className="px-4 py-6 text-center text-sm text-slate-500" colSpan={5}>
-                Cargando equipos...
-              </td>
-            </tr>
+            Array.from({ length: pageSize }).map((_, index) => (
+              <tr key={`teams-skeleton-${index}`} className={tableRowClass}>
+                <td className={tableCellClass}>
+                  <SkeletonCell className="w-10" />
+                </td>
+                <td className={tableCellClass}>
+                  <div className="h-12 w-12 animate-pulse rounded-2xl bg-slate-200/80" />
+                </td>
+                <td className={tableCellClass}>
+                  <div className="space-y-2">
+                    <SkeletonCell className="w-32" />
+                    <SkeletonCell className="w-24" />
+                  </div>
+                </td>
+                <td className={tableCellClass}>
+                  <div className="space-y-2">
+                    <SkeletonCell className="h-6 w-24 rounded-full" />
+                    <SkeletonCell className="w-40" />
+                  </div>
+                </td>
+                <td className={`${tableCellClass} text-right`}>
+                  <div className="flex justify-end gap-2">
+                    {Array.from({ length: 4 }).map((__, actionIndex) => (
+                      <div
+                        key={`teams-skeleton-action-${index}-${actionIndex}`}
+                        className="h-9 w-9 animate-pulse rounded-lg bg-slate-200/80"
+                      />
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            ))
           ) : null}
 
           {!loading &&
@@ -138,7 +169,8 @@ export function TeamsTable({
                     onView={onView}
                     onEdit={onEdit}
                     onManage={onManage}
-                    manageLabel="Ver jugadores"
+                    manageLabel="Ver plantilla"
+                    manageIcon={<Shirt size={14} />}
                     onDelete={onDelete}
                     disabled={deletingTeamId === team.id}
                   />

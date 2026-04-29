@@ -9,6 +9,7 @@ type RowActionsProps<T> = {
   onEdit?: (row: T) => void;
   onManage?: (row: T) => void;
   manageLabel?: string;
+  manageIcon?: ReactNode;
   onSecurity?: (row: T) => void;
   securityLabel?: string;
   onDelete?: (row: T) => void;
@@ -33,7 +34,7 @@ function ActionButton({ title, onClick, icon, className, disabled }: ActionButto
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 w-9 items-center justify-center rounded-lg transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-1",
+        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-1",
         "disabled:opacity-50 disabled:hover:brightness-100",
         className
       )}
@@ -49,6 +50,7 @@ export function RowActions<T>({
   onEdit,
   onManage,
   manageLabel,
+  manageIcon,
   onSecurity,
   securityLabel,
   onDelete,
@@ -67,14 +69,14 @@ export function RowActions<T>({
         title="Editar"
         onClick={onEdit ? () => onEdit(row) : undefined}
         icon={<Pencil size={14} />}
-        className="border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+        className="border border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 group-hover:border-orange-200 group-hover:bg-orange-50 group-hover:text-orange-700"
         disabled={disabled}
       />
       <ActionButton
         title={manageLabel ?? "Gestionar jugadores"}
         onClick={onManage ? () => onManage(row) : undefined}
-        icon={<UsersRound size={14} />}
-        className="border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+        icon={manageIcon ?? <UsersRound size={14} />}
+        className="border border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
         disabled={disabled}
       />
       <ActionButton

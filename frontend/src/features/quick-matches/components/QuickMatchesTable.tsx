@@ -1,8 +1,8 @@
 import {
-  BarChart3,
   Bolt,
   Clock3,
   MapPin,
+  Monitor,
   Pencil,
   Search,
   Trash2,
@@ -81,42 +81,29 @@ function MatchCardActions({
   onView,
   onEdit,
   onDelete,
-  onHoverChange,
-  onMenuOpenChange,
 }: Pick<QuickMatchesTableProps, "deletingMatchId" | "onView" | "onEdit" | "onDelete"> & {
   match: QuickMatchListItem;
-  onHoverChange?: (value: boolean) => void;
-  onMenuOpenChange?: (value: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [launchOpen, setLaunchOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const disabled = deletingMatchId === match.id;
-  const statsDisabled = disabled || match.status === "scheduled";
-  const statsLabel =
-    match.status === "live"
-      ? "Ver estadisticas en vivo"
-      : match.status === "scheduled"
-        ? "Estadisticas disponibles al iniciar el partido"
-        : "Ver estadisticas";
 
   useEffect(() => {
-    onMenuOpenChange?.(open);
-  }, [onMenuOpenChange, open]);
-
-  useEffect(() => {
-    if (!open) {
+    if (!launchOpen && !actionsOpen) {
       return;
     }
 
     const handlePointerDown = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpen(false);
+        closeMenus();
       }
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
+        setLaunchOpen(false);
+        setActionsOpen(false);
       }
     };
 
@@ -127,69 +114,113 @@ function MatchCardActions({
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
+  }, [actionsOpen, launchOpen]);
+
+  const closeMenus = () => {
+    setLaunchOpen(false);
+    setActionsOpen(false);
+  };
 
   const runAction = (action: () => void) => {
     action();
-    setOpen(false);
+    closeMenus();
   };
 
   return (
     <div
       ref={menuRef}
       className="relative flex items-center gap-2"
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
     >
-      <IconButton
-        label={statsLabel}
-        onClick={() => openMatchStats(match.id)}
-        disabled={statsDisabled}
-        className="border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300"
-      >
-        <BarChart3 size={16} />
-      </IconButton>
+      <div className="relative">
+        <IconButton
+          label={launchOpen ? "Cerrar accesos de marcador" : "Abrir accesos de marcador"}
+          onClick={() => {
+            setLaunchOpen((current) => !current);
+            setActionsOpen(false);
+          }}
+          disabled={disabled}
+          className="border border-slate-200 bg-slate-50 text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+        >
+          <Monitor size={16} />
+        </IconButton>
 
-      <IconButton
-        label={open ? "Cerrar acciones" : "Abrir acciones"}
-        onClick={() => setOpen((current) => !current)}
-        disabled={disabled}
-        className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-      >
-        <Bolt size={18} className={cn("transition-transform duration-200", open && "rotate-90")} />
-      </IconButton>
+        {launchOpen ? (
+          <div className="absolute right-0 top-full z-20 mt-2 w-44 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+            <button
+              type="button"
+              onClick={() => runAction(() => openMatchControl(match.id))}
+              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              <span>Control</span>
+              <span className="text-xs text-slate-400">Abrir</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => runAction(() => openMatchLive(match.id))}
+              className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              <span>Live</span>
+              <span className="text-xs text-slate-400">Abrir</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => runAction(() => openMatchBoth(match.id))}
+              className="mt-1 flex w-full items-center justify-between rounded-xl bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+            >
+              <span>Ambos</span>
+              <span className="text-xs text-orange-500">2 tabs</span>
+            </button>
+          </div>
+        ) : null}
+      </div>
 
-      {open ? (
-        <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => runAction(() => onView(match))}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Search size={14} />
-            Ver datos
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => runAction(() => onEdit(match))}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Pencil size={14} />
-            Editar
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => runAction(() => onDelete(match))}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Trash2 size={14} />
-            Eliminar
-          </button>
-        </div>
-      ) : null}
+      <div className="relative">
+        <IconButton
+          label={actionsOpen ? "Cerrar acciones" : "Abrir acciones"}
+          onClick={() => {
+            setActionsOpen((current) => !current);
+            setLaunchOpen(false);
+          }}
+          disabled={disabled}
+          className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+        >
+          <Bolt size={18} className={cn("transition-transform duration-200", actionsOpen && "rotate-90")} />
+        </IconButton>
+
+        {actionsOpen ? (
+          <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => runAction(() => onView(match))}
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Search size={14} />
+              Ver datos
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => runAction(() => onEdit(match))}
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Pencil size={14} />
+              Editar
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => runAction(() => onDelete(match))}
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 size={14} />
+              Eliminar
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -205,65 +236,27 @@ function MatchCard({
   match: QuickMatchListItem;
   emphasisLabel?: string;
 }) {
-  const [cardHovered, setCardHovered] = useState(false);
-  const [actionsHovered, setActionsHovered] = useState(false);
-  const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
-  const showQuickLaunch = cardHovered && !actionsHovered && !actionsMenuOpen;
   const centerScoreLabel = `${match.scoreTeamA ?? "--"} - ${match.scoreTeamB ?? "--"}`;
+  const openStats = () => openMatchStats(match.id);
 
   return (
     <article
-      onMouseEnter={() => setCardHovered(true)}
-      onMouseLeave={() => {
-        setCardHovered(false);
-        setActionsHovered(false);
-        setActionsMenuOpen(false);
+      role="button"
+      tabIndex={0}
+      onClick={openStats}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openStats();
+        }
       }}
       className={cn(
-        "relative w-[368px] shrink-0 overflow-hidden rounded-[24px] border bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition snap-start",
+        "relative w-[368px] shrink-0 cursor-pointer overflow-hidden rounded-[24px] border bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition snap-start hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_16px_36px_rgba(249,115,22,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2",
         emphasisLabel
           ? "border-orange-200 shadow-[0_16px_36px_rgba(249,115,22,0.16)]"
           : "border-slate-300"
       )}
     >
-      <div className="pointer-events-none absolute inset-y-3 right-3 z-10 flex items-center justify-end">
-        <div
-          className={cn(
-            "pointer-events-auto w-[148px] rounded-[22px] border border-slate-200 bg-white/95 p-2 shadow-[0_16px_28px_rgba(15,23,42,0.14)] backdrop-blur transition-all duration-300",
-            showQuickLaunch ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-10 opacity-0"
-          )}
-        >
-          <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            Marcador
-          </p>
-
-          <button
-            type="button"
-            onClick={() => openMatchControl(match.id)}
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-          >
-            <span>Control</span>
-            <span className="text-xs text-slate-400">Abrir</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => openMatchLive(match.id)}
-            className="mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-          >
-            <span>Live</span>
-            <span className="text-xs text-slate-400">Abrir</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => openMatchBoth(match.id)}
-            className="mt-1 flex w-full items-center justify-between rounded-xl bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
-          >
-            <span>Ambos</span>
-            <span className="text-xs text-orange-500">2 tabs</span>
-          </button>
-        </div>
-      </div>
-
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {emphasisLabel ? (
@@ -297,8 +290,6 @@ function MatchCard({
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
-          onHoverChange={setActionsHovered}
-          onMenuOpenChange={setActionsMenuOpen}
         />
       </div>
 

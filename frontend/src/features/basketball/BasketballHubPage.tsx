@@ -23,7 +23,7 @@ const topRowItems: HubCardItem[] = [
     title: "Jugadores",
     description: "Gestionar los jugadores del deporte",
     icon: <UsersRound size={16} />,
-    to: "/team-players",
+    to: "/players",
   },
   {
     title: "Equipos",

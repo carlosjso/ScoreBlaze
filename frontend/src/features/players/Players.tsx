@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { PlayerDetailModal } from "@/features/players/components/PlayerDetailModal";
 import { PlayerFormModal } from "@/features/players/components/PlayerFormModal";
@@ -13,6 +13,7 @@ import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
 
 export default function Players() {
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const queryTeam = Number(params.get("team"));
   const initialTeamFilter =
@@ -132,12 +133,18 @@ export default function Players() {
   return (
     <div className="sb-page">
       <div className="sb-page-shell">
-        <PageHeader title="Jugadores" subtitle="Gestiona jugadores y sus relaciones reales con uno o varios equipos." />
+        <PageHeader title="Jugadores" subtitle="Gestiona jugadores y consulta a qué equipos pertenecen." />
 
         <Panel>
           {panelError ? (
             <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {panelError}
+            </div>
+          ) : null}
+
+          {!panelError ? (
+            <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+              Puedes asignar equipos desde cada jugador o desde <strong>Equipos &gt; Plantilla</strong>.
             </div>
           ) : null}
 
@@ -165,6 +172,7 @@ export default function Players() {
                 clearMutationError();
                 modals.openEdit(player);
               }}
+              onManage={(player) => navigate(`/players/${player.id}/teams`)}
               onDelete={(player) => {
                 clearMutationError();
                 modals.requestDelete(player);

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { playersQueryKeys, playersService } from "@/features/players/Players.service";
 import type { PlayerFormMode, PlayerFormValues } from "@/features/players/Players.types";
 import { toPlayerMutationPayload } from "@/features/players/schemas/Players.schema";
+import { teamsQueryKeys } from "@/features/teams/Teams.service";
 
 type SavePlayerArgs = {
   mode: PlayerFormMode;
@@ -33,12 +34,18 @@ export function usePlayersMutations() {
 
       return playersService.updatePlayer(playerId, payload);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (playerId: number) => playersService.deletePlayer(playerId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+    },
   });
 
   const clearMutationError = () => {

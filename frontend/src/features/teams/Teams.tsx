@@ -146,7 +146,7 @@ export default function Teams() {
                 clearMutationError();
                 modals.openEdit(team);
               }}
-              onManage={(team) => navigate(`/team-players?team=${team.id}`)}
+              onManage={(team) => navigate(`/teams/${team.id}/roster`)}
               onDelete={(team) => {
                 clearMutationError();
                 modals.requestDelete(team);
