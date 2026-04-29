@@ -45,6 +45,7 @@ function normalizeOptionalText(value: string): string | null {
 export const apiTeamOptionSchema = z.object({
   id: idSchema,
   name: z.string().trim().min(1),
+  logo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
 }) satisfies z.ZodType<ApiTeamOption>;
 
 export const apiTeamsOptionsSchema = z.array(apiTeamOptionSchema);
@@ -130,14 +131,16 @@ export const quickMatchFormSchema = z
   }) satisfies z.ZodType<QuickMatchFormValues>;
 
 export function buildQuickMatchesView(matches: ApiMatch[], teams: ApiTeamOption[]): QuickMatchListItem[] {
-  const teamNameById = new Map(teams.map((team) => [team.id, team.name]));
+  const teamById = new Map(teams.map((team) => [team.id, team]));
 
   return matches.map((match) => {
-    const teamAName = teamNameById.get(match.team_a_id) ?? `Equipo #${match.team_a_id}`;
-    const teamBName = teamNameById.get(match.team_b_id) ?? `Equipo #${match.team_b_id}`;
+    const teamA = teamById.get(match.team_a_id);
+    const teamB = teamById.get(match.team_b_id);
+    const teamAName = teamA?.name ?? `Equipo #${match.team_a_id}`;
+    const teamBName = teamB?.name ?? `Equipo #${match.team_b_id}`;
     const court = match.court?.trim() ?? "";
     const tournament = match.tournament?.trim() ?? "";
-    const venueLabel = [court, tournament].filter(Boolean).join(" · ") || "Sin sede";
+    const venueLabel = [court, tournament].filter(Boolean).join(" | ") || "Sin sede";
     const scoreLabel =
       match.score_team_a !== null && match.score_team_b !== null
         ? `${match.score_team_a} - ${match.score_team_b}`
@@ -149,13 +152,15 @@ export function buildQuickMatchesView(matches: ApiMatch[], teams: ApiTeamOption[
       teamBId: match.team_b_id,
       teamAName,
       teamBName,
+      teamALogoBase64: teamA?.logo_base64 ?? null,
+      teamBLogoBase64: teamB?.logo_base64 ?? null,
       matchupLabel: `${teamAName} vs ${teamBName}`,
       matchDate: match.match_date,
       dateLabel: formatMatchDate(match.match_date),
       startTime: normalizeTimeInput(match.start_time),
       endTime: normalizeTimeInput(match.end_time),
       timeLabel: formatMatchTimeRange(match.start_time, match.end_time),
-      scheduleLabel: `${formatMatchDate(match.match_date)} · ${formatMatchTimeRange(match.start_time, match.end_time)}`,
+      scheduleLabel: `${formatMatchDate(match.match_date)} | ${formatMatchTimeRange(match.start_time, match.end_time)}`,
       scoreTeamA: match.score_team_a,
       scoreTeamB: match.score_team_b,
       scoreLabel,
@@ -266,4 +271,3 @@ export function toQuickMatchMutationPayload(values: QuickMatchFormValues): Match
     status: normalizedValues.status,
   };
 }
-

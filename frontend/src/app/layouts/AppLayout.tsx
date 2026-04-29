@@ -12,7 +12,18 @@ type BreadcrumbItem = {
   to?: string;
 };
 
-const basketballPaths = new Set(["/basketball", "/teams", "/team-players", "/quick-match", "/leagues"]);
+function isBasketballPath(pathname: string) {
+  return (
+    pathname === "/basketball" ||
+    pathname === "/teams" ||
+    pathname === "/team-players" ||
+    pathname === "/quick-match" ||
+    pathname.startsWith("/quick-match/") ||
+    pathname === "/leagues" ||
+    pathname === "/scoreboard" ||
+    pathname.startsWith("/scoreboard/")
+  );
+}
 
 const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
   "/dashboard": [{ label: "Inicio" }],
@@ -42,13 +53,21 @@ export default function AppLayout() {
   const menuRoutes = useMemo(
     () =>
       sidebarRoutes.filter((route) => {
-        if (basketballPaths.has(location.pathname)) return route.sidebarContext === "basketball";
+        if (isBasketballPath(location.pathname)) return route.sidebarContext === "basketball";
         return route.sidebarContext === "home";
       }),
     [location.pathname]
   );
 
-  const breadcrumbs = breadcrumbByPath[location.pathname] ?? [{ label: "Inicio", to: "/dashboard" }];
+  const breadcrumbs =
+    location.pathname.startsWith("/quick-match/") && location.pathname.endsWith("/stats")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Partido rapido", to: "/quick-match" },
+          { label: "Consultar estadisticas" },
+        ]
+      : breadcrumbByPath[location.pathname] ?? [{ label: "Inicio", to: "/dashboard" }];
   const pageTitle = breadcrumbs[breadcrumbs.length - 1]?.label ?? "ScoreBlaze";
 
   return (

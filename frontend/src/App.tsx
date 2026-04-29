@@ -12,6 +12,7 @@ import BasketballHubPage from "@/features/basketball/BasketballHubPage";
 import LeaguesPage from "@/features/leagues/LeaguesPage";
 import Players from "@/features/players/Players";
 import QuickMatches from "@/features/quick-matches/QuickMatches";
+import QuickMatchStatsPage from "@/features/quick-matches/QuickMatchStatsPage";
 import Scoreboard from "@/features/scoreboard/Scoreboard";
 import LiveScoreboard from "@/features/scoreboard/LiveScoreboard";
 import SportDashboardPage from "@/features/sports/SportDashboardPage";
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/team-players" element={<Players />} />
             <Route path="/teams" element={<Teams />} />
             <Route path="/quick-match" element={<QuickMatches />} />
+            <Route path="/quick-match/:matchId/stats" element={<QuickMatchStatsPage />} />
             <Route path="/scoreboard" element={<Scoreboard />} />
              <Route path="/scoreboard/:matchId" element={<Scoreboard />} />
             <Route path="/leagues" element={<LeaguesPage />} />

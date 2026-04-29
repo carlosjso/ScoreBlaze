@@ -119,7 +119,7 @@ export default function QuickMatches() {
   return (
     <div className="sb-page">
       <div className="sb-page-shell">
-        <PageHeader title="Partido rapido" subtitle="Programa partidos amistosos entre dos equipos." />
+        <PageHeader title="Partido rapido" subtitle="Programa partidos amistosos fuera de liga entre dos equipos." />
 
         <Panel>
           {panelError ? (
@@ -149,6 +149,7 @@ export default function QuickMatches() {
               loading={loading}
               sortKey={sortKey}
               sortDir={sortDir}
+              statusFilter={statusFilter}
               hasActiveFilters={hasActiveFilters}
               deletingMatchId={deletingMatchId}
               onToggleSort={toggleSort}
