@@ -15,8 +15,8 @@ import { PageHeader, Panel } from "@/shared/components/ui";
 export default function QuickMatches() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<MatchStatusFilter>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("id");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const sortKey: SortKey = "id";
+  const sortDir: SortDir = "asc";
 
   const deferredSearch = useDeferredValue(search);
 
@@ -72,16 +72,6 @@ export default function QuickMatches() {
   }, [deferredSearch, matches, sortDir, sortKey, statusFilter]);
 
   const hasActiveFilters = Boolean(search.trim()) || statusFilter !== "all";
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey !== key) {
-      setSortKey(key);
-      setSortDir("asc");
-      return;
-    }
-
-    setSortDir((currentDir) => (currentDir === "asc" ? "desc" : "asc"));
-  };
 
   const resetFilters = () => {
     setSearch("");
@@ -147,12 +137,9 @@ export default function QuickMatches() {
             <QuickMatchesTable
               matches={filteredMatches}
               loading={loading}
-              sortKey={sortKey}
-              sortDir={sortDir}
               statusFilter={statusFilter}
               hasActiveFilters={hasActiveFilters}
               deletingMatchId={deletingMatchId}
-              onToggleSort={toggleSort}
               onClearFilters={resetFilters}
               onView={modals.openDetail}
               onEdit={(match) => {

@@ -8,12 +8,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import type {
   MatchStatusFilter,
   QuickMatchListItem,
-  SortDir,
-  SortKey,
 } from "@/features/quick-matches/QuickMatches.types";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
@@ -23,12 +22,9 @@ import { cn } from "@/shared/utils/cn";
 type QuickMatchesTableProps = {
   matches: QuickMatchListItem[];
   loading: boolean;
-  sortKey: SortKey;
-  sortDir: SortDir;
   statusFilter: MatchStatusFilter;
   hasActiveFilters: boolean;
   deletingMatchId: number | null;
-  onToggleSort: (key: SortKey) => void;
   onClearFilters: () => void;
   onView: (match: QuickMatchListItem) => void;
   onEdit: (match: QuickMatchListItem) => void;
@@ -53,9 +49,24 @@ function sortByRecent(matches: QuickMatchListItem[]): QuickMatchListItem[] {
   return [...matches].sort((left, right) => getScheduleStamp(right).localeCompare(getScheduleStamp(left)));
 }
 
+function buildMatchUrl(path: string) {
+  return new URL(path, window.location.origin).toString();
+}
+
+function openNewTab(url: string) {
+  const nextWindow = window.open("about:blank", "_blank");
+
+  if (!nextWindow) {
+    return false;
+  }
+
+  nextWindow.opener = null;
+  nextWindow.location.replace(url);
+  return true;
+}
+
 function openMatchTab(path: string) {
-  const url = new URL(path, window.location.origin);
-  window.open(url.toString(), "_blank", "noopener,noreferrer");
+  openNewTab(buildMatchUrl(path));
 }
 
 function openMatchControl(matchId: number) {
@@ -67,12 +78,14 @@ function openMatchLive(matchId: number) {
 }
 
 function openMatchBoth(matchId: number) {
-  openMatchControl(matchId);
-  openMatchLive(matchId);
-}
+  const openedTabs = [
+    openNewTab(buildMatchUrl(`/scoreboard/${matchId}`)),
+    openNewTab(buildMatchUrl(`/scoreboard/live/${matchId}`)),
+  ].filter(Boolean).length;
 
-function openMatchStats(matchId: number) {
-  openMatchTab(`/quick-match/${matchId}/stats`);
+  if (openedTabs < 2) {
+    window.alert("Tu navegador bloqueo una de las pestañas. Permite ventanas emergentes para abrir Control y Live juntos.");
+  }
 }
 
 function MatchCardActions({
@@ -236,8 +249,9 @@ function MatchCard({
   match: QuickMatchListItem;
   emphasisLabel?: string;
 }) {
+  const navigate = useNavigate();
   const centerScoreLabel = `${match.scoreTeamA ?? "--"} - ${match.scoreTeamB ?? "--"}`;
-  const openStats = () => openMatchStats(match.id);
+  const openStats = () => navigate(`/quick-match/${match.id}/stats`);
 
   return (
     <article
@@ -412,12 +426,9 @@ function MatchSection({
 export function QuickMatchesTable({
   matches,
   loading,
-  sortKey,
-  sortDir,
   statusFilter,
   hasActiveFilters,
   deletingMatchId,
-  onToggleSort,
   onClearFilters,
   onView,
   onEdit,
