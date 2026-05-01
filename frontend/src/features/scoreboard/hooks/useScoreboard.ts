@@ -824,6 +824,10 @@ export function useScoreboard({
     [state.shotClockSeconds],
   );
 
+  const awaitPendingSync = useCallback(async () => {
+    await mutationQueueRef.current.catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     if (!matchId) {
       return;
@@ -862,6 +866,7 @@ export function useScoreboard({
     toggleArrow,
     setControlMode,
     resetGame,
+    awaitPendingSync,
   };
 }
 
