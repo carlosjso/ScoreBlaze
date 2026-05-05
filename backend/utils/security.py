@@ -2,6 +2,8 @@ import hashlib
 import hmac
 import os
 
+from core.exceptions import ValidationException
+
 
 PBKDF2_ALGORITHM = "sha256"
 PBKDF2_ITERATIONS = 390000
@@ -10,7 +12,7 @@ SALT_SIZE = 16
 
 def hash_password(password: str) -> str:
     if not password:
-        raise ValueError("Password is required")
+        raise ValidationException("Password is required")
 
     salt = os.urandom(SALT_SIZE)
     derived_key = hashlib.pbkdf2_hmac(

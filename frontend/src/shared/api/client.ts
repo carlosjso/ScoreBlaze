@@ -30,6 +30,10 @@ export function getApiErrorMessage(error: unknown, fallbackMessage = "Error ines
       return data.detail;
     }
 
+    if (data && typeof data === "object" && "message" in data && typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
     if (error.message) {
       return error.message;
     }

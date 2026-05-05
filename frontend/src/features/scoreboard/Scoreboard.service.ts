@@ -360,10 +360,19 @@ export async function finishMatch(state: ScoreboardState, matchId?: number) {
     return state;
   }
 
+  const isDraw = state.teamA.score === state.teamB.score;
+  const winnerTeamId = isDraw
+    ? null
+    : state.teamA.score > state.teamB.score
+      ? state.teamA.id
+      : state.teamB.id;
+
   return requestJson(
-    apiClient.put(`/matches/${matchId}`, {
+    apiClient.patch(`/matches/${matchId}`, {
       score_team_a: state.teamA.score,
       score_team_b: state.teamB.score,
+      winner_team_id: winnerTeamId,
+      is_draw: isDraw,
       status: "finished",
     }),
     apiMatchSchema,

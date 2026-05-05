@@ -13,7 +13,7 @@ from config import DB_URL  # noqa: E402
 from database.alchemy import Base  # noqa: E402
 
 # Import all entities to register metadata
-from data.entities import *  # noqa: F401,F403,E402
+from data.orm import *  # noqa: F401,F403,E402
 
 # Alembic Config object
 config = context.config

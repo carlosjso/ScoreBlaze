@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import Session
 
-from data.entities import Player, Team, TeamMembership
+from data.orm import Player, Team, TeamMembership
 from database.alchemy import SessionLocal
 
 

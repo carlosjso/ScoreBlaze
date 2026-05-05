@@ -23,6 +23,12 @@ APP_ENV = os.getenv("APP_ENV", "development")
 APP_PORT = int(os.getenv("APP_PORT", 8000))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5173")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", APP_BASE_URL).split(",")
+    if origin.strip()
+]
 
 # ==============================================================================
 # DATABASE
