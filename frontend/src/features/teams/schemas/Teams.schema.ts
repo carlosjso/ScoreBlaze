@@ -15,6 +15,14 @@ function sanitizePlayerIds(playerIds: number[]): number[] {
 }
 
 const idSchema = z.coerce.number().int();
+type TeamFormFieldName = Extract<keyof TeamFormValues, string>;
+
+export const TEAM_FORM_LIMITS = {
+  name: 80,
+  responsibleName: 100,
+  responsiblePhone: 19,
+  responsibleEmail: 120,
+} as const;
 
 export const apiTeamSchema = z.object({
   id: idSchema,
@@ -46,13 +54,44 @@ export const apiTeamMembershipSchema = z.object({
 export const apiTeamMembershipsSchema = z.array(apiTeamMembershipSchema);
 
 export const teamFormSchema = z.object({
-  name: z.string().trim().min(1, "El nombre del equipo es obligatorio."),
-  responsibleName: z.string().trim().min(1, "El nombre del responsable es obligatorio."),
-  responsiblePhone: z.string().trim().min(7, "El telefono del responsable es obligatorio."),
-  responsibleEmail: z.string().trim().email("Escribe un correo valido."),
+  name: z
+    .string()
+    .trim()
+    .min(1, "El nombre del equipo es obligatorio.")
+    .max(TEAM_FORM_LIMITS.name, "El nombre del equipo no puede exceder 80 caracteres."),
+  responsibleName: z
+    .string()
+    .trim()
+    .min(1, "El nombre del responsable es obligatorio.")
+    .max(TEAM_FORM_LIMITS.responsibleName, "El nombre del responsable no puede exceder 100 caracteres."),
+  responsiblePhone: z
+    .string()
+    .trim()
+    .min(1, "El telefono del responsable es obligatorio.")
+    .max(TEAM_FORM_LIMITS.responsiblePhone, "El telefono del responsable no puede exceder 19 digitos.")
+    .refine((value) => /^\d+$/.test(value), "El telefono del responsable debe contener solo numeros."),
+  responsibleEmail: z
+    .string()
+    .trim()
+    .min(1, "El correo del responsable es obligatorio.")
+    .max(TEAM_FORM_LIMITS.responsibleEmail, "El correo del responsable no puede exceder 120 caracteres."),
   logoBase64: z.string().nullable(),
   playerIds: z.array(z.number().int()),
 }) satisfies z.ZodType<TeamFormValues>;
+
+export const teamFormApiFieldMap = {
+  name: "name",
+  responsible_name: "responsibleName",
+  responsible_phone: "responsiblePhone",
+  responsible_email: "responsibleEmail",
+  logo_base64: "logoBase64",
+  player_ids: "playerIds",
+} satisfies Record<string, TeamFormFieldName>;
+
+export const teamFormApiMessageFieldMap = {
+  "Ya existe un equipo con ese nombre.": "name",
+  "No se pudo procesar el logo.": "logoBase64",
+} satisfies Record<string, TeamFormFieldName | readonly TeamFormFieldName[]>;
 
 export function buildTeamsView(
   teams: ApiTeam[],

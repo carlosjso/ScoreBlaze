@@ -10,8 +10,8 @@ class Player(Base):
     __tablename__ = "players"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
-    name = Column(String(250), nullable=False)
-    email = Column(String(250), nullable=False, unique=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(120), nullable=False, unique=True, index=True)
     phone = Column(BigInteger, nullable=True)
     photo = Column(LargeBinary, nullable=True)
 

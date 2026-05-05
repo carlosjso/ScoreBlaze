@@ -1,12 +1,16 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+PLAYER_NAME_MAX_LENGTH = 100
+PLAYER_EMAIL_MAX_LENGTH = 120
+PLAYER_PHONE_MAX_VALUE = 9_223_372_036_854_775_807
+
 
 class PlayerBase(BaseModel):
-    name: str = Field(..., max_length=250)
-    email: EmailStr
-    phone: Optional[int] = Field(default=None, ge=0)
+    name: str = Field(..., max_length=PLAYER_NAME_MAX_LENGTH)
+    email: Annotated[EmailStr, Field(max_length=PLAYER_EMAIL_MAX_LENGTH)]
+    phone: Optional[int] = Field(default=None, ge=0, le=PLAYER_PHONE_MAX_VALUE)
 
 
 class PlayerCreate(PlayerBase):

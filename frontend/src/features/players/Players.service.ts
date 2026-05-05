@@ -1,6 +1,6 @@
 import type { ZodType } from "zod";
 
-import { apiClient, getApiErrorMessage } from "@/shared/api/client";
+import { apiClient, toApiRequestError } from "@/shared/api/client";
 import type { PlayerMutationPayload, PlayersSnapshot } from "@/features/players/Players.types";
 import {
   apiPlayerSchema,
@@ -23,7 +23,7 @@ async function requestJson<T>(
     const response = await request;
     return schema.parse(response.data);
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, invalidMessage));
+    throw toApiRequestError(error, invalidMessage);
   }
 }
 
@@ -31,7 +31,7 @@ async function requestVoid(request: Promise<unknown>, fallbackMessage: string): 
   try {
     await request;
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, fallbackMessage));
+    throw toApiRequestError(error, fallbackMessage);
   }
 }
 

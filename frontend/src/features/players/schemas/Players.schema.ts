@@ -15,6 +15,14 @@ function sanitizeTeamIds(teamIds: number[]): number[] {
 }
 
 const idSchema = z.coerce.number().int();
+type PlayerFormFieldName = Extract<keyof PlayerFormValues, string>;
+const PLAYER_PHONE_MAX_VALUE = 9_223_372_036_854_775_807n;
+
+export const PLAYER_FORM_LIMITS = {
+  name: 100,
+  email: 120,
+  phone: 19,
+} as const;
 
 export const apiPlayerSchema = z.object({
   id: idSchema,
@@ -43,16 +51,42 @@ export const apiTeamMembershipSchema = z.object({
 export const apiTeamMembershipsSchema = z.array(apiTeamMembershipSchema);
 
 export const playerFormSchema = z.object({
-  name: z.string().trim().min(1, "El nombre es obligatorio."),
+  name: z
+    .string()
+    .trim()
+    .min(1, "El nombre del jugador es obligatorio.")
+    .max(PLAYER_FORM_LIMITS.name, "El nombre del jugador no puede exceder 100 caracteres."),
   email: z
     .string()
     .trim()
-    .min(1, "El correo es obligatorio.")
+    .min(1, "El correo del jugador es obligatorio.")
+    .max(PLAYER_FORM_LIMITS.email, "El correo del jugador no puede exceder 120 caracteres.")
     .email("Ingresa un correo valido."),
-  phone: z.string().trim().regex(/^\d*$/, "El telefono solo debe contener numeros."),
+  phone: z
+    .string()
+    .trim()
+    .max(PLAYER_FORM_LIMITS.phone, "El telefono no puede exceder 19 digitos.")
+    .refine((value) => value === "" || /^\d+$/.test(value), "El telefono debe contener solo numeros.")
+    .refine(
+      (value) => value === "" || !/^\d+$/.test(value) || BigInt(value) <= PLAYER_PHONE_MAX_VALUE,
+      "El telefono excede el tamaño maximo permitido.",
+    ),
   photoBase64: z.string().nullable(),
   teamIds: z.array(z.number().int()),
 }) satisfies z.ZodType<PlayerFormValues>;
+
+export const playerFormApiFieldMap = {
+  name: "name",
+  email: "email",
+  phone: "phone",
+  photo_base64: "photoBase64",
+  team_ids: "teamIds",
+} satisfies Record<string, PlayerFormFieldName>;
+
+export const playerFormApiMessageFieldMap = {
+  "Ya existe un jugador con ese correo.": "email",
+  "No se pudo procesar la foto.": "photoBase64",
+} satisfies Record<string, PlayerFormFieldName | readonly PlayerFormFieldName[]>;
 
 export function parsePlayerResponse(input: unknown): ApiPlayer {
   return apiPlayerSchema.parse(input);

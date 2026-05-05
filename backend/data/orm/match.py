@@ -47,8 +47,8 @@ class Match(Base):
     )
     is_draw = Column(Boolean, nullable=False, default=False, server_default="false")
 
-    court = Column(String(250), nullable=True)
-    tournament = Column(String(250), nullable=True)
+    court = Column(String(80), nullable=True)
+    tournament = Column(String(100), nullable=True)
     status = Column(
         String(20),
         nullable=False,

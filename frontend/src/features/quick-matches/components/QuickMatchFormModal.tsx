@@ -1,18 +1,23 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarDays, Clock3, MapPin, Shield, Trophy } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { FormErrors } from "@/features/quick-matches/components/FormErrors";
 import {
-  getMatchResultOptionLabel,
   type ApiTeamOption,
-  type MatchResultOption,
   type QuickMatchFormValues,
   type QuickMatchListItem,
 } from "@/features/quick-matches/QuickMatches.types";
-import { quickMatchFormSchema, toQuickMatchFormValues } from "@/features/quick-matches/schemas/QuickMatches.schema";
-import { Button, Input, Modal, Select } from "@/shared/components/ui";
+import {
+  QUICK_MATCH_FORM_LIMITS,
+  quickMatchFormApiFieldMap,
+  quickMatchFormApiMessageFieldMap,
+  quickMatchFormSchema,
+  toQuickMatchFormValues,
+} from "@/features/quick-matches/schemas/QuickMatches.schema";
+import { mapApiErrorToForm } from "@/shared/api/client";
+import { Button, DatePicker, Input, Modal, Select, TimePicker } from "@/shared/components/ui";
 
 type QuickMatchFormModalProps = {
   isOpen: boolean;
@@ -20,27 +25,40 @@ type QuickMatchFormModalProps = {
   initialMatch?: QuickMatchListItem | null;
   teams: ApiTeamOption[];
   loading?: boolean;
-  apiError?: string | null;
+  apiError?: unknown;
   onClose: () => void;
   onSubmit: (values: QuickMatchFormValues) => Promise<void> | void;
 };
 
-function getComputedResultOption(scoreTeamA: string, scoreTeamB: string): MatchResultOption | null {
+type QuickMatchFormFieldName = Extract<keyof QuickMatchFormValues, string>;
+
+function getComputedResultLabel(
+  scoreTeamA: string,
+  scoreTeamB: string,
+  teamAName: string,
+  teamBName: string,
+): string {
   const normalizedScoreTeamA = scoreTeamA.trim();
   const normalizedScoreTeamB = scoreTeamB.trim();
 
   if (!/^\d+$/.test(normalizedScoreTeamA) || !/^\d+$/.test(normalizedScoreTeamB)) {
-    return null;
+    return "El ganador se calcula automaticamente con el marcador.";
   }
 
   const parsedScoreTeamA = Number(normalizedScoreTeamA);
   const parsedScoreTeamB = Number(normalizedScoreTeamB);
 
   if (parsedScoreTeamA === parsedScoreTeamB) {
-    return "draw";
+    return "Resultado calculado automaticamente: Empate.";
   }
 
-  return parsedScoreTeamA > parsedScoreTeamB ? "team_a" : "team_b";
+  return parsedScoreTeamA > parsedScoreTeamB
+    ? `Resultado calculado automaticamente: Gana ${teamAName}.`
+    : `Resultado calculado automaticamente: Gana ${teamBName}.`;
+}
+
+function sanitizeScoreInput(value: string): string {
+  return value.replace(/\D/g, "").slice(0, QUICK_MATCH_FORM_LIMITS.score);
 }
 
 export function QuickMatchFormModal({
@@ -53,24 +71,40 @@ export function QuickMatchFormModal({
   onClose,
   onSubmit,
 }: QuickMatchFormModalProps) {
-  const { control, handleSubmit, reset, watch } = useForm<QuickMatchFormValues>({
+  const { control, handleSubmit, reset, trigger, watch } = useForm<QuickMatchFormValues>({
     resolver: zodResolver(quickMatchFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: toQuickMatchFormValues(null, teams),
   });
+  const [dismissedApiFields, setDismissedApiFields] = useState<
+    Partial<Record<QuickMatchFormFieldName, true>>
+  >({});
 
   const teamAId = watch("teamAId");
   const teamBId = watch("teamBId");
   const scoreTeamA = watch("scoreTeamA") ?? "";
   const scoreTeamB = watch("scoreTeamB") ?? "";
+  const apiFormError = mapApiErrorToForm(
+    apiError,
+    quickMatchFormApiFieldMap,
+    quickMatchFormApiMessageFieldMap,
+  );
 
   useEffect(() => {
     if (isOpen) {
+      setDismissedApiFields({});
       reset(toQuickMatchFormValues(initialMatch, teams));
       return;
     }
 
+    setDismissedApiFields({});
     reset(toQuickMatchFormValues(null, teams));
   }, [initialMatch, isOpen, reset, teams]);
+
+  useEffect(() => {
+    setDismissedApiFields({});
+  }, [apiError]);
 
   const teamAName = useMemo(
     () => teams.find((team) => team.id === teamAId)?.name ?? "Equipo A",
@@ -80,13 +114,42 @@ export function QuickMatchFormModal({
     () => teams.find((team) => team.id === teamBId)?.name ?? "Equipo B",
     [teamBId, teams]
   );
-  const computedResult = useMemo(() => getComputedResultOption(scoreTeamA, scoreTeamB), [scoreTeamA, scoreTeamB]);
-  const resultHint = computedResult
-    ? `El resultado se calcula automaticamente: ${getMatchResultOptionLabel(computedResult, teamAName, teamBName)}.`
-    : "Si dejas el marcador vacio, puedes definir el resultado manualmente.";
+  const computedResultMessage = useMemo(
+    () => getComputedResultLabel(scoreTeamA, scoreTeamB, teamAName, teamBName),
+    [scoreTeamA, scoreTeamB, teamAName, teamBName],
+  );
+
+  const dismissApiFieldError = (fieldName: QuickMatchFormFieldName) => {
+    setDismissedApiFields((current) => {
+      if (current[fieldName]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [fieldName]: true,
+      };
+    });
+  };
+
+  const getApiFieldError = (fieldName: QuickMatchFormFieldName) => {
+    if (dismissedApiFields[fieldName]) {
+      return undefined;
+    }
+
+    return apiFormError.fieldErrors[fieldName];
+  };
 
   const submitForm = async (values: QuickMatchFormValues) => {
     await onSubmit(values);
+  };
+
+  const revalidateTimeFields = () => {
+    void trigger(["startTime", "endTime"]);
+  };
+
+  const revalidateScoreFields = () => {
+    void trigger(["scoreTeamA", "scoreTeamB"]);
   };
 
   return (
@@ -105,9 +168,12 @@ export function QuickMatchFormModal({
               <Select
                 label="Equipo local"
                 value={String(field.value)}
-                onChange={(event) => field.onChange(Number(event.target.value))}
+                onChange={(event) => {
+                  dismissApiFieldError("teamAId");
+                  field.onChange(Number(event.target.value));
+                }}
                 onBlur={field.onBlur}
-                error={fieldState.error?.message}
+                error={fieldState.error?.message ?? getApiFieldError("teamAId")}
                 disabled={loading}
               >
                 {teams.length === 0 ? <option value="0">No hay equipos disponibles</option> : null}
@@ -127,9 +193,12 @@ export function QuickMatchFormModal({
               <Select
                 label="Equipo visitante"
                 value={String(field.value)}
-                onChange={(event) => field.onChange(Number(event.target.value))}
+                onChange={(event) => {
+                  dismissApiFieldError("teamBId");
+                  field.onChange(Number(event.target.value));
+                }}
                 onBlur={field.onBlur}
-                error={fieldState.error?.message}
+                error={fieldState.error?.message ?? getApiFieldError("teamBId")}
                 disabled={loading}
               >
                 {teams.length === 0 ? <option value="0">No hay equipos disponibles</option> : null}
@@ -146,14 +215,16 @@ export function QuickMatchFormModal({
             name="matchDate"
             control={control}
             render={({ field, fieldState }) => (
-              <Input
+              <DatePicker
                 label="Fecha"
-                type="date"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(nextValue) => {
+                  dismissApiFieldError("matchDate");
+                  field.onChange(nextValue);
+                }}
                 onBlur={field.onBlur}
                 leftIcon={<CalendarDays size={14} />}
-                error={fieldState.error?.message}
+                error={fieldState.error?.message ?? getApiFieldError("matchDate")}
                 disabled={loading}
               />
             )}
@@ -166,9 +237,12 @@ export function QuickMatchFormModal({
               <Select
                 label="Estatus"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(event) => {
+                  dismissApiFieldError("status");
+                  field.onChange(event);
+                }}
                 onBlur={field.onBlur}
-                error={fieldState.error?.message}
+                error={fieldState.error?.message ?? getApiFieldError("status")}
                 disabled={loading}
               >
                 <option value="scheduled">Programado</option>
@@ -182,14 +256,17 @@ export function QuickMatchFormModal({
             name="startTime"
             control={control}
             render={({ field, fieldState }) => (
-              <Input
+              <TimePicker
                 label="Hora de inicio"
-                type="time"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(nextValue) => {
+                  dismissApiFieldError("startTime");
+                  field.onChange(nextValue);
+                  revalidateTimeFields();
+                }}
                 onBlur={field.onBlur}
                 leftIcon={<Clock3 size={14} />}
-                error={fieldState.error?.message}
+                error={fieldState.error?.message ?? getApiFieldError("startTime")}
                 disabled={loading}
               />
             )}
@@ -199,14 +276,17 @@ export function QuickMatchFormModal({
             name="endTime"
             control={control}
             render={({ field, fieldState }) => (
-              <Input
+              <TimePicker
                 label="Hora de fin"
-                type="time"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(nextValue) => {
+                  dismissApiFieldError("endTime");
+                  field.onChange(nextValue);
+                  revalidateTimeFields();
+                }}
                 onBlur={field.onBlur}
                 leftIcon={<Clock3 size={14} />}
-                error={fieldState.error?.message}
+                error={fieldState.error?.message ?? getApiFieldError("endTime")}
                 disabled={loading}
               />
             )}
@@ -218,13 +298,18 @@ export function QuickMatchFormModal({
             render={({ field, fieldState }) => (
               <Input
                 label={`Marcador ${teamAName}`}
-                type="number"
-                min={0}
+                type="text"
+                inputMode="numeric"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(event) => {
+                  dismissApiFieldError("scoreTeamA");
+                  field.onChange(sanitizeScoreInput(event.target.value));
+                  revalidateScoreFields();
+                }}
                 onBlur={field.onBlur}
                 leftIcon={<Trophy size={14} />}
-                error={fieldState.error?.message}
+                maxLength={QUICK_MATCH_FORM_LIMITS.score}
+                error={fieldState.error?.message ?? getApiFieldError("scoreTeamA")}
                 disabled={loading}
               />
             )}
@@ -236,39 +321,26 @@ export function QuickMatchFormModal({
             render={({ field, fieldState }) => (
               <Input
                 label={`Marcador ${teamBName}`}
-                type="number"
-                min={0}
+                type="text"
+                inputMode="numeric"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(event) => {
+                  dismissApiFieldError("scoreTeamB");
+                  field.onChange(sanitizeScoreInput(event.target.value));
+                  revalidateScoreFields();
+                }}
                 onBlur={field.onBlur}
                 leftIcon={<Trophy size={14} />}
-                error={fieldState.error?.message}
+                maxLength={QUICK_MATCH_FORM_LIMITS.score}
+                error={fieldState.error?.message ?? getApiFieldError("scoreTeamB")}
                 disabled={loading}
               />
             )}
           />
 
-          <Controller
-            name="result"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Select
-                label="Resultado"
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                error={fieldState.error?.message}
-                hint={resultHint}
-                disabled={loading || computedResult !== null}
-                containerClassName="sm:col-span-2"
-              >
-                <option value="pending">{getMatchResultOptionLabel("pending", teamAName, teamBName)}</option>
-                <option value="draw">{getMatchResultOptionLabel("draw", teamAName, teamBName)}</option>
-                <option value="team_a">{getMatchResultOptionLabel("team_a", teamAName, teamBName)}</option>
-                <option value="team_b">{getMatchResultOptionLabel("team_b", teamAName, teamBName)}</option>
-              </Select>
-            )}
-          />
+          <p className="sm:col-span-2 text-xs font-medium text-slate-500">
+            {computedResultMessage}
+          </p>
 
           <Controller
             name="court"
@@ -277,11 +349,15 @@ export function QuickMatchFormModal({
               <Input
                 label="Cancha"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(event) => {
+                  dismissApiFieldError("court");
+                  field.onChange(event);
+                }}
                 onBlur={field.onBlur}
                 leftIcon={<MapPin size={14} />}
                 placeholder="Cancha central"
-                error={fieldState.error?.message}
+                maxLength={QUICK_MATCH_FORM_LIMITS.court}
+                error={fieldState.error?.message ?? getApiFieldError("court")}
                 disabled={loading}
               />
             )}
@@ -294,24 +370,22 @@ export function QuickMatchFormModal({
               <Input
                 label="Torneo"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(event) => {
+                  dismissApiFieldError("tournament");
+                  field.onChange(event);
+                }}
                 onBlur={field.onBlur}
                 leftIcon={<Shield size={14} />}
                 placeholder="Torneo relampago"
-                error={fieldState.error?.message}
+                maxLength={QUICK_MATCH_FORM_LIMITS.tournament}
+                error={fieldState.error?.message ?? getApiFieldError("tournament")}
                 disabled={loading}
               />
             )}
           />
         </div>
 
-        {teamAId > 0 && teamAId === teamBId ? (
-          <p className="text-xs font-semibold text-rose-600">
-            El equipo local y visitante no pueden ser el mismo.
-          </p>
-        ) : null}
-
-        <FormErrors message={apiError} />
+        <FormErrors message={apiFormError.globalMessage} />
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} disabled={loading}>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { quickMatchesQueryKeys, quickMatchesService } from "@/features/quick-matches/QuickMatches.service";
 import type { MatchFormMode, QuickMatchFormValues } from "@/features/quick-matches/QuickMatches.types";
 import { toQuickMatchMutationPayload } from "@/features/quick-matches/schemas/QuickMatches.schema";
+import { getApiGlobalErrorMessage } from "@/shared/api/client";
 
 type SaveQuickMatchArgs = {
   mode: MatchFormMode;
@@ -66,15 +67,17 @@ export function useQuickMatchesMutations() {
     }
   };
 
-  const mutationError = useMemo(() => {
-    const error = saveMutation.error ?? deleteMutation.error;
-    return error instanceof Error ? error.message : null;
-  }, [deleteMutation.error, saveMutation.error]);
+  const mutationError = saveMutation.error ?? deleteMutation.error;
+  const mutationErrorMessage = useMemo(
+    () => (mutationError ? getApiGlobalErrorMessage(mutationError) : null),
+    [mutationError],
+  );
 
   return {
     submitting: saveMutation.isPending,
     deletingMatchId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     saveMatch,
     deleteMatch,

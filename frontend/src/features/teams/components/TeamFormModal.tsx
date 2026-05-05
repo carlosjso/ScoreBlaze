@@ -14,7 +14,14 @@ import { FormErrors } from "@/features/teams/components/FormErrors";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import type { TeamFormValues, TeamListItem } from "@/features/teams/Teams.types";
 import { imageFileToPngBase64 } from "@/features/teams/Teams.utils";
-import { teamFormSchema, toTeamFormValues } from "@/features/teams/schemas/Teams.schema";
+import {
+  TEAM_FORM_LIMITS,
+  teamFormApiFieldMap,
+  teamFormApiMessageFieldMap,
+  teamFormSchema,
+  toTeamFormValues,
+} from "@/features/teams/schemas/Teams.schema";
+import { mapApiErrorToForm } from "@/shared/api/client";
 import { Button, Input, Modal } from "@/shared/components/ui";
 import { cn } from "@/shared/utils/cn";
 
@@ -23,10 +30,12 @@ type TeamFormModalProps = {
   mode: "create" | "edit";
   initialTeam?: TeamListItem | null;
   loading?: boolean;
-  apiError?: string | null;
+  apiError?: unknown;
   onClose: () => void;
   onSubmit: (values: TeamFormValues) => Promise<void> | void;
 };
+
+type TeamFormFieldName = Extract<keyof TeamFormValues, string>;
 
 export function TeamFormModal({
   isOpen,
@@ -39,23 +48,54 @@ export function TeamFormModal({
 }: TeamFormModalProps) {
   const { control, handleSubmit, reset, setValue, watch } = useForm<TeamFormValues>({
     resolver: zodResolver(teamFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: toTeamFormValues(null),
   });
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [dismissedApiFields, setDismissedApiFields] = useState<Partial<Record<TeamFormFieldName, true>>>({});
 
   const teamName = watch("name") ?? "";
   const logoBase64 = watch("logoBase64");
+  const apiFormError = mapApiErrorToForm(apiError, teamFormApiFieldMap, teamFormApiMessageFieldMap);
 
   useEffect(() => {
     if (isOpen) {
       setLogoError(null);
+      setDismissedApiFields({});
       reset(toTeamFormValues(initialTeam));
       return;
     }
 
     setLogoError(null);
+    setDismissedApiFields({});
     reset(toTeamFormValues(null));
   }, [initialTeam, isOpen, reset]);
+
+  useEffect(() => {
+    setDismissedApiFields({});
+  }, [apiError]);
+
+  const dismissApiFieldError = (fieldName: TeamFormFieldName) => {
+    setDismissedApiFields((current) => {
+      if (current[fieldName]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [fieldName]: true,
+      };
+    });
+  };
+
+  const getApiFieldError = (fieldName: TeamFormFieldName) => {
+    if (dismissedApiFields[fieldName]) {
+      return undefined;
+    }
+
+    return apiFormError.fieldErrors[fieldName];
+  };
 
   const handleLogoChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -71,6 +111,7 @@ export function TeamFormModal({
     }
 
     setLogoError(null);
+    dismissApiFieldError("logoBase64");
 
     try {
       const nextLogoBase64 = await imageFileToPngBase64(file);
@@ -85,6 +126,7 @@ export function TeamFormModal({
 
   const clearLogo = () => {
     setLogoError(null);
+    dismissApiFieldError("logoBase64");
     setValue("logoBase64", null, {
       shouldDirty: true,
       shouldValidate: true,
@@ -165,6 +207,10 @@ export function TeamFormModal({
                 <p className="mt-2 text-center text-xs font-medium text-red-600">
                   {logoError}
                 </p>
+              ) : getApiFieldError("logoBase64") ? (
+                <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-700">
+                  {getApiFieldError("logoBase64")}
+                </p>
               ) : null}
             </div>
 
@@ -176,11 +222,15 @@ export function TeamFormModal({
                   <Input
                     label="Nombre del equipo"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      dismissApiFieldError("name");
+                      field.onChange(event);
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<CircleUserRound size={14} />}
                     placeholder="Plataneros"
-                    error={fieldState.error?.message}
+                    maxLength={TEAM_FORM_LIMITS.name}
+                    error={fieldState.error?.message ?? getApiFieldError("name")}
                     disabled={loading}
                     className="bg-slate-100"
                   />
@@ -194,11 +244,15 @@ export function TeamFormModal({
                   <Input
                     label="Nombre del responsable"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      dismissApiFieldError("responsibleName");
+                      field.onChange(event);
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<CircleUserRound size={14} />}
                     placeholder="Platano Alvarado"
-                    error={fieldState.error?.message}
+                    maxLength={TEAM_FORM_LIMITS.responsibleName}
+                    error={fieldState.error?.message ?? getApiFieldError("responsibleName")}
                     disabled={loading}
                     className="bg-slate-100"
                   />
@@ -212,11 +266,16 @@ export function TeamFormModal({
                   <Input
                     label="Telefono del responsable"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      dismissApiFieldError("responsiblePhone");
+                      field.onChange(event.target.value.replace(/\D/g, "").slice(0, TEAM_FORM_LIMITS.responsiblePhone));
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<Phone size={14} />}
                     placeholder="7711777344"
-                    error={fieldState.error?.message}
+                    maxLength={TEAM_FORM_LIMITS.responsiblePhone}
+                    inputMode="numeric"
+                    error={fieldState.error?.message ?? getApiFieldError("responsiblePhone")}
                     disabled={loading}
                     className="bg-slate-100"
                   />
@@ -230,11 +289,15 @@ export function TeamFormModal({
                   <Input
                     label="Correo del responsable"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      dismissApiFieldError("responsibleEmail");
+                      field.onChange(event);
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<Mail size={14} />}
                     placeholder="siamel3803@gmail.com"
-                    error={fieldState.error?.message}
+                    maxLength={TEAM_FORM_LIMITS.responsibleEmail}
+                    error={fieldState.error?.message ?? getApiFieldError("responsibleEmail")}
                     disabled={loading}
                     className="bg-slate-100"
                   />
@@ -244,7 +307,7 @@ export function TeamFormModal({
           </div>
         </div>
 
-        <FormErrors message={apiError} />
+        <FormErrors message={apiFormError.globalMessage} />
 
         <div className="flex justify-end">
           <Button variant="secondary" type="submit" disabled={loading}>
