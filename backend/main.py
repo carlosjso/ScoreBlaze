@@ -37,10 +37,10 @@ def root():
 
 app.include_router(matches_router, prefix="/matches", tags=["matches"])
 app.include_router(match_events_router, prefix="/match-events", tags=["match-events"])
-app.include_router(players_router, prefix="/players", tags=["players"])
+app.include_router(players_router, prefix="/api/players", tags=["players"])
 app.include_router(player_stats_router, prefix="/player-stats", tags=["player-stats"])
 app.include_router(scoreboard_realtime_router, tags=["scoreboard-realtime"])
-app.include_router(teams_router, prefix="/teams", tags=["teams"])
+app.include_router(teams_router, prefix="/api/teams", tags=["teams"])
 app.include_router(team_stats_router, prefix="/team-stats", tags=["team-stats"])
 app.include_router(memberships_router, prefix="/team-memberships", tags=["team-memberships"])
 app.include_router(users_router, prefix="/users", tags=["users"])

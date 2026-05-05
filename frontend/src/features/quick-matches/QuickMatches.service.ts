@@ -38,7 +38,7 @@ export const quickMatchesService = {
   async getSnapshot(signal?: AbortSignal): Promise<QuickMatchesSnapshot> {
     const [matches, teams] = await Promise.all([
       requestJson(apiClient.get("/matches/", { signal }), apiMatchesSchema, "La lista de partidos es invalida."),
-      requestJson(apiClient.get("/teams/", { signal }), apiTeamsOptionsSchema, "La lista de equipos es invalida."),
+      requestJson(apiClient.get("/api/teams/", { signal }), apiTeamsOptionsSchema, "La lista de equipos es invalida."),
     ]);
 
     return { matches, teams };
