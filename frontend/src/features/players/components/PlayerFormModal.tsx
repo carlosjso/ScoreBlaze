@@ -7,7 +7,14 @@ import { Controller, useForm } from "react-hook-form";
 import { FormErrors } from "@/features/players/components/FormErrors";
 import { PlayerPhoto } from "@/features/players/components/PlayerPhoto";
 import { getPlayerStatus, type PlayerFormValues, type PlayerListItem } from "@/features/players/Players.types";
-import { playerFormSchema, toPlayerFormValues } from "@/features/players/schemas/Players.schema";
+import {
+  PLAYER_FORM_LIMITS,
+  playerFormApiFieldMap,
+  playerFormApiMessageFieldMap,
+  playerFormSchema,
+  toPlayerFormValues,
+} from "@/features/players/schemas/Players.schema";
+import { mapApiErrorToForm } from "@/shared/api/client";
 import { Button, Input, Modal } from "@/shared/components/ui";
 import { imageFileToPngBase64 } from "@/shared/utils/base64Image";
 import { cn } from "@/shared/utils/cn";
@@ -17,10 +24,12 @@ type PlayerFormModalProps = {
   mode: "create" | "edit";
   initialPlayer?: PlayerListItem | null;
   loading?: boolean;
-  apiError?: string | null;
+  apiError?: unknown;
   onClose: () => void;
   onSubmit: (values: PlayerFormValues) => Promise<void> | void;
 };
+
+type PlayerFormFieldName = Extract<keyof PlayerFormValues, string>;
 
 export function PlayerFormModal({
   isOpen,
@@ -39,27 +48,58 @@ export function PlayerFormModal({
     watch,
   } = useForm<PlayerFormValues>({
     resolver: zodResolver(playerFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: toPlayerFormValues(null),
   });
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [dismissedApiFields, setDismissedApiFields] = useState<Partial<Record<PlayerFormFieldName, true>>>({});
 
   const selectedTeamIds = watch("teamIds");
   const playerName = watch("name") ?? "";
   const photoBase64 = watch("photoBase64");
+  const apiFormError = mapApiErrorToForm(apiError, playerFormApiFieldMap, playerFormApiMessageFieldMap);
 
   useEffect(() => {
     if (isOpen) {
       setPhotoError(null);
+      setDismissedApiFields({});
       reset(toPlayerFormValues(initialPlayer));
       return;
     }
 
     setPhotoError(null);
+    setDismissedApiFields({});
     reset(toPlayerFormValues(null));
   }, [initialPlayer, isOpen, reset]);
 
+  useEffect(() => {
+    setDismissedApiFields({});
+  }, [apiError]);
+
   const normalizedSelectedTeamIds = useMemo(() => selectedTeamIds ?? [], [selectedTeamIds]);
   const status = useMemo(() => getPlayerStatus(normalizedSelectedTeamIds), [normalizedSelectedTeamIds]);
+
+  const dismissApiFieldError = (fieldName: PlayerFormFieldName) => {
+    setDismissedApiFields((current) => {
+      if (current[fieldName]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [fieldName]: true,
+      };
+    });
+  };
+
+  const getApiFieldError = (fieldName: PlayerFormFieldName) => {
+    if (dismissedApiFields[fieldName]) {
+      return undefined;
+    }
+
+    return apiFormError.fieldErrors[fieldName];
+  };
 
   const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -75,6 +115,7 @@ export function PlayerFormModal({
     }
 
     setPhotoError(null);
+    dismissApiFieldError("photoBase64");
 
     try {
       const nextPhotoBase64 = await imageFileToPngBase64(file);
@@ -89,6 +130,7 @@ export function PlayerFormModal({
 
   const clearPhoto = () => {
     setPhotoError(null);
+    dismissApiFieldError("photoBase64");
     setValue("photoBase64", null, {
       shouldDirty: true,
       shouldValidate: true,
@@ -168,6 +210,10 @@ export function PlayerFormModal({
                 <p className="mt-2 text-center text-xs font-medium text-red-600">
                   {photoError}
                 </p>
+              ) : getApiFieldError("photoBase64") ? (
+                <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-700">
+                  {getApiFieldError("photoBase64")}
+                </p>
               ) : null}
             </div>
 
@@ -179,11 +225,15 @@ export function PlayerFormModal({
                   <Input
                     label="Nombre del jugador"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      dismissApiFieldError("name");
+                      field.onChange(event);
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<CircleUserRound size={14} />}
                     placeholder="Ivan Perez"
-                    error={fieldState.error?.message}
+                    maxLength={PLAYER_FORM_LIMITS.name}
+                    error={fieldState.error?.message ?? getApiFieldError("name")}
                     disabled={loading}
                     className="bg-slate-100"
                   />
@@ -197,11 +247,16 @@ export function PlayerFormModal({
                   <Input
                     label="Telefono del jugador"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      dismissApiFieldError("phone");
+                      field.onChange(event.target.value.replace(/\D/g, "").slice(0, PLAYER_FORM_LIMITS.phone));
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<Phone size={14} />}
                     placeholder="7717777344"
-                    error={fieldState.error?.message}
+                    maxLength={PLAYER_FORM_LIMITS.phone}
+                    inputMode="numeric"
+                    error={fieldState.error?.message ?? getApiFieldError("phone")}
                     disabled={loading}
                     className="bg-slate-100"
                   />
@@ -216,11 +271,15 @@ export function PlayerFormModal({
                     label="Correo del jugador"
                     type="email"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      dismissApiFieldError("email");
+                      field.onChange(event);
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<Mail size={14} />}
                     placeholder="ivan@email.com"
-                    error={fieldState.error?.message}
+                    maxLength={PLAYER_FORM_LIMITS.email}
+                    error={fieldState.error?.message ?? getApiFieldError("email")}
                     disabled={loading}
                     className="bg-slate-100"
                   />
@@ -238,7 +297,7 @@ export function PlayerFormModal({
           </div>
         </div>
 
-        <FormErrors message={apiError} />
+        <FormErrors message={apiFormError.globalMessage} />
 
         <div className="flex justify-end">
           <Button variant="secondary" type="submit" disabled={loading}>

@@ -1,6 +1,6 @@
 import type { ZodType } from "zod";
 
-import { apiClient, getApiErrorMessage } from "@/shared/api/client";
+import { apiClient, toApiRequestError } from "@/shared/api/client";
 import type { TeamMutationPayload, TeamsSnapshot } from "@/features/teams/Teams.types";
 import {
   apiPlayersSchema,
@@ -23,7 +23,7 @@ async function requestJson<T>(
     const response = await request;
     return schema.parse(response.data);
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, invalidMessage));
+    throw toApiRequestError(error, invalidMessage);
   }
 }
 
@@ -31,15 +31,15 @@ async function requestVoid(request: Promise<unknown>, fallbackMessage: string): 
   try {
     await request;
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, fallbackMessage));
+    throw toApiRequestError(error, fallbackMessage);
   }
 }
 
 export const teamsService = {
   async getSnapshot(signal?: AbortSignal): Promise<TeamsSnapshot> {
     const [teams, players, memberships] = await Promise.all([
-      requestJson(apiClient.get("/teams/", { signal }), apiTeamsSchema, "La lista de equipos es invalida."),
-      requestJson(apiClient.get("/players/", { signal }), apiPlayersSchema, "La lista de jugadores es invalida."),
+      requestJson(apiClient.get("/api/teams/", { signal }), apiTeamsSchema, "La lista de equipos es invalida."),
+      requestJson(apiClient.get("/api/players/", { signal }), apiPlayersSchema, "La lista de jugadores es invalida."),
       requestJson(
         apiClient.get("/team-memberships/", { signal }),
         apiTeamMembershipsSchema,
@@ -52,7 +52,7 @@ export const teamsService = {
 
   createTeam(payload: TeamMutationPayload, signal?: AbortSignal) {
     return requestJson(
-      apiClient.post("/teams/", payload, { signal }),
+      apiClient.post("/api/teams/", payload, { signal }),
       apiTeamSchema,
       "La respuesta del equipo es invalida."
     );
@@ -60,14 +60,14 @@ export const teamsService = {
 
   updateTeam(teamId: number, payload: TeamMutationPayload, signal?: AbortSignal) {
     return requestJson(
-      apiClient.put(`/teams/${teamId}`, payload, { signal }),
+      apiClient.put(`/api/teams/${teamId}`, payload, { signal }),
       apiTeamSchema,
       "La respuesta del equipo es invalida."
     );
   },
 
   deleteTeam(teamId: number, signal?: AbortSignal) {
-    return requestVoid(apiClient.delete(`/teams/${teamId}`, { signal }), "No se pudo eliminar el equipo.");
+    return requestVoid(apiClient.delete(`/api/teams/${teamId}`, { signal }), "No se pudo eliminar el equipo.");
   },
 };
 

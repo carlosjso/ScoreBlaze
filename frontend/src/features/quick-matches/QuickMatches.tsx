@@ -26,6 +26,7 @@ export default function QuickMatches() {
     submitting,
     deletingMatchId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     saveMatch,
     deleteMatch,
@@ -104,7 +105,7 @@ export default function QuickMatches() {
     }
   };
 
-  const panelError = mutationError ?? error;
+  const panelError = mutationErrorMessage ?? error;
 
   return (
     <div className="sb-page">

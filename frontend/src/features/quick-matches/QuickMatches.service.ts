@@ -1,6 +1,6 @@
 import type { ZodType } from "zod";
 
-import { apiClient, getApiErrorMessage } from "@/shared/api/client";
+import { apiClient, toApiRequestError } from "@/shared/api/client";
 import type { MatchMutationPayload, QuickMatchesSnapshot } from "@/features/quick-matches/QuickMatches.types";
 import {
   apiMatchesSchema,
@@ -22,7 +22,7 @@ async function requestJson<T>(
     const response = await request;
     return schema.parse(response.data);
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, invalidMessage));
+    throw toApiRequestError(error, invalidMessage);
   }
 }
 
@@ -30,7 +30,7 @@ async function requestVoid(request: Promise<unknown>, fallbackMessage: string): 
   try {
     await request;
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, fallbackMessage));
+    throw toApiRequestError(error, fallbackMessage);
   }
 }
 
@@ -38,7 +38,7 @@ export const quickMatchesService = {
   async getSnapshot(signal?: AbortSignal): Promise<QuickMatchesSnapshot> {
     const [matches, teams] = await Promise.all([
       requestJson(apiClient.get("/matches/", { signal }), apiMatchesSchema, "La lista de partidos es invalida."),
-      requestJson(apiClient.get("/teams/", { signal }), apiTeamsOptionsSchema, "La lista de equipos es invalida."),
+      requestJson(apiClient.get("/api/teams/", { signal }), apiTeamsOptionsSchema, "La lista de equipos es invalida."),
     ]);
 
     return { matches, teams };

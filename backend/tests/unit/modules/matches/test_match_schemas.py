@@ -4,7 +4,7 @@ from datetime import date, time
 from pydantic import ValidationError
 
 from modules.matches.domain import MatchStatus
-from modules.matches.schemas import MatchPatch, MatchUpdate
+from modules.matches.schemas import MAX_MATCH_SCORE, MatchPatch, MatchUpdate
 
 
 class MatchSchemasTest(unittest.TestCase):
@@ -35,6 +35,10 @@ class MatchSchemasTest(unittest.TestCase):
 
         self.assertEqual(payload.score_team_a, 80)
         self.assertEqual(payload.status, MatchStatus.FINISHED)
+
+    def test_match_patch_rejects_scores_above_limit(self):
+        with self.assertRaises(ValidationError):
+            MatchPatch(score_team_a=MAX_MATCH_SCORE + 1)
 
 
 if __name__ == "__main__":

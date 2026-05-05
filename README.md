@@ -1,6 +1,6 @@
-# ScoreBlaze Backend - Guia Rapida
+# ScoreBlaze - Guia Rapida
 
-Esta guia es para levantar **PostgreSQL en Docker** y correr el **backend local** (sin dockerizar la API).
+Esta guia es para levantar **PostgreSQL en Docker**, correr el **backend local** y levantar el **frontend**.
 
 ## 1) Requisitos
 - Docker Desktop corriendo.
@@ -62,4 +62,19 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 Abrir en navegador:
 - `http://localhost:8000/`
 - `http://localhost:8000/docs`
+
+## 7) Levantar frontend
+```powershell
+cd D:\ScoreBlaze\frontend
+npm install
+npm run dev
+```
+
+Abrir la interfaz en:
+- `http://localhost:5173/`
+
+Importante:
+- `http://localhost:8000/` es el backend.
+- `http://localhost:5173/` es el frontend.
+- Si abres la app en `8000`, al entrar a rutas como `teams` o `players` puedes terminar viendo JSON de la API en lugar de la interfaz.
 

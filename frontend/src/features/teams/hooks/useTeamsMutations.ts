@@ -5,6 +5,7 @@ import { playersQueryKeys } from "@/features/players/Players.service";
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import type { TeamFormMode, TeamFormValues } from "@/features/teams/Teams.types";
 import { toTeamMutationPayload } from "@/features/teams/schemas/Teams.schema";
+import { getApiGlobalErrorMessage } from "@/shared/api/client";
 
 type SaveTeamArgs = {
   mode: TeamFormMode;
@@ -73,15 +74,17 @@ export function useTeamsMutations() {
     }
   };
 
-  const mutationError = useMemo(() => {
-    const error = saveMutation.error ?? deleteMutation.error;
-    return error instanceof Error ? error.message : null;
-  }, [deleteMutation.error, saveMutation.error]);
+  const mutationError = saveMutation.error ?? deleteMutation.error;
+  const mutationErrorMessage = useMemo(
+    () => (mutationError ? getApiGlobalErrorMessage(mutationError) : null),
+    [mutationError],
+  );
 
   return {
     submitting: saveMutation.isPending,
     deletingTeamId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     saveTeam,
     deleteTeam,

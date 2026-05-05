@@ -26,6 +26,7 @@ export default function Teams() {
     submitting,
     deletingTeamId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     saveTeam,
     deleteTeam,
@@ -91,7 +92,7 @@ export default function Teams() {
     }
   };
 
-  const panelError = mutationError ?? error;
+  const panelError = mutationErrorMessage ?? error;
 
   return (
     <div className="sb-page">

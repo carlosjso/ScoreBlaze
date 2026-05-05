@@ -32,6 +32,7 @@ export default function Players() {
     submitting,
     deletingPlayerId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     savePlayer,
     deletePlayer,
@@ -128,7 +129,7 @@ export default function Players() {
     }
   };
 
-  const panelError = mutationError ?? error;
+  const panelError = mutationErrorMessage ?? error;
 
   return (
     <div className="sb-page">

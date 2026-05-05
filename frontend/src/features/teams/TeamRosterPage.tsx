@@ -435,7 +435,7 @@ export function TeamRosterManagePage() {
   const [activeDropZone, setActiveDropZone] = useState<RosterZone | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
 
-  const { submitting, mutationError, clearMutationError, saveTeam } = useTeamsMutations();
+  const { submitting, mutationErrorMessage, clearMutationError, saveTeam } = useTeamsMutations();
 
   const originalPlayerIds = selectedTeam?.playerIds ?? [];
   const originalPlayerIdsKey = originalPlayerIds.join(",");
@@ -501,7 +501,7 @@ export function TeamRosterManagePage() {
   );
 
   const isDirty = selectedTeam !== null && draftPlayerIdsKey !== originalPlayerIdsKey;
-  const panelError = mutationError ?? error;
+  const panelError = mutationErrorMessage ?? error;
   const pendingChangeCount = addedPlayerIds.length + removedPlayerIds.length;
 
   const assignPlayer = (playerId: number) => {

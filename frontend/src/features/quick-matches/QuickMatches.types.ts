@@ -69,7 +69,6 @@ export type QuickMatchFormValues = {
   status: MatchStatus;
   scoreTeamA: string;
   scoreTeamB: string;
-  result: MatchResultOption;
   court: string;
   tournament: string;
 };
