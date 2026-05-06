@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { buildPaginatedResponseSchema } from "@/shared/api/pagination";
 import {
   getPlayerStatus,
   type ApiPlayer,
@@ -49,6 +50,50 @@ export const apiTeamMembershipSchema = z.object({
 }) satisfies z.ZodType<ApiTeamMembership>;
 
 export const apiTeamMembershipsSchema = z.array(apiTeamMembershipSchema);
+
+const apiPlayerTableTeamSchema = z
+  .object({
+    id: idSchema,
+    name: z.string().trim().min(1),
+    logo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
+  })
+  .transform((team) => ({
+    id: team.id,
+    name: team.name,
+    logoBase64: team.logo_base64,
+  }));
+
+export const apiPaginatedPlayersTableSchema = buildPaginatedResponseSchema(
+  z
+    .object({
+      id: idSchema,
+      name: z.string().trim().min(1),
+      email: z.string().trim().email(),
+      phone: z.string(),
+      photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
+      team_ids: z.array(idSchema),
+      team_names: z.array(z.string().trim().min(1)),
+      teams: z.array(apiPlayerTableTeamSchema),
+      team_label: z.string(),
+      teams_count: z.coerce.number().int().min(0),
+      status: z.union([z.literal("Con equipo"), z.literal("Sin equipo")]),
+    })
+    .transform(
+      (player): PlayerListItem => ({
+        id: player.id,
+        name: player.name,
+        email: player.email,
+        phone: player.phone,
+        photoBase64: player.photo_base64,
+        teamIds: sanitizeTeamIds(player.team_ids),
+        teamNames: player.team_names,
+        teams: player.teams,
+        teamLabel: player.team_label,
+        teamsCount: player.teams_count,
+        status: player.status,
+      }),
+    )
+);
 
 export const playerFormSchema = z.object({
   name: z

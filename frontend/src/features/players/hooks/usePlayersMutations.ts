@@ -36,16 +36,16 @@ export function usePlayersMutations() {
       return playersService.updatePlayer(playerId, payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (playerId: number) => playersService.deletePlayer(playerId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
     },
   });
 

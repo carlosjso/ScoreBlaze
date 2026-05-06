@@ -36,16 +36,16 @@ export function useTeamsMutations() {
       return teamsService.updateTeam(teamId, payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (teamId: number) => teamsService.deleteTeam(teamId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
     },
   });
 

@@ -1,16 +1,17 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { PlayerDetailModal } from "@/features/players/components/PlayerDetailModal";
 import { PlayerFormModal } from "@/features/players/components/PlayerFormModal";
 import { PlayersTable } from "@/features/players/components/PlayersTable";
 import { PlayersToolbar } from "@/features/players/components/PlayersToolbar";
-import { usePlayersData } from "@/features/players/hooks/usePlayersData";
 import { usePlayersModals } from "@/features/players/hooks/usePlayersModals";
 import { usePlayersMutations } from "@/features/players/hooks/usePlayersMutations";
+import { usePlayersTableData } from "@/features/players/hooks/usePlayersTableData";
 import type { SortDir, SortKey, TeamFilterValue } from "@/features/players/Players.types";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
+import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export default function Players() {
   const navigate = useNavigate();
@@ -23,10 +24,15 @@ export default function Players() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const deferredSearch = useDeferredValue(search);
-
-  const { players, teams, loading, error } = usePlayersData();
+  const { players, teams, loading, error, page, totalPages } = usePlayersTableData({
+    page: currentPage,
+    search,
+    teamFilter,
+    sortKey,
+    sortDir,
+  });
   const modals = usePlayersModals();
   const {
     submitting,
@@ -46,61 +52,30 @@ export default function Players() {
     }
   }, [teamFilter, teams]);
 
-  const selectedTeamId = useMemo(() => {
-    if (teamFilter === "all" || teamFilter === "none") return null;
-    const parsed = Number(teamFilter);
-    return Number.isInteger(parsed) ? parsed : null;
-  }, [teamFilter]);
-
-  const filteredPlayers = useMemo(() => {
-    const normalizedSearch = deferredSearch.trim().toLowerCase();
-    let basePlayers = [...players];
-
-    if (teamFilter === "none") {
-      basePlayers = basePlayers.filter((player) => player.teamIds.length === 0);
-    } else if (selectedTeamId !== null) {
-      basePlayers = basePlayers.filter((player) => player.teamIds.includes(selectedTeamId));
-    }
-
-    if (normalizedSearch) {
-      basePlayers = basePlayers.filter((player) => {
-        return (
-          String(player.id).includes(normalizedSearch) ||
-          player.name.toLowerCase().includes(normalizedSearch) ||
-          player.email.toLowerCase().includes(normalizedSearch) ||
-          player.phone.toLowerCase().includes(normalizedSearch) ||
-          player.status.toLowerCase().includes(normalizedSearch) ||
-          player.teamLabel.toLowerCase().includes(normalizedSearch)
-        );
-      });
-    }
-
-    const sortedPlayers = [...basePlayers].sort((left, right) => {
-      if (sortKey === "id") {
-        return left.id - right.id;
-      }
-
-      return left.name.localeCompare(right.name, "es", { sensitivity: "base" });
-    });
-
-    return sortDir === "asc" ? sortedPlayers : sortedPlayers.reverse();
-  }, [deferredSearch, players, selectedTeamId, sortDir, sortKey, teamFilter]);
-
   const hasActiveFilters = Boolean(search.trim()) || teamFilter !== "all";
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setCurrentPage(page);
+    }
+  }, [currentPage, page]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey !== key) {
       setSortKey(key);
       setSortDir("asc");
+      setCurrentPage(1);
       return;
     }
 
     setSortDir((currentDir) => (currentDir === "asc" ? "desc" : "asc"));
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
     setSearch("");
     setTeamFilter("all");
+    setCurrentPage(1);
   };
 
   const openCreate = () => {
@@ -153,20 +128,30 @@ export default function Players() {
             teams={teams}
             teamFilter={teamFilter}
             search={search}
-            onTeamFilterChange={setTeamFilter}
-            onSearchChange={setSearch}
+            onTeamFilterChange={(value) => {
+              setTeamFilter(value);
+              setCurrentPage(1);
+            }}
+            onSearchChange={(value) => {
+              setSearch(value);
+              setCurrentPage(1);
+            }}
             onCreate={openCreate}
           />
 
           <div className="mt-4">
             <PlayersTable
-              players={filteredPlayers}
+              players={players}
               loading={loading}
               sortKey={sortKey}
               sortDir={sortDir}
+              currentPage={page}
+              totalPages={totalPages}
+              pageSize={DEFAULT_TABLE_PAGE_SIZE}
               hasActiveFilters={hasActiveFilters}
               deletingPlayerId={deletingPlayerId}
               onToggleSort={toggleSort}
+              onPageChange={setCurrentPage}
               onClearFilters={resetFilters}
               onView={modals.openDetail}
               onEdit={(player) => {

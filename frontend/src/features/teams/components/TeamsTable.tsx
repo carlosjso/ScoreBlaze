@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Shirt } from "lucide-react";
+import { Shirt } from "lucide-react";
 
 import type { SortDir, SortKey, TeamListItem } from "@/features/teams/Teams.types";
+import { Paginator } from "@/shared/components/table/Paginator";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { RowActions } from "@/shared/components/table/RowActions";
 import { SortHeaderButton } from "@/shared/components/table/SortHeaderButton";
@@ -20,7 +21,6 @@ type TeamsTableProps = {
   deletingTeamId: number | null;
   onToggleSort: (key: SortKey) => void;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
   onView: (team: TeamListItem) => void;
   onEdit: (team: TeamListItem) => void;
   onManage: (team: TeamListItem) => void;
@@ -47,15 +47,12 @@ export function TeamsTable({
   deletingTeamId,
   onToggleSort,
   onPageChange,
-  onPageSizeChange,
   onView,
   onEdit,
   onManage,
   onDelete,
 }: TeamsTableProps) {
   const emptyRowsCount = Math.max(0, pageSize - teams.length);
-  const canGoBack = currentPage > 1;
-  const canGoForward = currentPage < totalPages;
 
   return (
     <TableShell className="min-h-[460px]">
@@ -211,40 +208,7 @@ export function TeamsTable({
             Pagina {currentPage} de {totalPages}
           </p>
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={!canGoBack}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Pagina anterior"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <span className="inline-flex min-w-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-              {currentPage}
-            </span>
-            <button
-              type="button"
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={!canGoForward}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Pagina siguiente"
-            >
-              <ChevronRight size={14} />
-            </button>
-
-            <select
-              value={pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100"
-              aria-label="Filas por pagina"
-            >
-              <option value={6}>6</option>
-              <option value={8}>8</option>
-              <option value={10}>10</option>
-            </select>
-          </div>
+          <Paginator currentPage={currentPage} totalPages={totalPages} onChange={onPageChange} />
         </div>
       ) : null}
     </TableShell>

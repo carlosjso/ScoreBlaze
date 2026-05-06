@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -28,3 +28,31 @@ class PlayerOut(PlayerBase):
     photo_base64: Optional[str] = Field(default=None, description="Optional player photo encoded in Base64.")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PlayerTableTeamOut(BaseModel):
+    id: int
+    name: str
+    logo_base64: Optional[str] = None
+
+
+class PlayerTableRowOut(BaseModel):
+    id: int
+    name: str
+    email: str
+    phone: str
+    photo_base64: Optional[str] = Field(default=None, description="Optional player photo encoded in Base64.")
+    team_ids: list[int]
+    team_names: list[str]
+    teams: list[PlayerTableTeamOut]
+    team_label: str
+    teams_count: int
+    status: Literal["Con equipo", "Sin equipo"]
+
+
+class PaginatedPlayersTableOut(BaseModel):
+    items: list[PlayerTableRowOut]
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int
