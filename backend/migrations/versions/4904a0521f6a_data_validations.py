@@ -15,7 +15,6 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Cambiar longitud de name en players
     op.alter_column(
         "players",
         "name",
@@ -23,7 +22,6 @@ def upgrade() -> None:
         type_=sa.String(length=50),
     )
 
-    # Cambiar phone de BigInteger → String(10)
     op.alter_column(
         "players",
         "phone",
@@ -32,14 +30,12 @@ def upgrade() -> None:
         existing_nullable=True,
     )
 
-    # CHECK teléfono (permite NULL o 10 dígitos)
     op.create_check_constraint(
         "ck_players_phone_format",
         "players",
         "phone IS NULL OR phone ~ '^[0-9]{10}$'"
     )
 
-    # Cambiar longitud de name en teams
     op.alter_column(
         "teams",
         "name",
@@ -47,28 +43,24 @@ def upgrade() -> None:
         type_=sa.String(length=50),
     )
 
-    # Evitar nombres vacíos en players
     op.create_check_constraint(
         "ck_players_name_not_empty",
         "players",
         "length(name) > 0"
     )
 
-    # Evitar nombres vacíos en teams
     op.create_check_constraint(
         "ck_teams_name_not_empty",
         "teams",
         "length(name) > 0"
     )
 
-    # Evitar nombres vacíos en roles
     op.create_check_constraint(
         "ck_roles_name_not_empty",
         "roles",
         "length(name) > 0"
     )
 
-    # UNIQUE case-insensitive (admin vs Admin)
     op.create_index(
         "uq_roles_name_lower",
         "roles",
@@ -76,17 +68,67 @@ def upgrade() -> None:
         unique=True
     )
 
+    op.create_check_constraint(
+        "ck_users_name_not_empty",
+        "users",
+        "length(name) > 0"
+    )
+
+    op.create_check_constraint(
+        "ck_users_email_not_empty",
+        "users",
+        "length(email) > 0"
+    )
+
+    op.create_index(
+        "uq_users_email_lower",
+        "users",
+        [sa.text("LOWER(email)")],
+        unique=True
+    )
+
+
 def downgrade() -> None:
-    # Eliminar constraints de roles
+    op.drop_index("uq_users_email_lower", table_name="users")
+
+    op.drop_constraint(
+        "ck_users_email_not_empty",
+        "users",
+        type_="check"
+    )
+
+    op.drop_constraint(
+        "ck_users_name_not_empty",
+        "users",
+        type_="check"
+    )
+
     op.drop_index("uq_roles_name_lower", table_name="roles")
-    op.drop_constraint("ck_roles_name_not_empty", "roles", type_="check")
 
-    # Eliminar constraints
-    op.drop_constraint("ck_players_phone_format", "players", type_="check")
-    op.drop_constraint("ck_players_name_not_empty", "players", type_="check")
-    op.drop_constraint("ck_teams_name_not_empty", "teams", type_="check")
+    op.drop_constraint(
+        "ck_roles_name_not_empty",
+        "roles",
+        type_="check"
+    )
 
-    # Revertir columnas
+    op.drop_constraint(
+        "ck_players_phone_format",
+        "players",
+        type_="check"
+    )
+
+    op.drop_constraint(
+        "ck_players_name_not_empty",
+        "players",
+        type_="check"
+    )
+
+    op.drop_constraint(
+        "ck_teams_name_not_empty",
+        "teams",
+        type_="check"
+    )
+
     op.alter_column(
         "players",
         "phone",
