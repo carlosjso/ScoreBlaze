@@ -65,7 +65,6 @@ class PlayerTableRowOut(BaseModel):
         default=None,
         description="Optional player photo encoded in Base64."
     )
-
     team_ids: list[int]
     team_names: list[str]
     teams: list[PlayerTableTeamOut]
