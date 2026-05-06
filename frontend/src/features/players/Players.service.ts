@@ -11,7 +11,7 @@ import {
   apiTeamMembershipsSchema,
   apiTeamsSchema,
 } from "@/features/players/schemas/Players.schema";
-import type { PlayerListItem, SortDir, SortKey, TeamFilterValue } from "@/features/players/Players.types";
+import type { PlayerListItem, SortDir, SortKey } from "@/features/players/Players.types";
 
 export const playersQueryKeys = {
   all: ["players"] as const,
@@ -20,7 +20,6 @@ export const playersQueryKeys = {
     page: number;
     pageSize?: number;
     search: string;
-    teamFilter: TeamFilterValue;
     sortKey: SortKey;
     sortDir: SortDir;
   }) => [...playersQueryKeys.all, "table", params] as const,
@@ -67,7 +66,6 @@ export const playersService = {
       page: number;
       pageSize?: number;
       search: string;
-      teamFilter: TeamFilterValue;
       sortKey: SortKey;
       sortDir: SortDir;
     },
@@ -80,7 +78,6 @@ export const playersService = {
           page: params.page,
           page_size: params.pageSize ?? DEFAULT_TABLE_PAGE_SIZE,
           search: params.search,
-          team_filter: params.teamFilter,
           sort_key: params.sortKey,
           sort_dir: params.sortDir,
         },

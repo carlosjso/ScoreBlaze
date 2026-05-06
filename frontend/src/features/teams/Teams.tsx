@@ -101,12 +101,6 @@ export default function Teams() {
           ) : null}
 
           <TeamsToolbar
-            sortKey={sortKey}
-            onSortKeyChange={(value) => {
-              setSortKey(value);
-              setSortDir("asc");
-              setCurrentPage(1);
-            }}
             search={search}
             onSearchChange={(value) => {
               setSearch(value);

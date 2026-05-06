@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Clock3, MapPin, Shield, Trophy } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, Clock3, MapPin, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { FormErrors } from "@/features/quick-matches/components/FormErrors";
@@ -32,35 +32,6 @@ type QuickMatchFormModalProps = {
 
 type QuickMatchFormFieldName = Extract<keyof QuickMatchFormValues, string>;
 
-function getComputedResultLabel(
-  scoreTeamA: string,
-  scoreTeamB: string,
-  teamAName: string,
-  teamBName: string,
-): string {
-  const normalizedScoreTeamA = scoreTeamA.trim();
-  const normalizedScoreTeamB = scoreTeamB.trim();
-
-  if (!/^\d+$/.test(normalizedScoreTeamA) || !/^\d+$/.test(normalizedScoreTeamB)) {
-    return "El ganador se calcula automaticamente con el marcador.";
-  }
-
-  const parsedScoreTeamA = Number(normalizedScoreTeamA);
-  const parsedScoreTeamB = Number(normalizedScoreTeamB);
-
-  if (parsedScoreTeamA === parsedScoreTeamB) {
-    return "Resultado calculado automaticamente: Empate.";
-  }
-
-  return parsedScoreTeamA > parsedScoreTeamB
-    ? `Resultado calculado automaticamente: Gana ${teamAName}.`
-    : `Resultado calculado automaticamente: Gana ${teamBName}.`;
-}
-
-function sanitizeScoreInput(value: string): string {
-  return value.replace(/\D/g, "").slice(0, QUICK_MATCH_FORM_LIMITS.score);
-}
-
 export function QuickMatchFormModal({
   isOpen,
   mode,
@@ -71,7 +42,7 @@ export function QuickMatchFormModal({
   onClose,
   onSubmit,
 }: QuickMatchFormModalProps) {
-  const { control, handleSubmit, reset, trigger, watch } = useForm<QuickMatchFormValues>({
+  const { control, handleSubmit, register, reset, trigger } = useForm<QuickMatchFormValues>({
     resolver: zodResolver(quickMatchFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
@@ -80,11 +51,6 @@ export function QuickMatchFormModal({
   const [dismissedApiFields, setDismissedApiFields] = useState<
     Partial<Record<QuickMatchFormFieldName, true>>
   >({});
-
-  const teamAId = watch("teamAId");
-  const teamBId = watch("teamBId");
-  const scoreTeamA = watch("scoreTeamA") ?? "";
-  const scoreTeamB = watch("scoreTeamB") ?? "";
   const apiFormError = mapApiErrorToForm(
     apiError,
     quickMatchFormApiFieldMap,
@@ -105,19 +71,6 @@ export function QuickMatchFormModal({
   useEffect(() => {
     setDismissedApiFields({});
   }, [apiError]);
-
-  const teamAName = useMemo(
-    () => teams.find((team) => team.id === teamAId)?.name ?? "Equipo A",
-    [teamAId, teams]
-  );
-  const teamBName = useMemo(
-    () => teams.find((team) => team.id === teamBId)?.name ?? "Equipo B",
-    [teamBId, teams]
-  );
-  const computedResultMessage = useMemo(
-    () => getComputedResultLabel(scoreTeamA, scoreTeamB, teamAName, teamBName),
-    [scoreTeamA, scoreTeamB, teamAName, teamBName],
-  );
 
   const dismissApiFieldError = (fieldName: QuickMatchFormFieldName) => {
     setDismissedApiFields((current) => {
@@ -148,10 +101,6 @@ export function QuickMatchFormModal({
     void trigger(["startTime", "endTime"]);
   };
 
-  const revalidateScoreFields = () => {
-    void trigger(["scoreTeamA", "scoreTeamB"]);
-  };
-
   return (
     <Modal
       isOpen={isOpen}
@@ -160,6 +109,9 @@ export function QuickMatchFormModal({
       maxWidthClassName="max-w-3xl"
     >
       <form className="space-y-4" onSubmit={handleSubmit(submitForm)}>
+        <input type="hidden" {...register("scoreTeamA")} />
+        <input type="hidden" {...register("scoreTeamB")} />
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Controller
             name="teamAId"
@@ -291,56 +243,6 @@ export function QuickMatchFormModal({
               />
             )}
           />
-
-          <Controller
-            name="scoreTeamA"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Input
-                label={`Marcador ${teamAName}`}
-                type="text"
-                inputMode="numeric"
-                value={field.value}
-                onChange={(event) => {
-                  dismissApiFieldError("scoreTeamA");
-                  field.onChange(sanitizeScoreInput(event.target.value));
-                  revalidateScoreFields();
-                }}
-                onBlur={field.onBlur}
-                leftIcon={<Trophy size={14} />}
-                maxLength={QUICK_MATCH_FORM_LIMITS.score}
-                error={fieldState.error?.message ?? getApiFieldError("scoreTeamA")}
-                disabled={loading}
-              />
-            )}
-          />
-
-          <Controller
-            name="scoreTeamB"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Input
-                label={`Marcador ${teamBName}`}
-                type="text"
-                inputMode="numeric"
-                value={field.value}
-                onChange={(event) => {
-                  dismissApiFieldError("scoreTeamB");
-                  field.onChange(sanitizeScoreInput(event.target.value));
-                  revalidateScoreFields();
-                }}
-                onBlur={field.onBlur}
-                leftIcon={<Trophy size={14} />}
-                maxLength={QUICK_MATCH_FORM_LIMITS.score}
-                error={fieldState.error?.message ?? getApiFieldError("scoreTeamB")}
-                disabled={loading}
-              />
-            )}
-          />
-
-          <p className="sm:col-span-2 text-xs font-medium text-slate-500">
-            {computedResultMessage}
-          </p>
 
           <Controller
             name="court"

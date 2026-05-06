@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { PlayerDetailModal } from "@/features/players/components/PlayerDetailModal";
 import { PlayerFormModal } from "@/features/players/components/PlayerFormModal";
@@ -8,28 +8,21 @@ import { PlayersToolbar } from "@/features/players/components/PlayersToolbar";
 import { usePlayersModals } from "@/features/players/hooks/usePlayersModals";
 import { usePlayersMutations } from "@/features/players/hooks/usePlayersMutations";
 import { usePlayersTableData } from "@/features/players/hooks/usePlayersTableData";
-import type { SortDir, SortKey, TeamFilterValue } from "@/features/players/Players.types";
+import type { SortDir, SortKey } from "@/features/players/Players.types";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export default function Players() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const queryTeam = Number(params.get("team"));
-  const initialTeamFilter =
-    Number.isInteger(queryTeam) && queryTeam > 0 ? (String(queryTeam) as `${number}`) : "all";
-
-  const [teamFilter, setTeamFilter] = useState<TeamFilterValue>(initialTeamFilter);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { players, teams, loading, error, page, totalPages } = usePlayersTableData({
+  const { players, loading, error, page, totalPages } = usePlayersTableData({
     page: currentPage,
     search,
-    teamFilter,
     sortKey,
     sortDir,
   });
@@ -44,15 +37,7 @@ export default function Players() {
     deletePlayer,
   } = usePlayersMutations();
 
-  useEffect(() => {
-    if (teamFilter === "all" || teamFilter === "none") return;
-    const exists = teams.some((team) => String(team.id) === teamFilter);
-    if (!exists && teams.length > 0) {
-      setTeamFilter("all");
-    }
-  }, [teamFilter, teams]);
-
-  const hasActiveFilters = Boolean(search.trim()) || teamFilter !== "all";
+  const hasActiveFilters = Boolean(search.trim());
 
   useEffect(() => {
     if (page !== currentPage) {
@@ -74,7 +59,6 @@ export default function Players() {
 
   const resetFilters = () => {
     setSearch("");
-    setTeamFilter("all");
     setCurrentPage(1);
   };
 
@@ -118,20 +102,8 @@ export default function Players() {
             </div>
           ) : null}
 
-          {!panelError ? (
-            <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-              Puedes asignar equipos desde cada jugador o desde <strong>Equipos &gt; Plantilla</strong>.
-            </div>
-          ) : null}
-
           <PlayersToolbar
-            teams={teams}
-            teamFilter={teamFilter}
             search={search}
-            onTeamFilterChange={(value) => {
-              setTeamFilter(value);
-              setCurrentPage(1);
-            }}
             onSearchChange={(value) => {
               setSearch(value);
               setCurrentPage(1);
