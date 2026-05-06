@@ -1,6 +1,7 @@
 import { Shield } from "lucide-react";
 
 import type { SortDir, SortKey, PlayerListItem } from "@/features/players/Players.types";
+import { Paginator } from "@/shared/components/table/Paginator";
 import { RowActions } from "@/shared/components/table/RowActions";
 import { SortHeaderButton } from "@/shared/components/table/SortHeaderButton";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
@@ -13,9 +14,13 @@ type PlayersTableProps = {
   loading: boolean;
   sortKey: SortKey;
   sortDir: SortDir;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
   hasActiveFilters: boolean;
   deletingPlayerId: number | null;
   onToggleSort: (key: SortKey) => void;
+  onPageChange: (page: number) => void;
   onClearFilters: () => void;
   onView: (player: PlayerListItem) => void;
   onEdit: (player: PlayerListItem) => void;
@@ -33,17 +38,20 @@ export function PlayersTable({
   loading,
   sortKey,
   sortDir,
+  currentPage,
+  totalPages,
+  pageSize,
   hasActiveFilters,
   deletingPlayerId,
   onToggleSort,
+  onPageChange,
   onClearFilters,
   onView,
   onEdit,
   onManage,
   onDelete,
 }: PlayersTableProps) {
-  const minVisibleRows = 8;
-  const emptyRowsCount = Math.max(0, minVisibleRows - players.length);
+  const emptyRowsCount = Math.max(0, pageSize - players.length);
 
   return (
     <TableShell className="min-h-[500px]">
@@ -74,11 +82,41 @@ export function PlayersTable({
         </thead>
         <tbody>
           {loading ? (
-            <tr>
-              <td className="px-4 py-6 text-center text-sm text-slate-500" colSpan={7}>
-                Cargando jugadores...
-              </td>
-            </tr>
+            Array.from({ length: pageSize }).map((_, index) => (
+              <tr key={`players-skeleton-${index}`} className={tableRowClass}>
+                <td className={tableCellClass}>
+                  <div className="h-4 w-10 animate-pulse rounded-full bg-slate-200/80" />
+                </td>
+                <td className={tableCellClass}>
+                  <div className="h-4 w-28 animate-pulse rounded-full bg-slate-200/80" />
+                </td>
+                <td className={tableCellClass}>
+                  <div className="h-4 w-36 animate-pulse rounded-full bg-slate-200/80" />
+                </td>
+                <td className={tableCellClass}>
+                  <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200/80" />
+                </td>
+                <td className={tableCellClass}>
+                  <div className="h-6 w-20 animate-pulse rounded-full bg-slate-200/80" />
+                </td>
+                <td className={tableCellClass}>
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 animate-pulse rounded-full bg-slate-200/80" />
+                    <div className="h-4 w-20 animate-pulse rounded-full bg-slate-200/80" />
+                  </div>
+                </td>
+                <td className={`${tableCellClass} text-right`}>
+                  <div className="flex justify-end gap-2">
+                    {Array.from({ length: 4 }).map((__, actionIndex) => (
+                      <div
+                        key={`players-skeleton-action-${index}-${actionIndex}`}
+                        className="h-9 w-9 animate-pulse rounded-lg bg-slate-200/80"
+                      />
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            ))
           ) : null}
 
           {!loading &&
@@ -161,6 +199,16 @@ export function PlayersTable({
             : null}
         </tbody>
       </table>
+
+      {!loading ? (
+        <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <p className="m-0 text-xs font-medium text-slate-500">
+            Pagina {currentPage} de {totalPages}
+          </p>
+
+          <Paginator currentPage={currentPage} totalPages={totalPages} onChange={onPageChange} />
+        </div>
+      ) : null}
     </TableShell>
   );
 }
