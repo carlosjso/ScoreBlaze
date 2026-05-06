@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -39,3 +39,33 @@ class TeamOut(TeamBase):
     logo_base64: Optional[str] = Field(default=None, description="Optional logo encoded in Base64.")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TeamTablePlayerOut(BaseModel):
+    id: int
+    name: str
+    email: str
+    phone: str
+    photo_base64: Optional[str] = None
+
+
+class TeamTableRowOut(BaseModel):
+    id: int
+    name: str
+    responsible_name: str
+    responsible_phone: str
+    responsible_email: str
+    logo_base64: Optional[str] = Field(default=None, description="Optional logo encoded in Base64.")
+    player_ids: list[int]
+    player_count: int
+    players: list[TeamTablePlayerOut]
+    players_label: str
+    roster_status: Literal["Con jugadores", "Sin jugadores"]
+
+
+class PaginatedTeamsTableOut(BaseModel):
+    items: list[TeamTableRowOut]
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int

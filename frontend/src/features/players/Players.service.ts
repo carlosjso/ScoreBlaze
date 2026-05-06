@@ -1,17 +1,28 @@
 import type { ZodType } from "zod";
 
 import { apiClient, toApiRequestError } from "@/shared/api/client";
+import type { PaginatedResponse } from "@/shared/api/pagination";
+import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 import type { PlayerMutationPayload, PlayersSnapshot } from "@/features/players/Players.types";
 import {
+  apiPaginatedPlayersTableSchema,
   apiPlayerSchema,
   apiPlayersSchema,
   apiTeamMembershipsSchema,
   apiTeamsSchema,
 } from "@/features/players/schemas/Players.schema";
+import type { PlayerListItem, SortDir, SortKey } from "@/features/players/Players.types";
 
 export const playersQueryKeys = {
   all: ["players"] as const,
   snapshot: () => [...playersQueryKeys.all, "snapshot"] as const,
+  table: (params: {
+    page: number;
+    pageSize?: number;
+    search: string;
+    sortKey: SortKey;
+    sortDir: SortDir;
+  }) => [...playersQueryKeys.all, "table", params] as const,
 };
 
 async function requestJson<T>(
@@ -48,6 +59,32 @@ export const playersService = {
     ]);
 
     return { players, teams, memberships };
+  },
+
+  getTablePage(
+    params: {
+      page: number;
+      pageSize?: number;
+      search: string;
+      sortKey: SortKey;
+      sortDir: SortDir;
+    },
+    signal?: AbortSignal,
+  ): Promise<PaginatedResponse<PlayerListItem>> {
+    return requestJson(
+      apiClient.get("/api/players/table", {
+        signal,
+        params: {
+          page: params.page,
+          page_size: params.pageSize ?? DEFAULT_TABLE_PAGE_SIZE,
+          search: params.search,
+          sort_key: params.sortKey,
+          sort_dir: params.sortDir,
+        },
+      }),
+      apiPaginatedPlayersTableSchema,
+      "La lista paginada de jugadores es invalida.",
+    );
   },
 
   createPlayer(payload: PlayerMutationPayload, signal?: AbortSignal) {
