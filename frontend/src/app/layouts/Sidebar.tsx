@@ -25,6 +25,18 @@ const linkActive = "bg-orange-50 text-orange-700";
 const collapsedTooltipClass =
   "pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity duration-150";
 
+function SidebarAccentBar({ active }: { active: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "absolute left-0 top-1/2 hidden h-5 w-1 -translate-y-1/2 rounded-r-full bg-orange-500 transition-opacity lg:block",
+        active ? "opacity-100" : "opacity-0",
+      )}
+    />
+  );
+}
+
 export default function Sidebar({ routes, open, collapsed, onClose, onToggleCollapse }: SidebarProps) {
   const { logout, session } = useAuth();
 
@@ -113,13 +125,7 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
               >
                 {({ isActive }) => (
                   <>
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "absolute left-0 top-1/2 hidden h-5 w-1 -translate-y-1/2 rounded-r-full bg-orange-500 transition-opacity lg:block",
-                        isActive ? "opacity-100" : "opacity-0",
-                      )}
-                    />
+                    <SidebarAccentBar active={isActive} />
                     {route.icon}
                     <span className={cn(collapsed ? "lg:hidden" : "")}>{route.label}</span>
                     {collapsed ? (
@@ -135,24 +141,32 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
         ) : null}
 
         <div className={cn("mt-auto space-y-1 pt-6", collapsed ? "lg:flex lg:flex-col lg:items-center" : "")}>
-          <button
-            type="button"
-            className={cn(
-              "group relative",
-              linkBase,
-              linkIdle,
-              collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
-            )}
-            title="Setting"
+          <NavLink
+            to="/settings"
+            onClick={onClose}
+            title="Settings"
+            className={({ isActive }) =>
+              cn(
+                "group relative",
+                linkBase,
+                isActive ? linkActive : linkIdle,
+                collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
+              )
+            }
           >
-            <Settings size={16} />
-            <span className={cn(collapsed ? "lg:hidden" : "")}>Setting</span>
-            {collapsed ? (
-              <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
-                Setting
-              </span>
-            ) : null}
-          </button>
+            {({ isActive }) => (
+              <>
+                <SidebarAccentBar active={isActive} />
+                <Settings size={16} />
+                <span className={cn(collapsed ? "lg:hidden" : "")}>Settings</span>
+                {collapsed ? (
+                  <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
+                    Settings
+                  </span>
+                ) : null}
+              </>
+            )}
+          </NavLink>
 
           <button
             type="button"
@@ -184,13 +198,13 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
               "text-rose-700 hover:bg-rose-50",
               collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
             )}
-            title="Cerrar sesión"
+            title="Cerrar sesion"
           >
             <LogOut size={16} />
-            <span className={cn(collapsed ? "lg:hidden" : "")}>Cerrar sesión</span>
+            <span className={cn(collapsed ? "lg:hidden" : "")}>Cerrar sesion</span>
             {collapsed ? (
               <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
-                Cerrar sesión
+                Cerrar sesion
               </span>
             ) : null}
           </button>

@@ -17,8 +17,10 @@ import Players from "@/features/players/Players";
 import PlayerTeamAssignmentPage from "@/features/players/PlayerTeamAssignmentPage";
 import QuickMatches from "@/features/quick-matches/QuickMatches";
 import QuickMatchStatsPage from "@/features/quick-matches/QuickMatchStatsPage";
+import Roles from "@/features/roles/Roles";
 import Scoreboard from "@/features/scoreboard/Scoreboard";
 import LiveScoreboard from "@/features/scoreboard/LiveScoreboard";
+import SettingsPage from "@/features/settings/SettingsPage";
 import SportDashboardPage from "@/features/sports/SportDashboardPage";
 import SportsPage from "@/features/sports/SportsPage";
 import TeamRosterPage, { TeamRosterManagePage } from "@/features/teams/TeamRosterPage";
@@ -54,6 +56,8 @@ export default function App() {
                 <Route path="/quick-match/:matchId/stats" element={<QuickMatchStatsPage />} />
                 <Route path="/scoreboard" element={<Scoreboard />} />
                 <Route path="/scoreboard/:matchId" element={<Scoreboard />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/settings/roles" element={<Roles />} />
                 <Route path="/leagues" element={<LeaguesPage />} />
                 <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
                 <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />

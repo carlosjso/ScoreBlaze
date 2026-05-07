@@ -15,6 +15,8 @@ type BreadcrumbItem = {
 function isBasketballPath(pathname: string) {
   return (
     pathname === "/basketball" ||
+    pathname === "/settings" ||
+    pathname.startsWith("/settings/") ||
     pathname === "/teams" ||
     pathname.startsWith("/teams/") ||
     pathname === "/players" ||
@@ -30,6 +32,8 @@ function isBasketballPath(pathname: string) {
 const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
   "/dashboard": [{ label: "Inicio" }],
   "/basketball": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet" }],
+  "/settings": [{ label: "Inicio", to: "/dashboard" }, { label: "Settings" }],
+  "/settings/roles": [{ label: "Inicio", to: "/dashboard" }, { label: "Settings", to: "/settings" }, { label: "Roles" }],
   "/teams": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Equipos" }],
   "/players": [
     { label: "Inicio", to: "/dashboard" },

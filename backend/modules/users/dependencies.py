@@ -5,6 +5,7 @@ from database.unit_of_work import UnitOfWork
 
 from .policy import UserPolicy
 from .repositories import RoleRepository, UserRepository
+from .role_service import RoleService
 from .service import UserService
 
 
@@ -27,3 +28,10 @@ def get_user_service(
     policy: UserPolicy = Depends(get_user_policy),
 ) -> UserService:
     return UserService(user_repo, role_repo, unit_of_work, policy)
+
+
+def get_role_service(
+    role_repo: RoleRepository = Depends(get_role_repository),
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> RoleService:
+    return RoleService(role_repo, unit_of_work)

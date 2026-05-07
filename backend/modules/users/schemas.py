@@ -22,3 +22,33 @@ class UserOut(UserBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RoleBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class RoleCreate(RoleBase):
+    pass
+
+
+class RoleUpdate(RoleBase):
+    pass
+
+
+class RoleOut(RoleBase):
+    id: int
+    user_count: int = 0
+    is_system: bool = False
+
+
+class RoleTableItem(RoleOut):
+    pass
+
+
+class RoleTablePageOut(BaseModel):
+    items: list[RoleTableItem]
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int
