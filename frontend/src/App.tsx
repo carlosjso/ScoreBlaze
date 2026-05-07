@@ -18,6 +18,7 @@ import PlayerTeamAssignmentPage from "@/features/players/PlayerTeamAssignmentPag
 import Permissions from "@/features/permissions/Permissions";
 import QuickMatches from "@/features/quick-matches/QuickMatches";
 import QuickMatchStatsPage from "@/features/quick-matches/QuickMatchStatsPage";
+import RolePermissions from "@/features/role-permissions/RolePermissions";
 import Roles from "@/features/roles/Roles";
 import Scoreboard from "@/features/scoreboard/Scoreboard";
 import LiveScoreboard from "@/features/scoreboard/LiveScoreboard";
@@ -60,6 +61,7 @@ export default function App() {
                 <Route path="/scoreboard/:matchId" element={<Scoreboard />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/settings/permissions" element={<Permissions />} />
+                <Route path="/settings/role-permissions" element={<RolePermissions />} />
                 <Route path="/settings/roles" element={<Roles />} />
                 <Route path="/settings/users" element={<Users />} />
                 <Route path="/leagues" element={<LeaguesPage />} />

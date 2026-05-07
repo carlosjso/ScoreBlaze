@@ -35,6 +35,7 @@ const shortcutItems: ShortcutItem[] = [
     description: "Relacion visual entre roles y acciones.",
     icon: <UserRoundCog size={18} />,
     accentClassName: "from-emerald-100 via-white to-emerald-50 text-emerald-700 border-emerald-200",
+    to: "/settings/role-permissions",
   },
   {
     title: "Usuarios",

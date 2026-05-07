@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, status
 
-from .dependencies import get_permission_service, get_role_service, get_user_service
+from .dependencies import (
+    get_permission_service,
+    get_role_permission_service,
+    get_role_service,
+    get_user_service,
+)
 from .permission_service import PermissionService
+from .role_permission_service import RolePermissionService
 from .role_service import RoleService
 from .schemas import (
     PermissionCreate,
@@ -10,6 +16,8 @@ from .schemas import (
     PermissionUpdate,
     RoleCreate,
     RoleOut,
+    RolePermissionMatrixOut,
+    RolePermissionMatrixUpdate,
     RoleTablePageOut,
     RoleUpdate,
     UserCreate,
@@ -67,6 +75,31 @@ def update_role(
 @router.delete("/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_role(role_id: int, service: RoleService = Depends(get_role_service)):
     service.delete(role_id)
+
+
+@router.get(
+    "/roles/{role_id}/permission-matrix",
+    response_model=RolePermissionMatrixOut,
+    status_code=status.HTTP_200_OK,
+)
+def get_role_permission_matrix(
+    role_id: int,
+    service: RolePermissionService = Depends(get_role_permission_service),
+):
+    return service.get_matrix(role_id)
+
+
+@router.put(
+    "/roles/{role_id}/permission-matrix",
+    response_model=RolePermissionMatrixOut,
+    status_code=status.HTTP_200_OK,
+)
+def update_role_permission_matrix(
+    role_id: int,
+    payload: RolePermissionMatrixUpdate,
+    service: RolePermissionService = Depends(get_role_permission_service),
+):
+    return service.update_matrix(role_id, payload)
 
 
 @router.get("/permissions", response_model=list[PermissionOut], status_code=status.HTTP_200_OK)

@@ -96,3 +96,27 @@ class PermissionTablePageOut(BaseModel):
     page_size: int
     total_items: int
     total_pages: int
+
+
+class RolePermissionActionOut(BaseModel):
+    key: str
+    label: str
+    permission_name: str
+    enabled: bool
+
+
+class RolePermissionModuleOut(BaseModel):
+    key: str
+    label: str
+    description: str
+    allow_all: bool
+    permissions: list[RolePermissionActionOut]
+
+
+class RolePermissionMatrixOut(BaseModel):
+    role: RoleOut
+    modules: list[RolePermissionModuleOut]
+
+
+class RolePermissionMatrixUpdate(BaseModel):
+    permission_names: list[str] = Field(default_factory=list)

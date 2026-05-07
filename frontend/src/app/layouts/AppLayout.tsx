@@ -38,6 +38,11 @@ const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
     { label: "Configuracion", to: "/settings" },
     { label: "Permisos" },
   ],
+  "/settings/role-permissions": [
+    { label: "Inicio", to: "/dashboard" },
+    { label: "Configuracion", to: "/settings" },
+    { label: "Roles por permiso" },
+  ],
   "/settings/roles": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Roles" }],
   "/settings/users": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Usuarios" }],
   "/teams": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Equipos" }],

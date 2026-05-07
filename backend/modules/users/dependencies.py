@@ -6,6 +6,7 @@ from database.unit_of_work import UnitOfWork
 from .policy import UserPolicy
 from .permission_service import PermissionService
 from .repositories import PermissionRepository, RoleRepository, UserRepository
+from .role_permission_service import RolePermissionService
 from .role_service import RoleService
 from .service import UserService
 
@@ -47,3 +48,11 @@ def get_permission_service(
     unit_of_work: UnitOfWork = Depends(get_unit_of_work),
 ) -> PermissionService:
     return PermissionService(permission_repo, unit_of_work)
+
+
+def get_role_permission_service(
+    role_repo: RoleRepository = Depends(get_role_repository),
+    permission_repo: PermissionRepository = Depends(get_permission_repository),
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> RolePermissionService:
+    return RolePermissionService(role_repo, permission_repo, unit_of_work)
