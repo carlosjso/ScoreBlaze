@@ -21,23 +21,28 @@ export function RolePermissionModuleCard({
   onTogglePermission,
 }: RolePermissionModuleCardProps) {
   return (
-    <article className="rounded-[26px] border border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+    <article className="rounded-[20px] border border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3.5 shadow-[0_12px_24px_rgba(15,23,42,0.045)]">
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="flex min-w-0 items-center gap-2">
           <span
-            className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-[linear-gradient(135deg,var(--tw-gradient-from),var(--tw-gradient-via),var(--tw-gradient-to))] ${accentClassName}`}
+            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border bg-[linear-gradient(135deg,var(--tw-gradient-from),var(--tw-gradient-via),var(--tw-gradient-to))] ${accentClassName}`}
           >
             {icon}
           </span>
           <div className="min-w-0">
-            <h3 className="truncate text-[22px] font-semibold tracking-tight text-slate-950">
+            <h3 className="truncate text-[17px] font-semibold tracking-tight text-slate-950">
               {module.label}
             </h3>
+            <p className="mt-0.5 text-[11px] font-medium text-slate-400">
+              {module.permissions.length} acciones
+            </p>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="text-sm font-semibold text-slate-700">Permitir todo</span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Todo
+          </span>
           <PermissionSwitch
             checked={module.allowAll}
             disabled={disabled}
@@ -47,13 +52,13 @@ export function RolePermissionModuleCard({
         </div>
       </div>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-3 space-y-1.5">
         {module.permissions.map((permission) => (
           <div
             key={permission.permissionName}
-            className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white/70 px-3 py-2.5"
+            className="flex items-center justify-between gap-2 rounded-[16px] border border-slate-200/80 bg-white/80 px-2.5 py-1.5"
           >
-            <span className="text-[15px] font-medium text-slate-700">{permission.label}</span>
+            <span className="text-[13px] font-medium text-slate-700">{permission.label}</span>
             <PermissionSwitch
               checked={permission.enabled}
               disabled={disabled}

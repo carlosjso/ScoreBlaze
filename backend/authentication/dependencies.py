@@ -15,6 +15,8 @@ from .schemas import AuthUserOut
 from .service import AuthService
 from .session_store import BaseSessionStore, build_session_store
 
+SUPERADMIN_ROLE_NAME = "superadmin"
+
 
 @dataclass
 class AuthContext:
@@ -94,8 +96,14 @@ async def require_authenticated_user(
     auth_context: AuthContext | None = Depends(get_optional_auth_context),
 ) -> AuthUserOut:
     if auth_context is None:
-        raise UnauthorizedException("Autenticación requerida.")
+        raise UnauthorizedException("Autenticacion requerida.")
     return auth_context.user
+
+
+def has_required_role(current_roles: set[str], required_roles: set[str]) -> bool:
+    if SUPERADMIN_ROLE_NAME in current_roles:
+        return True
+    return not required_roles.isdisjoint(current_roles)
 
 
 def require_roles(*required_roles: str):
@@ -105,8 +113,8 @@ def require_roles(*required_roles: str):
         current_user: AuthUserOut = Depends(require_authenticated_user),
     ) -> AuthUserOut:
         current_roles = {role.strip().lower() for role in current_user.roles}
-        if normalized_required_roles.isdisjoint(current_roles):
-            raise ForbiddenException("No tienes permisos para realizar esta acción.")
+        if not has_required_role(current_roles, normalized_required_roles):
+            raise ForbiddenException("No tienes permisos para realizar esta accion.")
         return current_user
 
     return dependency

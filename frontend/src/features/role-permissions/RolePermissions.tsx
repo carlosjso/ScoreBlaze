@@ -298,7 +298,7 @@ export default function RolePermissions() {
           ) : null}
 
           {draftModules.length > 0 ? (
-            <section className="mt-4 grid gap-4 xl:grid-cols-3">
+            <section className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {draftModules.map((module) => {
                 const visual = moduleVisuals[module.key] ?? {
                   icon: <ShieldCheck size={18} />,
