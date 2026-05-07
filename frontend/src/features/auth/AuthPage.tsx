@@ -66,7 +66,7 @@ function HeroSection() {
 
           <div className="relative ml-6 flex h-[360px] w-[360px] items-end justify-center rounded-[48px] bg-[linear-gradient(180deg,rgba(255,255,255,0.58),rgba(255,255,255,0))]">
             <img
-              src="/ScoreBlazeLogoMark.png"
+              src="/ScoreBlazeImageLogin.png"
               alt="ScoreBlaze mark"
               className="h-[280px] w-[280px] -rotate-6 object-contain drop-shadow-[0_25px_40px_rgba(15,23,42,0.28)]"
             />
