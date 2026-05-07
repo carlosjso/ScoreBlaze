@@ -26,6 +26,7 @@ import SportDashboardPage from "@/features/sports/SportDashboardPage";
 import SportsPage from "@/features/sports/SportsPage";
 import TeamRosterPage, { TeamRosterManagePage } from "@/features/teams/TeamRosterPage";
 import Teams from "@/features/teams/Teams";
+import Users from "@/features/users/Users";
 
 export default function App() {
   return (
@@ -60,6 +61,7 @@ export default function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/settings/permissions" element={<Permissions />} />
                 <Route path="/settings/roles" element={<Roles />} />
+                <Route path="/settings/users" element={<Users />} />
                 <Route path="/leagues" element={<LeaguesPage />} />
                 <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
                 <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />

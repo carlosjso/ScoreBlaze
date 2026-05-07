@@ -14,6 +14,7 @@ from .schemas import (
     RoleUpdate,
     UserCreate,
     UserOut,
+    UserTablePageOut,
     UserUpdate,
 )
 from .service import UserService
@@ -117,17 +118,35 @@ def delete_permission(permission_id: int, service: PermissionService = Depends(g
 
 @router.get("/", response_model=list[UserOut], status_code=status.HTTP_200_OK)
 def list_users(service: UserService = Depends(get_user_service)):
-    return service.list()
+    return service.list_out()
+
+
+@router.get("/table", response_model=UserTablePageOut, status_code=status.HTTP_200_OK)
+def list_users_table(
+    page: int = 1,
+    page_size: int = 10,
+    search: str = "",
+    sort_key: str = "name",
+    sort_dir: str = "asc",
+    service: UserService = Depends(get_user_service),
+):
+    return service.get_table_page(
+        page=page,
+        page_size=page_size,
+        search=search,
+        sort_key=sort_key,
+        sort_dir=sort_dir,
+    )
 
 
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(payload: UserCreate, service: UserService = Depends(get_user_service)):
-    return service.create(payload)
+    return service.create_out(payload)
 
 
 @router.get("/{user_id}", response_model=UserOut, status_code=status.HTTP_200_OK)
 def get_user(user_id: int, service: UserService = Depends(get_user_service)):
-    return service.get(user_id)
+    return service.get_out(user_id)
 
 
 @router.put("/{user_id}", response_model=UserOut, status_code=status.HTTP_200_OK)
@@ -136,7 +155,7 @@ def update_user(
     payload: UserUpdate,
     service: UserService = Depends(get_user_service),
 ):
-    return service.update(user_id, payload)
+    return service.update_out(user_id, payload)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

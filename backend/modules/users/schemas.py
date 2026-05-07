@@ -20,8 +20,21 @@ class UserUpdate(UserBase):
 class UserOut(UserBase):
     id: int
     created_at: datetime
+    roles: list[str] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserTableItem(UserOut):
+    role_count: int = 0
+
+
+class UserTablePageOut(BaseModel):
+    items: list[UserTableItem]
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int
 
 
 class RoleBase(BaseModel):

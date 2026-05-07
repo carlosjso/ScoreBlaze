@@ -42,6 +42,7 @@ const shortcutItems: ShortcutItem[] = [
     description: "Vista base para administrar cuentas.",
     icon: <UsersRound size={18} />,
     accentClassName: "from-violet-100 via-white to-violet-50 text-violet-700 border-violet-200",
+    to: "/settings/users",
   },
   {
     title: "Roles de usuario",

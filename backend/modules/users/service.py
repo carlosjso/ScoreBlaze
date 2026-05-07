@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from math import ceil
+
 import config
+from core.exceptions import ValidationException
 from data.orm import User
 from database.unit_of_work import UnitOfWork
 from modules.users.repositories import RoleRepository, UserRepository
 from utils.security import hash_password
 
 from .policy import UserPolicy
-from .schemas import UserCreate, UserUpdate
+from .schemas import UserCreate, UserOut, UserTableItem, UserTablePageOut, UserUpdate
 
 
 class UserService:
@@ -29,12 +32,28 @@ class UserService:
             return list(dict.fromkeys(["admin", config.AUTH_DEFAULT_ROLE]))
         return [config.AUTH_DEFAULT_ROLE]
 
+    def _normalize_name(self, value: str) -> str:
+        normalized_name = value.strip()
+        if not normalized_name:
+            raise ValidationException("El nombre del usuario es obligatorio.")
+        return normalized_name
+
+    def _serialize_user(self, user: User) -> UserOut:
+        role_names = sorted({role.name for role in getattr(user, "roles", [])})
+        return UserOut(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            created_at=user.created_at,
+            roles=role_names,
+        )
+
     def create(self, data: UserCreate) -> User:
         normalized_email = str(data.email).strip().lower()
         self.policy.ensure_email_available(normalized_email)
 
         user = User(
-            name=data.name,
+            name=self._normalize_name(data.name),
             email=normalized_email,
             password_hash=hash_password(data.password),
         )
@@ -47,8 +66,48 @@ class UserService:
     def list(self) -> list[User]:
         return self.user_repo.list()
 
+    def list_out(self) -> list[UserOut]:
+        return [self._serialize_user(user) for user in self.list()]
+
     def get(self, user_id: int) -> User:
         return self.policy.get_existing_user(user_id)
+
+    def get_out(self, user_id: int) -> UserOut:
+        return self._serialize_user(self.get(user_id))
+
+    def get_table_page(
+        self,
+        *,
+        page: int,
+        page_size: int,
+        search: str,
+        sort_key: str,
+        sort_dir: str,
+    ) -> UserTablePageOut:
+        normalized_page = max(1, page)
+        normalized_page_size = max(1, page_size)
+        rows, total_items = self.user_repo.get_table_page(
+            page=normalized_page,
+            page_size=normalized_page_size,
+            search=search,
+            sort_key=sort_key,
+            sort_dir=sort_dir,
+        )
+        total_pages = max(1, ceil(total_items / normalized_page_size))
+        items = [
+            UserTableItem(
+                **self._serialize_user(user).model_dump(),
+                role_count=len({role.name for role in getattr(user, "roles", [])}),
+            )
+            for user in rows
+        ]
+        return UserTablePageOut(
+            items=items,
+            page=min(normalized_page, total_pages),
+            page_size=normalized_page_size,
+            total_items=total_items,
+            total_pages=total_pages,
+        )
 
     def update(self, user_id: int, data: UserUpdate) -> User:
         user = self.policy.get_existing_user(user_id)
@@ -57,7 +116,7 @@ class UserService:
 
         password_hash = hash_password(data.password) if data.password is not None else None
         fields = {
-            "name": data.name,
+            "name": self._normalize_name(data.name),
             "email": normalized_email,
         }
         if password_hash is not None:
@@ -72,3 +131,9 @@ class UserService:
         user = self.policy.get_existing_user(user_id)
         with self.unit_of_work.transaction():
             self.user_repo.soft_delete(user)
+
+    def create_out(self, data: UserCreate) -> UserOut:
+        return self._serialize_user(self.create(data))
+
+    def update_out(self, user_id: int, data: UserUpdate) -> UserOut:
+        return self._serialize_user(self.update(user_id, data))
