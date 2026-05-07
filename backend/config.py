@@ -34,3 +34,31 @@ CORS_ALLOWED_ORIGINS = [
 # DATABASE
 # ==============================================================================
 DB_URL = os.getenv("DB_URL") or os.getenv("DATABASE_URL")
+
+# ==============================================================================
+# AUTH / SESSION / SEED
+# ==============================================================================
+SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "sb_session")
+SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "lax")
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").strip().lower() == "true"
+SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN") or None
+SESSION_IDLE_MINUTES = int(os.getenv("SESSION_IDLE_MINUTES", 30))
+SESSION_ABSOLUTE_MINUTES = int(os.getenv("SESSION_ABSOLUTE_MINUTES", 480))
+SESSION_ACTIVITY_GRACE_SECONDS = int(os.getenv("SESSION_ACTIVITY_GRACE_SECONDS", 45))
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+AUTH_DEFAULT_ROLE = os.getenv("AUTH_DEFAULT_ROLE", "coach").strip().lower() or "coach"
+AUTH_BOOTSTRAP_ADMIN_EMAILS = {
+    email.strip().lower()
+    for email in os.getenv("AUTH_BOOTSTRAP_ADMIN_EMAILS", "").split(",")
+    if email.strip()
+}
+SEED_SUPERADMIN_NAME = os.getenv("SEED_SUPERADMIN_NAME", "Super Admin").strip() or "Super Admin"
+SEED_SUPERADMIN_EMAIL = os.getenv("SEED_SUPERADMIN_EMAIL", "superadmin@scoreblaze.local").strip().lower()
+SEED_SUPERADMIN_PASSWORD = os.getenv("SEED_SUPERADMIN_PASSWORD", "ScoreBlaze123!")
+SEED_SUPERADMIN_ROLES = tuple(
+    dict.fromkeys(
+        role.strip().lower()
+        for role in os.getenv("SEED_SUPERADMIN_ROLES", "admin,coach").split(",")
+        if role.strip()
+    )
+) or ("admin", "coach")

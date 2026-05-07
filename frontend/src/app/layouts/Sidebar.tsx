@@ -1,7 +1,8 @@
-import { Bell, Menu, Settings, UserCircle2, X } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Bell, LogOut, Menu, Settings, UserCircle2, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { Link, NavLink } from "react-router-dom";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import { cn } from "@/shared/utils/cn";
 
 type SidebarRoute = {
@@ -25,6 +26,8 @@ const collapsedTooltipClass =
   "pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-sm transition-opacity duration-150";
 
 export default function Sidebar({ routes, open, collapsed, onClose, onToggleCollapse }: SidebarProps) {
+  const { logout, session } = useAuth();
+
   return (
     <>
       {open && (
@@ -40,13 +43,13 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
         className={cn(
           "fixed left-0 top-0 z-40 flex h-screen w-[248px] flex-col border-r border-slate-300 bg-slate-50/95 px-3 py-4 shadow-md backdrop-blur transition-all duration-200",
           collapsed ? "lg:w-[68px] lg:px-1" : "lg:w-[248px]",
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         <div
           className={cn(
             "mb-4 flex min-h-[64px] items-center border-b border-slate-200 pb-3",
-            collapsed ? "justify-center" : "justify-between px-1"
+            collapsed ? "justify-center" : "justify-between px-1",
           )}
         >
           {collapsed ? (
@@ -104,7 +107,7 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
                     "group relative",
                     linkBase,
                     isActive ? linkActive : linkIdle,
-                    collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "justify-start pl-4"
+                    collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "justify-start pl-4",
                   )
                 }
               >
@@ -114,7 +117,7 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
                       aria-hidden="true"
                       className={cn(
                         "absolute left-0 top-1/2 hidden h-5 w-1 -translate-y-1/2 rounded-r-full bg-orange-500 transition-opacity lg:block",
-                        isActive ? "opacity-100" : "opacity-0"
+                        isActive ? "opacity-100" : "opacity-0",
                       )}
                     />
                     {route.icon}
@@ -138,7 +141,7 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
               "group relative",
               linkBase,
               linkIdle,
-              collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4"
+              collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
             )}
             title="Setting"
           >
@@ -157,7 +160,7 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
               "group relative",
               linkBase,
               linkIdle,
-              collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4"
+              collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
             )}
             title="Notifications"
           >
@@ -166,6 +169,28 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
             {collapsed ? (
               <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
                 Notifications
+              </span>
+            ) : null}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              void logout();
+            }}
+            className={cn(
+              "group relative",
+              linkBase,
+              "text-rose-700 hover:bg-rose-50",
+              collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
+            )}
+            title="Cerrar sesión"
+          >
+            <LogOut size={16} />
+            <span className={cn(collapsed ? "lg:hidden" : "")}>Cerrar sesión</span>
+            {collapsed ? (
+              <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
+                Cerrar sesión
               </span>
             ) : null}
           </button>
@@ -180,8 +205,12 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
               <UserCircle2 size={26} className="text-slate-500" />
               <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-slate-700">Culaccino_</p>
-                <p className="truncate text-[11px] text-slate-500">UX Designer</p>
+                <p className="truncate text-xs font-semibold text-slate-700">
+                  {session?.user.name ?? "Usuario"}
+                </p>
+                <p className="truncate text-[11px] text-slate-500">
+                  {session?.user.roles[0] ?? session?.user.email ?? "Sin rol"}
+                </p>
               </div>
             </div>
           )}

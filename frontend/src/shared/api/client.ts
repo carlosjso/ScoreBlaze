@@ -9,6 +9,7 @@ const baseURL =
 
 export const apiClient = axios.create({
   baseURL,
+  withCredentials: true,
   headers: {
     Accept: "application/json",
   },
@@ -18,7 +19,10 @@ type ApiFieldErrors = Record<string, string>;
 
 const apiMessageTranslations: Record<string, string> = {
   "Team name already exists": "Ya existe un equipo con ese nombre.",
-  "Email already exists": "Ya existe un jugador con ese correo.",
+  "Email already exists": "Ya existe un correo registrado.",
+  "Credenciales inválidas.": "Correo o contraseña incorrectos.",
+  "Autenticación requerida.": "Tu sesión expiró. Inicia sesión nuevamente.",
+  "No tienes permisos para realizar esta acción.": "No tienes permisos para realizar esta acción.",
   "Invalid logo. Could not decode Base64": "No se pudo procesar el logo.",
   "Invalid photo. Could not decode Base64": "No se pudo procesar la foto.",
   "Start time must be earlier than end time": "La hora de inicio debe ser anterior a la hora de fin.",
@@ -84,14 +88,14 @@ function translateApiMessage(message: string, fieldName?: string | null): string
       || message.includes("exceeded maximum size")
     )
   ) {
-    return "El telefono excede el tamaño maximo permitido.";
+    return "El teléfono excede el tamaño máximo permitido.";
   }
 
   if (
     (fieldName === "score_team_a" || fieldName === "score_team_b")
     && message.startsWith("Input should be less than or equal to")
   ) {
-    return "El marcador no puede tener mas de 3 digitos.";
+    return "El marcador no puede tener más de 3 dígitos.";
   }
 
   return message;
