@@ -49,13 +49,13 @@ export function PlayersTable({
     <TableShell className="min-h-[500px]">
       <table className="w-full min-w-[920px] table-fixed border-collapse">
         <colgroup>
-          <col style={{ width: "64px" }} />
-          <col style={{ width: "180px" }} />
-          <col style={{ width: "220px" }} />
-          <col style={{ width: "120px" }} />
-          <col style={{ width: "110px" }} />
+          <col style={{ width: "60px" }} />
+          <col style={{ width: "160px" }} />
           <col style={{ width: "210px" }} />
-          <col style={{ width: "190px" }} />
+          <col style={{ width: "130px" }} />
+          <col style={{ width: "110px" }} />
+          <col style={{ width: "150px" }} />
+          <col style={{ width: "180px" }} />
         </colgroup>
         <thead>
           <tr className={tableHeaderClass}>
@@ -95,20 +95,15 @@ export function PlayersTable({
                   {player.phone || <span className="text-xs text-slate-500">Sin telefono</span>}
                 </td>
                 <td className={tableCellClass}>
-                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", statusClass[player.status])}>
+                  <span className={cn("inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold", statusClass[player.status])}>
                     {player.status}
                   </span>
                 </td>
                 <td className={tableCellClass}>
                   {player.teamNames.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="truncate text-sm text-slate-700" title={player.teamLabel}>
-                        {player.teamLabel}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {player.teamsCount} {player.teamsCount === 1 ? "equipo" : "equipos"}
-                      </p>
-                    </div>
+                    <span className="text-sm text-slate-700">
+                      {player.teamsCount} {player.teamsCount === 1 ? "equipo" : "equipos"}
+                    </span>
                   ) : (
                     <span className="text-xs text-slate-500">Sin equipo</span>
                   )}
@@ -164,4 +159,3 @@ export function PlayersTable({
     </TableShell>
   );
 }
-
