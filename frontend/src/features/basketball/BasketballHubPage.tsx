@@ -14,12 +14,6 @@ type HubCardItem = {
 
 const topRowItems: HubCardItem[] = [
   {
-    title: "Ligas",
-    description: "Gestionar las ligas del deporte",
-    icon: <Trophy size={16} />,
-    to: "/leagues",
-  },
-  {
     title: "Jugadores",
     description: "Gestionar los jugadores del deporte",
     icon: <UsersRound size={16} />,
@@ -31,6 +25,13 @@ const topRowItems: HubCardItem[] = [
     icon: <Shield size={16} />,
     to: "/teams",
   },
+  {
+    title: "Ligas",
+    description: "Gestionar las ligas del deporte",
+    icon: <Trophy size={16} />,
+    to: "/leagues",
+  },
+  
 ];
 
 const bottomRowItems: HubCardItem[] = [
