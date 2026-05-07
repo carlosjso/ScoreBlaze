@@ -32,8 +32,8 @@ Archivo: `D:\ScoreBlaze\backend\.env`
 ```env
 DB_URL=postgresql+psycopg2://postgres:postgres@localhost:5435/scoreblaze
 REDIS_URL=redis://localhost:6379/0
-SEED_SUPERADMIN_EMAIL=superadmin@scoreblaze.local
-SEED_SUPERADMIN_PASSWORD=ScoreBlaze123!
+SEED_SUPERADMIN_EMAIL=codexaempresarial@gmail.com
+SEED_SUPERADMIN_PASSWORD=CodexaAdmin2026!
 ```
 
 El resto de opciones avanzadas ya tienen valor por defecto en [backend/config.py](/C:/Users/dell/Documents/GitHub/ScoreBlaze/backend/config.py:17), asi que para local no necesitas llenar todo el archivo.
@@ -76,8 +76,15 @@ python seed_superadmin.py
 ```
 
 Credenciales por defecto:
-- Email: `superadmin@scoreblaze.local`
-- Password: `ScoreBlaze123!`
+- Email: `codexaempresarial@gmail.com`
+- Password: `CodexaAdmin2026!`
+
+## 6.2) Poblar catalogo base de permisos
+```powershell
+cd D:\ScoreBlaze\backend
+.\.venv\Scripts\Activate.ps1
+python seed_permissions.py
+```
 
 ## 7) Levantar frontend
 ```powershell
@@ -88,5 +95,3 @@ npm run dev
 
 Abrir la interfaz en:
 - `http://localhost:5173/`
-
-

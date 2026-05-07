@@ -10,6 +10,27 @@ from database.alchemy import SessionLocal
 from modules.users.repositories import RoleRepository, UserRepository
 from utils.security import hash_password
 
+LEGACY_SUPERADMIN_EMAILS = (
+    "superadmin@scoreblaze.local",
+    "superadmin@scoreblaze.com",
+)
+
+
+def _get_existing_seed_user(user_repo: UserRepository) -> User | None:
+    configured_user = user_repo.get_by_email(config.SEED_SUPERADMIN_EMAIL, include_deleted=True)
+    if configured_user is not None:
+        return configured_user
+
+    for legacy_email in LEGACY_SUPERADMIN_EMAILS:
+        if legacy_email == config.SEED_SUPERADMIN_EMAIL:
+            continue
+
+        legacy_user = user_repo.get_by_email(legacy_email, include_deleted=True)
+        if legacy_user is not None:
+            return legacy_user
+
+    return None
+
 
 def run() -> None:
     db: Session = SessionLocal()
@@ -17,7 +38,7 @@ def run() -> None:
         user_repo = UserRepository(db)
         role_repo = RoleRepository(db)
 
-        existing_user = user_repo.get_by_email(config.SEED_SUPERADMIN_EMAIL, include_deleted=True)
+        existing_user = _get_existing_seed_user(user_repo)
         roles = [role_repo.get_or_create(role_name) for role_name in config.SEED_SUPERADMIN_ROLES]
         password_hash = hash_password(config.SEED_SUPERADMIN_PASSWORD)
         created = existing_user is None
