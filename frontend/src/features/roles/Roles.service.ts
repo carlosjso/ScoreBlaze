@@ -1,13 +1,14 @@
 import type { ZodType } from "zod";
 
 import type { RoleMutationPayload, RoleListItem, SortDir, SortKey } from "@/features/roles/Roles.types";
-import { apiPaginatedRolesTableSchema, apiRoleSchema } from "@/features/roles/schemas/Roles.schema";
+import { apiPaginatedRolesTableSchema, apiRoleSchema, apiRolesSchema } from "@/features/roles/schemas/Roles.schema";
 import { apiClient, toApiRequestError } from "@/shared/api/client";
 import type { PaginatedResponse } from "@/shared/api/pagination";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export const rolesQueryKeys = {
   all: ["roles"] as const,
+  list: () => [...rolesQueryKeys.all, "list"] as const,
   table: (params: {
     page: number;
     pageSize?: number;
@@ -39,6 +40,14 @@ async function requestVoid(request: Promise<unknown>, fallbackMessage: string): 
 }
 
 export const rolesService = {
+  getAll(signal?: AbortSignal): Promise<RoleListItem[]> {
+    return requestJson(
+      apiClient.get("/users/roles", { signal }),
+      apiRolesSchema,
+      "La lista de roles es invalida.",
+    );
+  },
+
   getTablePage(
     params: {
       page: number;

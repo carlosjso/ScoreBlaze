@@ -22,7 +22,7 @@ export const apiUserSchema = z
     name: z.string().trim().min(1),
     email: z.string().trim().email(),
     roles: z.array(z.string().trim().min(1)),
-    role_count: z.coerce.number().int().min(0),
+    role_count: z.coerce.number().int().min(0).optional(),
     created_at: z.string().trim().min(1),
   })
   .transform(
@@ -31,7 +31,7 @@ export const apiUserSchema = z
       name: user.name,
       email: user.email,
       roles: user.roles,
-      roleCount: user.role_count,
+      roleCount: user.role_count ?? user.roles.length,
       createdAt: user.created_at,
     }),
   );
@@ -50,39 +50,54 @@ export const userFormSchema = z.object({
     .trim()
     .min(1, "El correo es obligatorio.")
     .email("Captura un correo valido."),
+  roleName: z.string(),
   password: z
     .string()
-    .max(USER_FORM_LIMITS.password, "La contraseña no puede exceder 128 caracteres.")
+    .max(USER_FORM_LIMITS.password, "La contrasena no puede exceder 128 caracteres.")
     .refine((value) => value.length === 0 || value.length >= 8, {
-      message: "La contraseña debe tener al menos 8 caracteres.",
+      message: "La contrasena debe tener al menos 8 caracteres.",
     }),
 }) satisfies z.ZodType<UserFormValues>;
 
 export const userFormApiFieldMap = {
   name: "name",
   email: "email",
+  role_name: "roleName",
   password: "password",
 } satisfies Record<string, UserFormFieldName>;
 
 export const userFormApiMessageFieldMap = {
   "Ya existe un correo registrado.": "email",
   "El nombre del usuario es obligatorio.": "name",
+  "El rol del usuario es obligatorio.": "roleName",
 } satisfies Record<string, UserFormFieldName | readonly UserFormFieldName[]>;
 
 export function toUserFormValues(user?: UserListItem | null): UserFormValues {
   return {
     name: user?.name ?? "",
     email: user?.email ?? "",
+    roleName: user?.roles[0] ?? "",
     password: "",
   };
 }
 
-export function toUserMutationPayload(values: UserFormValues, mode: UserFormMode): UserMutationPayload {
+export function toUserMutationPayload(
+  values: UserFormValues,
+  mode: UserFormMode,
+  currentRoleName?: string,
+): UserMutationPayload {
   const normalizedValues = userFormSchema.parse(values);
   const payload: UserMutationPayload = {
     name: normalizedValues.name.trim(),
     email: normalizedValues.email.trim().toLowerCase(),
   };
+
+  const normalizedRoleName = normalizedValues.roleName.trim().toLowerCase();
+  const normalizedCurrentRoleName = currentRoleName?.trim().toLowerCase() ?? "";
+
+  if (normalizedRoleName && (mode === "create" || normalizedRoleName !== normalizedCurrentRoleName)) {
+    payload.role_name = normalizedRoleName;
+  }
 
   if (mode === "create" || normalizedValues.password.length > 0) {
     payload.password = normalizedValues.password;

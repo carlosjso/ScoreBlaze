@@ -144,7 +144,7 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
           <NavLink
             to="/settings"
             onClick={onClose}
-            title="Settings"
+            title="Configuracion"
             className={({ isActive }) =>
               cn(
                 "group relative",
@@ -158,10 +158,10 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
               <>
                 <SidebarAccentBar active={isActive} />
                 <Settings size={16} />
-                <span className={cn(collapsed ? "lg:hidden" : "")}>Settings</span>
+                <span className={cn(collapsed ? "lg:hidden" : "")}>Configuracion</span>
                 {collapsed ? (
                   <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
-                    Settings
+                    Configuracion
                   </span>
                 ) : null}
               </>

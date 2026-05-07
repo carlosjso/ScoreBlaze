@@ -32,6 +32,13 @@ class UserService:
             return list(dict.fromkeys(["admin", config.AUTH_DEFAULT_ROLE]))
         return [config.AUTH_DEFAULT_ROLE]
 
+    def _normalize_role_name(self, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        normalized_role_name = value.strip().lower()
+        return normalized_role_name or None
+
     def _normalize_name(self, value: str) -> str:
         normalized_name = value.strip()
         if not normalized_name:
@@ -57,8 +64,10 @@ class UserService:
             email=normalized_email,
             password_hash=hash_password(data.password),
         )
+        explicit_role_name = self._normalize_role_name(data.role_name)
         with self.unit_of_work.transaction():
-            user.roles = [self.role_repo.get_or_create(role_name) for role_name in self._resolve_registration_roles(normalized_email)]
+            role_names = [explicit_role_name] if explicit_role_name else self._resolve_registration_roles(normalized_email)
+            user.roles = [self.role_repo.get_or_create(role_name) for role_name in role_names]
             self.user_repo.add(user)
         self.unit_of_work.refresh(user)
         return user
@@ -121,9 +130,12 @@ class UserService:
         }
         if password_hash is not None:
             fields["password_hash"] = password_hash
+        explicit_role_name = self._normalize_role_name(data.role_name)
 
         with self.unit_of_work.transaction():
             self.user_repo.update(user, **fields)
+            if explicit_role_name is not None:
+                user.roles = [self.role_repo.get_or_create(explicit_role_name)]
         self.unit_of_work.refresh(user)
         return user
 

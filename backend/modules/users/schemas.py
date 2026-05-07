@@ -11,10 +11,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=128)
+    role_name: Optional[str] = Field(default=None, max_length=100)
 
 
 class UserUpdate(UserBase):
     password: Optional[str] = Field(default=None, min_length=8, max_length=128)
+    role_name: Optional[str] = Field(default=None, max_length=100)
 
 
 class UserOut(UserBase):

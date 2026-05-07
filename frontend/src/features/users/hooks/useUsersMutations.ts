@@ -9,6 +9,7 @@ import { getApiGlobalErrorMessage } from "@/shared/api/client";
 type SaveUserArgs = {
   mode: UserFormMode;
   userId?: number;
+  currentRoleName?: string;
   values: UserFormValues;
 };
 
@@ -51,12 +52,12 @@ export function useUsersMutations() {
     deleteMutation.reset();
   };
 
-  const saveUser = async ({ mode, userId, values }: SaveUserArgs) => {
+  const saveUser = async ({ mode, userId, currentRoleName, values }: SaveUserArgs) => {
     clearMutationError();
     await saveMutation.mutateAsync({
       mode,
       userId,
-      payload: toUserMutationPayload(values, mode),
+      payload: toUserMutationPayload(values, mode, currentRoleName),
     });
   };
 

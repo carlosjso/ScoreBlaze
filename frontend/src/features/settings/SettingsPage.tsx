@@ -1,8 +1,7 @@
 import {
   KeyRound,
-  Link2,
   ShieldCheck,
-  UserCog,
+  UserRoundCog,
   UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -34,7 +33,7 @@ const shortcutItems: ShortcutItem[] = [
   {
     title: "Roles por permiso",
     description: "Relacion visual entre roles y acciones.",
-    icon: <Link2 size={18} />,
+    icon: <UserRoundCog size={18} />,
     accentClassName: "from-emerald-100 via-white to-emerald-50 text-emerald-700 border-emerald-200",
   },
   {
@@ -44,17 +43,11 @@ const shortcutItems: ShortcutItem[] = [
     accentClassName: "from-violet-100 via-white to-violet-50 text-violet-700 border-violet-200",
     to: "/settings/users",
   },
-  {
-    title: "Roles de usuario",
-    description: "Asignacion final por usuario.",
-    icon: <UserCog size={18} />,
-    accentClassName: "from-rose-100 via-white to-rose-50 text-rose-700 border-rose-200",
-  },
 ];
 
 function ShortcutCard({ item }: { item: ShortcutItem }) {
   const className =
-    "group rounded-[22px] border border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-6 text-left text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(15,23,42,0.08)]";
+    "group flex h-full w-full flex-col items-start rounded-[22px] border border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-6 text-left text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(15,23,42,0.08)] appearance-none";
 
   const content = (
     <>
@@ -92,7 +85,7 @@ export default function SettingsPage() {
   return (
     <div className="sb-page">
       <div className="sb-page-shell max-w-[1380px]">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {shortcutItems.map((item) => (
             <ShortcutCard key={item.title} item={item} />
           ))}

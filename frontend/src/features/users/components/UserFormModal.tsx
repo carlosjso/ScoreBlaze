@@ -1,8 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { LockKeyhole, Mail, User2 } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import { rolesQueryKeys, rolesService } from "@/features/roles/Roles.service";
 import type { UserFormValues, UserListItem } from "@/features/users/Users.types";
 import {
   USER_FORM_LIMITS,
@@ -12,7 +14,7 @@ import {
   userFormSchema,
 } from "@/features/users/schemas/Users.schema";
 import { mapApiErrorToForm } from "@/shared/api/client";
-import { Button, Input, Modal } from "@/shared/components/ui";
+import { Button, Input, Modal, Select } from "@/shared/components/ui";
 
 type UserFormModalProps = {
   isOpen: boolean;
@@ -41,6 +43,11 @@ export function UserFormModal({
   });
 
   const apiFormError = mapApiErrorToForm(apiError, userFormApiFieldMap, userFormApiMessageFieldMap);
+  const rolesQuery = useQuery({
+    queryKey: rolesQueryKeys.list(),
+    queryFn: ({ signal }) => rolesService.getAll(signal),
+    enabled: isOpen,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -52,15 +59,23 @@ export function UserFormModal({
   }, [initialUser, isOpen, reset]);
 
   const submitForm = async (values: UserFormValues) => {
-    if (mode === "create" && values.password.length === 0) {
-      setError("password", {
+    if (values.roleName.trim().length === 0) {
+      setError("roleName", {
         type: "manual",
-        message: "La contraseña es obligatoria.",
+        message: "Selecciona un rol para el usuario.",
       });
       return;
     }
 
-    clearErrors("password");
+    if (mode === "create" && values.password.length === 0) {
+      setError("password", {
+        type: "manual",
+        message: "La contrasena es obligatoria.",
+      });
+      return;
+    }
+
+    clearErrors(["roleName", "password"]);
     await onSubmit(values);
   };
 
@@ -127,11 +142,43 @@ export function UserFormModal({
             />
 
             <Controller
+              name="roleName"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Select
+                  label="Rol"
+                  value={field.value}
+                  onChange={(event) => {
+                    clearErrors("roleName");
+                    field.onChange(event);
+                  }}
+                  onBlur={field.onBlur}
+                  error={
+                    fieldState.error?.message
+                    ?? apiFormError.fieldErrors.roleName
+                    ?? (rolesQuery.error instanceof Error ? rolesQuery.error.message : undefined)
+                  }
+                  disabled={loading || rolesQuery.isLoading}
+                  className="bg-slate-100"
+                >
+                  <option value="">
+                    {rolesQuery.isLoading ? "Cargando roles..." : "Selecciona un rol"}
+                  </option>
+                  {(rolesQuery.data ?? []).map((role) => (
+                    <option key={role.id} value={role.name}>
+                      {role.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            />
+
+            <Controller
               name="password"
               control={control}
               render={({ field, fieldState }) => (
                 <Input
-                  label={mode === "create" ? "Contraseña" : "Nueva contraseña"}
+                  label={mode === "create" ? "Contrasena" : "Nueva contrasena"}
                   type="password"
                   value={field.value}
                   onChange={(event) => {
@@ -142,7 +189,7 @@ export function UserFormModal({
                   leftIcon={<LockKeyhole size={14} />}
                   placeholder={mode === "create" ? "Minimo 8 caracteres" : "Dejar vacia para conservar"}
                   maxLength={USER_FORM_LIMITS.password}
-                  hint={mode === "edit" ? "Si la dejas vacia, la contraseña actual se conserva." : undefined}
+                  hint={mode === "edit" ? "Si la dejas vacia, la contrasena actual se conserva." : undefined}
                   error={fieldState.error?.message ?? apiFormError.fieldErrors.password}
                   disabled={loading}
                   className="bg-slate-100"

@@ -10,12 +10,14 @@ export type UserListItem = {
 export type UserFormValues = {
   name: string;
   email: string;
+  roleName: string;
   password: string;
 };
 
 export type UserMutationPayload = {
   name: string;
   email: string;
+  role_name?: string;
   password?: string;
 };
 

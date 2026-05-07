@@ -62,6 +62,7 @@ export default function Users() {
     await saveUser({
       mode: modals.formMode,
       userId: modals.editingUser?.id,
+      currentRoleName: modals.editingUser?.roles[0],
       values,
     });
     clearMutationError();

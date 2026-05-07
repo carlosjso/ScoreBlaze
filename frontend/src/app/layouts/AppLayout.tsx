@@ -32,14 +32,14 @@ function isBasketballPath(pathname: string) {
 const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
   "/dashboard": [{ label: "Inicio" }],
   "/basketball": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet" }],
-  "/settings": [{ label: "Inicio", to: "/dashboard" }, { label: "Settings" }],
+  "/settings": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion" }],
   "/settings/permissions": [
     { label: "Inicio", to: "/dashboard" },
-    { label: "Settings", to: "/settings" },
+    { label: "Configuracion", to: "/settings" },
     { label: "Permisos" },
   ],
-  "/settings/roles": [{ label: "Inicio", to: "/dashboard" }, { label: "Settings", to: "/settings" }, { label: "Roles" }],
-  "/settings/users": [{ label: "Inicio", to: "/dashboard" }, { label: "Settings", to: "/settings" }, { label: "Usuarios" }],
+  "/settings/roles": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Roles" }],
+  "/settings/users": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Usuarios" }],
   "/teams": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Equipos" }],
   "/players": [
     { label: "Inicio", to: "/dashboard" },
