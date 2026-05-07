@@ -1,12 +1,15 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import { cn } from "@/shared/utils/cn";
 
-type PanelProps = {
+type PanelProps = ComponentPropsWithoutRef<"section"> & {
   children: ReactNode;
-  className?: string;
 };
 
-export function Panel({ children, className }: PanelProps) {
-  return <section className={cn("sb-panel", className)}>{children}</section>;
+export function Panel({ children, className, ...props }: PanelProps) {
+  return (
+    <section className={cn("sb-panel", className)} {...props}>
+      {children}
+    </section>
+  );
 }

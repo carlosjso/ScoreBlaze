@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
+from authentication.dependencies import require_authenticated_user
 from modules.matches.dependencies import get_match_service
 from modules.scoreboard.schemas import ScoreboardEventCreate, ScoreboardSnapshotOut
 from modules.scoreboard.dependencies import get_scoreboard_service
@@ -17,7 +18,11 @@ def list_matches(service: MatchService = Depends(get_match_service)):
 
 
 @router.post("/", response_model=MatchOut, status_code=status.HTTP_201_CREATED)
-def create_match(payload: MatchCreate, service: MatchService = Depends(get_match_service)):
+def create_match(
+    payload: MatchCreate,
+    service: MatchService = Depends(get_match_service),
+    _=Depends(require_authenticated_user),
+):
     return service.create(payload)
 
 
@@ -43,6 +48,7 @@ def create_match_scoreboard_event(
     match_id: int,
     payload: ScoreboardEventCreate,
     service: ScoreboardService = Depends(get_scoreboard_service),
+    _=Depends(require_authenticated_user),
 ):
     return service.record_event(match_id, payload)
 
@@ -51,6 +57,7 @@ def create_match_scoreboard_event(
 def undo_match_scoreboard_event(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
+    _=Depends(require_authenticated_user),
 ):
     return service.undo_last_event(match_id)
 
@@ -59,6 +66,7 @@ def undo_match_scoreboard_event(
 def reset_match_scoreboard(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
+    _=Depends(require_authenticated_user),
 ):
     return service.reset(match_id)
 
@@ -68,6 +76,7 @@ def update_match(
     match_id: int,
     payload: MatchUpdate,
     service: MatchService = Depends(get_match_service),
+    _=Depends(require_authenticated_user),
 ):
     return service.update(match_id, payload)
 
@@ -77,10 +86,15 @@ def patch_match(
     match_id: int,
     payload: MatchPatch,
     service: MatchService = Depends(get_match_service),
+    _=Depends(require_authenticated_user),
 ):
     return service.patch(match_id, payload)
 
 
 @router.delete("/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_match(match_id: int, service: MatchService = Depends(get_match_service)):
+def delete_match(
+    match_id: int,
+    service: MatchService = Depends(get_match_service),
+    _=Depends(require_authenticated_user),
+):
     service.delete(match_id)

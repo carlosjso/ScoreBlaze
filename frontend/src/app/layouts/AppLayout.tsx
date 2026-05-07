@@ -15,6 +15,8 @@ type BreadcrumbItem = {
 function isBasketballPath(pathname: string) {
   return (
     pathname === "/basketball" ||
+    pathname === "/settings" ||
+    pathname.startsWith("/settings/") ||
     pathname === "/teams" ||
     pathname.startsWith("/teams/") ||
     pathname === "/players" ||
@@ -30,6 +32,19 @@ function isBasketballPath(pathname: string) {
 const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
   "/dashboard": [{ label: "Inicio" }],
   "/basketball": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet" }],
+  "/settings": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion" }],
+  "/settings/permissions": [
+    { label: "Inicio", to: "/dashboard" },
+    { label: "Configuracion", to: "/settings" },
+    { label: "Permisos" },
+  ],
+  "/settings/role-permissions": [
+    { label: "Inicio", to: "/dashboard" },
+    { label: "Configuracion", to: "/settings" },
+    { label: "Roles por permiso" },
+  ],
+  "/settings/roles": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Roles" }],
+  "/settings/users": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Usuarios" }],
   "/teams": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Equipos" }],
   "/players": [
     { label: "Inicio", to: "/dashboard" },

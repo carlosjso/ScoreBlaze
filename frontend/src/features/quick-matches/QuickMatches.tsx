@@ -121,7 +121,7 @@ export default function QuickMatches() {
 
           {!panelError && teams.length < 2 ? (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Necesitas al menos 2 equipos reales en el backend para programar partidos.
+              Necesitas al menos 2 equipos registrados para programar partidos.
             </div>
           ) : null}
 

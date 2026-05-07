@@ -188,7 +188,7 @@ export default function LeaguesPage() {
 
           {!panelError && teams.length < 2 ? (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Necesitas al menos 2 equipos reales en el backend para crear ligas.
+              Necesitas al menos 2 equipos registrados para crear ligas.
             </div>
           ) : null}
 

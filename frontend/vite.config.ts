@@ -2,6 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 
+const backendTarget = "http://localhost:8000";
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -15,13 +17,15 @@ export default defineConfig({
         target: "ws://localhost:8000",
         ws: true,
       },
-      "/match-events": "http://localhost:8000",
-      "/player-stats": "http://localhost:8000",
-      "/api/players": "http://localhost:8000",
-      "/api/teams": "http://localhost:8000",
-      "/team-stats": "http://localhost:8000",
-      "/team-memberships": "http://localhost:8000",
-      "/matches": "http://localhost:8000",
+      "/auth": backendTarget,
+      "/users": backendTarget,
+      "/match-events": backendTarget,
+      "/player-stats": backendTarget,
+      "/api/players": backendTarget,
+      "/api/teams": backendTarget,
+      "/team-stats": backendTarget,
+      "/team-memberships": backendTarget,
+      "/matches": backendTarget,
     },
   },
 });
