@@ -15,6 +15,7 @@ import BasketballHubPage from "@/features/basketball/BasketballHubPage";
 import LeaguesPage from "@/features/leagues/LeaguesPage";
 import Players from "@/features/players/Players";
 import PlayerTeamAssignmentPage from "@/features/players/PlayerTeamAssignmentPage";
+import Permissions from "@/features/permissions/Permissions";
 import QuickMatches from "@/features/quick-matches/QuickMatches";
 import QuickMatchStatsPage from "@/features/quick-matches/QuickMatchStatsPage";
 import Roles from "@/features/roles/Roles";
@@ -57,6 +58,7 @@ export default function App() {
                 <Route path="/scoreboard" element={<Scoreboard />} />
                 <Route path="/scoreboard/:matchId" element={<Scoreboard />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/settings/permissions" element={<Permissions />} />
                 <Route path="/settings/roles" element={<Roles />} />
                 <Route path="/leagues" element={<LeaguesPage />} />
                 <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />

@@ -52,3 +52,32 @@ class RoleTablePageOut(BaseModel):
     page_size: int
     total_items: int
     total_pages: int
+
+
+class PermissionBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class PermissionCreate(PermissionBase):
+    pass
+
+
+class PermissionUpdate(PermissionBase):
+    pass
+
+
+class PermissionOut(PermissionBase):
+    id: int
+    role_count: int = 0
+
+
+class PermissionTableItem(PermissionOut):
+    pass
+
+
+class PermissionTablePageOut(BaseModel):
+    items: list[PermissionTableItem]
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int

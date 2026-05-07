@@ -1,5 +1,6 @@
 from .match import Match
 from .match_event import MatchEvent
+from .permission import Permission, role_permissions_table
 from .player import Player
 from .player_stat import PlayerStat
 from .role import Role, user_roles_table
@@ -11,6 +12,7 @@ from .user import User
 __all__ = [
     "Match",
     "MatchEvent",
+    "Permission",
     "Player",
     "PlayerStat",
     "Role",
@@ -18,5 +20,6 @@ __all__ = [
     "TeamStat",
     "TeamMembership",
     "User",
+    "role_permissions_table",
     "user_roles_table",
 ]

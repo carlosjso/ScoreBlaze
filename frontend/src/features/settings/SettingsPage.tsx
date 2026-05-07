@@ -29,6 +29,7 @@ const shortcutItems: ShortcutItem[] = [
     description: "Catalogo visual de acciones disponibles.",
     icon: <KeyRound size={18} />,
     accentClassName: "from-sky-100 via-white to-sky-50 text-sky-700 border-sky-200",
+    to: "/settings/permissions",
   },
   {
     title: "Roles por permiso",

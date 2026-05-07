@@ -1,8 +1,21 @@
 from fastapi import APIRouter, Depends, status
 
-from .dependencies import get_role_service, get_user_service
+from .dependencies import get_permission_service, get_role_service, get_user_service
+from .permission_service import PermissionService
 from .role_service import RoleService
-from .schemas import RoleCreate, RoleOut, RoleTablePageOut, RoleUpdate, UserCreate, UserOut, UserUpdate
+from .schemas import (
+    PermissionCreate,
+    PermissionOut,
+    PermissionTablePageOut,
+    PermissionUpdate,
+    RoleCreate,
+    RoleOut,
+    RoleTablePageOut,
+    RoleUpdate,
+    UserCreate,
+    UserOut,
+    UserUpdate,
+)
 from .service import UserService
 
 router = APIRouter()
@@ -53,6 +66,53 @@ def update_role(
 @router.delete("/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_role(role_id: int, service: RoleService = Depends(get_role_service)):
     service.delete(role_id)
+
+
+@router.get("/permissions", response_model=list[PermissionOut], status_code=status.HTTP_200_OK)
+def list_permissions(service: PermissionService = Depends(get_permission_service)):
+    return service.list()
+
+
+@router.get("/permissions/table", response_model=PermissionTablePageOut, status_code=status.HTTP_200_OK)
+def list_permissions_table(
+    page: int = 1,
+    page_size: int = 10,
+    search: str = "",
+    sort_key: str = "name",
+    sort_dir: str = "asc",
+    service: PermissionService = Depends(get_permission_service),
+):
+    return service.get_table_page(
+        page=page,
+        page_size=page_size,
+        search=search,
+        sort_key=sort_key,
+        sort_dir=sort_dir,
+    )
+
+
+@router.post("/permissions", response_model=PermissionOut, status_code=status.HTTP_201_CREATED)
+def create_permission(payload: PermissionCreate, service: PermissionService = Depends(get_permission_service)):
+    return service.create(payload)
+
+
+@router.get("/permissions/{permission_id}", response_model=PermissionOut, status_code=status.HTTP_200_OK)
+def get_permission(permission_id: int, service: PermissionService = Depends(get_permission_service)):
+    return service.get(permission_id)
+
+
+@router.put("/permissions/{permission_id}", response_model=PermissionOut, status_code=status.HTTP_200_OK)
+def update_permission(
+    permission_id: int,
+    payload: PermissionUpdate,
+    service: PermissionService = Depends(get_permission_service),
+):
+    return service.update(permission_id, payload)
+
+
+@router.delete("/permissions/{permission_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_permission(permission_id: int, service: PermissionService = Depends(get_permission_service)):
+    service.delete(permission_id)
 
 
 @router.get("/", response_model=list[UserOut], status_code=status.HTTP_200_OK)

@@ -3,27 +3,26 @@ from sqlalchemy.orm import relationship
 
 from database.alchemy import Base
 
-user_roles_table = Table(
-    "user_roles",
+role_permissions_table = Table(
+    "role_permissions",
     Base.metadata,
-    Column("user_id", BigInteger, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("role_id", BigInteger, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+    Column("permission_id", BigInteger, ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
-class Role(Base):
-    __tablename__ = "roles"
+class Permission(Base):
+    __tablename__ = "permissions"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
     name = Column(String(100), nullable=False, unique=True, index=True)
 
-    users = relationship("User", secondary=user_roles_table, back_populates="roles")
-    permissions = relationship(
-        "Permission",
-        secondary="role_permissions",
-        back_populates="roles",
+    roles = relationship(
+        "Role",
+        secondary=role_permissions_table,
+        back_populates="permissions",
         lazy="selectin",
     )
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"Role(id={self.id}, name={self.name})"
+        return f"Permission(id={self.id}, name={self.name})"

@@ -9,7 +9,7 @@ from database.unit_of_work import UnitOfWork
 from .repositories import RoleRepository
 from .schemas import RoleCreate, RoleTableItem, RoleTablePageOut, RoleOut, RoleUpdate
 
-SYSTEM_ROLE_NAMES = {"admin", "coach"}
+SYSTEM_ROLE_NAMES = {"superadmin"}
 
 
 class RoleService:

@@ -4,7 +4,8 @@ from database.dependencies import get_unit_of_work
 from database.unit_of_work import UnitOfWork
 
 from .policy import UserPolicy
-from .repositories import RoleRepository, UserRepository
+from .permission_service import PermissionService
+from .repositories import PermissionRepository, RoleRepository, UserRepository
 from .role_service import RoleService
 from .service import UserService
 
@@ -15,6 +16,10 @@ def get_user_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) ->
 
 def get_role_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) -> RoleRepository:
     return RoleRepository(unit_of_work.db)
+
+
+def get_permission_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) -> PermissionRepository:
+    return PermissionRepository(unit_of_work.db)
 
 
 def get_user_policy(user_repo: UserRepository = Depends(get_user_repository)) -> UserPolicy:
@@ -35,3 +40,10 @@ def get_role_service(
     unit_of_work: UnitOfWork = Depends(get_unit_of_work),
 ) -> RoleService:
     return RoleService(role_repo, unit_of_work)
+
+
+def get_permission_service(
+    permission_repo: PermissionRepository = Depends(get_permission_repository),
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> PermissionService:
+    return PermissionService(permission_repo, unit_of_work)
