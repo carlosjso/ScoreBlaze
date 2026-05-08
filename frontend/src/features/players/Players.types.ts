@@ -8,7 +8,7 @@ export type ApiPlayer = {
   id: number;
   name: string;
   email: string;
-  phone: number | null;
+  phone: string | null;
   photo_base64: string | null;
 };
 
@@ -59,7 +59,7 @@ export type PlayerFormValues = {
 export type PlayerMutationPayload = {
   name: string;
   email: string;
-  phone: number | null;
+  phone: string | null;
   photo_base64: string | null;
   team_ids: number[];
 };

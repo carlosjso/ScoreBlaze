@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 PLAYER_NAME_MAX_LENGTH = 50
 PLAYER_EMAIL_MAX_LENGTH = 120
@@ -19,6 +19,15 @@ class PlayerBase(BaseModel):
         default=None,
         pattern=r"^[0-9]{10}$"
     )
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def normalize_phone(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, int):
+            return str(value)
+        return value
 
 
 class PlayerCreate(PlayerBase):

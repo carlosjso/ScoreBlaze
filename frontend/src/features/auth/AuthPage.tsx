@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, LockKeyhole, Mail, User2 } from "lucide-react";
+import { LockKeyhole, Mail, User2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -22,11 +22,29 @@ type AuthPageProps = {
   mode: AuthMode;
 };
 
-function AuthPanelFrame({ children }: { children: ReactNode }) {
+type AuthPanelFrameProps = {
+  mode: AuthMode;
+  children: ReactNode;
+};
+
+type SocialButtonProps = {
+  icon: ReactNode;
+};
+
+function AuthPanelFrame({ mode, children }: AuthPanelFrameProps) {
   return (
-    <div className="min-h-screen bg-[#191919] p-3 sm:p-5">
-      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1280px] overflow-hidden rounded-[30px] border border-white/10 bg-[#f6f8fb] shadow-[0_30px_80px_rgba(0,0,0,0.35)] sm:min-h-[calc(100vh-2.5rem)]">
-        {children}
+    <div className="min-h-screen bg-[#1b1b1b] p-3 sm:p-6">
+      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1160px] overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,#f8fbfe_0%,#e8f0fa_52%,#dce8f6_100%)] shadow-[0_32px_90px_rgba(0,0,0,0.34)] sm:min-h-[calc(100vh-3rem)]">
+        <HeroSection />
+        <section className="relative flex w-full flex-col justify-center overflow-hidden bg-[linear-gradient(180deg,rgba(237,244,253,0.12)_0%,rgba(219,230,244,0.22)_100%)] px-7 py-9 sm:px-10 lg:w-[355px] xl:w-[390px] xl:px-10">
+          <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.7),rgba(255,255,255,0)_72%)]" />
+          <div className="absolute inset-x-7 top-7 z-10 sm:inset-x-10 sm:top-8">
+            <div className="mx-auto w-full max-w-[352px]">
+              <AuthTabs mode={mode} />
+            </div>
+          </div>
+          <div className="relative z-10 mx-auto w-full max-w-[352px]">{children}</div>
+        </section>
       </div>
     </div>
   );
@@ -34,73 +52,119 @@ function AuthPanelFrame({ children }: { children: ReactNode }) {
 
 function HeroSection() {
   return (
-    <section className="relative hidden flex-1 overflow-hidden border-r border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.95),rgba(233,241,251,0.92)_42%,rgba(210,223,242,0.95)_100%)] lg:flex">
+    <section className="relative hidden flex-1 overflow-hidden lg:flex">
       <img
         src="/ScoreBlazeLogoFull.png"
         alt="ScoreBlaze"
-        className="absolute left-10 top-8 h-10 w-auto object-contain"
+        className="absolute left-14 top-8 h-11 w-auto object-contain"
       />
 
-      <div className="absolute inset-y-0 left-[54%] w-[150px] -translate-x-1/2 bg-[linear-gradient(180deg,rgba(160,255,170,0.55)_0%,rgba(255,240,160,0.48)_30%,rgba(255,170,120,0.42)_60%,rgba(170,205,255,0.44)_100%)] blur-3xl" />
-      <div className="absolute -left-16 bottom-0 h-[430px] w-[430px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.72)_0%,rgba(255,255,255,0)_68%)]" />
-      <div className="absolute right-16 top-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.7)_0%,rgba(255,255,255,0)_72%)]" />
+      <div className="absolute inset-y-0 left-[57%] w-[165px] -translate-x-1/2 bg-[linear-gradient(180deg,rgba(175,255,178,0.44)_0%,rgba(255,244,155,0.46)_24%,rgba(255,193,139,0.44)_52%,rgba(173,212,255,0.36)_100%)] blur-[46px]" />
+      <div className="absolute inset-y-0 left-[57%] w-[68px] -translate-x-1/2 bg-[linear-gradient(180deg,rgba(149,255,173,0.76)_0%,rgba(255,243,170,0.74)_26%,rgba(255,191,133,0.74)_55%,rgba(185,220,255,0.56)_100%)] opacity-90 blur-[14px]" />
+      <div className="absolute right-10 top-[22%] h-24 w-[38%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.38)_0%,rgba(255,255,255,0)_72%)] blur-2xl" />
+      <div className="absolute inset-x-0 bottom-0 h-[42%] bg-[linear-gradient(180deg,rgba(214,226,243,0)_0%,rgba(210,223,241,0.7)_100%)]" />
 
-      <div className="relative z-10 flex w-full flex-col justify-between p-12 xl:p-16">
-        <div className="max-w-[420px]">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-500">Control de acceso</p>
-          <h1 className="mt-4 text-[42px] leading-[0.98] text-slate-950">
-            Bienvenido a la cabina de control de ScoreBlaze
-          </h1>
-          <p className="mt-5 max-w-[360px] text-sm leading-6 text-slate-600">
-            Administra partidos, jugadores, equipos y marcador en tiempo real desde una sola sesión segura.
-          </p>
-        </div>
-
-        <div className="relative mt-10 flex min-h-[420px] items-end">
-          <div className="absolute bottom-10 left-20 h-[250px] w-[250px] rounded-full border-[10px] border-white/80 bg-[radial-gradient(circle_at_35%_30%,#ffb26a_0%,#f97316_58%,#c24e06_100%)] shadow-[0_28px_60px_rgba(249,115,22,0.3)]">
-            <span className="absolute inset-y-0 left-1/2 w-[9px] -translate-x-1/2 rounded-full bg-[#5a2400]/50" />
-            <span className="absolute inset-x-[14%] top-1/2 h-[9px] -translate-y-1/2 rounded-full bg-[#5a2400]/50" />
-            <span className="absolute inset-y-[10%] left-[18%] right-[18%] rounded-[50%] border-[8px] border-[#5a2400]/45" />
-            <span className="absolute inset-x-[16%] bottom-[12%] top-[12%] rounded-[50%] border-[8px] border-[#5a2400]/45" />
-          </div>
-
-          <div className="relative ml-6 flex h-[360px] w-[360px] items-end justify-center rounded-[48px] bg-[linear-gradient(180deg,rgba(255,255,255,0.58),rgba(255,255,255,0))]">
-            <img
-              src="/ScoreBlazeImageLogin.png"
-              alt="ScoreBlaze mark"
-              className="h-[280px] w-[280px] -rotate-6 object-contain drop-shadow-[0_25px_40px_rgba(15,23,42,0.28)]"
-            />
-          </div>
-        </div>
+      <div className="relative z-10 h-full w-full">
+        <img
+          src="/ScoreBlazeImageLogin.png"
+          alt="Jugador de ScoreBlaze"
+          className="pointer-events-none absolute bottom-[-18%] left-[5%] h-[108%] w-auto max-w-none object-contain xl:bottom-[-19%] xl:left-[7%] xl:h-[112%]"
+        />
       </div>
     </section>
   );
 }
 
 function AuthTabs({ mode }: { mode: AuthMode }) {
-  const linkBase =
-    "inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold transition";
-
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex items-center justify-end gap-3">
       <Link
         to="/login"
         className={cn(
-          linkBase,
-          mode === "login" ? "bg-slate-900 text-white shadow-sm" : "text-slate-700 hover:bg-slate-200/70",
+          "relative inline-flex items-center px-2 py-1 text-sm font-semibold no-underline transition",
+          mode === "login" ? "text-slate-950" : "rounded-full bg-slate-950 px-4 py-2 text-white shadow-sm hover:bg-black",
         )}
       >
         Iniciar
+        {mode === "login" ? <span className="absolute -bottom-1 left-2 right-2 h-[2px] rounded-full bg-slate-950" /> : null}
       </Link>
       <Link
         to="/register"
         className={cn(
-          linkBase,
-          mode === "register" ? "bg-slate-900 text-white shadow-sm" : "text-slate-700 hover:bg-slate-200/70",
+          "relative inline-flex items-center px-2 py-1 text-sm font-semibold no-underline transition",
+          mode === "register" ? "text-slate-950" : "rounded-full bg-slate-950 px-4 py-2 text-white shadow-sm hover:bg-black",
         )}
       >
         Registrar
+        {mode === "register" ? <span className="absolute -bottom-1 left-2 right-2 h-[2px] rounded-full bg-slate-950" /> : null}
       </Link>
+    </div>
+  );
+}
+
+function SocialButton({ icon }: SocialButtonProps) {
+  return (
+    <button
+      type="button"
+      disabled
+      className="inline-flex h-11 items-center justify-center rounded-[10px] border border-white/70 bg-white shadow-[0_10px_18px_rgba(148,163,184,0.12)]"
+    >
+      <span className="inline-flex h-5 w-5 items-center justify-center">{icon}</span>
+    </button>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true">
+      <path
+        fill="#FFC107"
+        d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.227 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.96 3.04l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z"
+      />
+      <path
+        fill="#FF3D00"
+        d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.96 3.04l5.657-5.657C34.046 6.053 29.272 4 24 4 16.318 4 9.656 8.337 6.306 14.691Z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44Z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.611 20.083 43.595 20 24 20v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917Z"
+      />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <path
+        fill="#1877F2"
+        d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073c0 6.026 4.388 11.021 10.125 11.927V15.562H7.078v-3.489h3.047V9.41c0-3.017 1.792-4.686 4.533-4.686 1.312 0 2.686.235 2.686.235V7.92h-1.513c-1.491 0-1.955.931-1.955 1.887v2.266h3.328l-.532 3.489h-2.796V24C19.612 23.094 24 18.099 24 12.073Z"
+      />
+      <path
+        fill="#FFFFFF"
+        d="m16.672 15.562.532-3.489h-3.328V9.807c0-.956.464-1.887 1.955-1.887h1.513V4.959s-1.374-.235-2.686-.235c-2.741 0-4.533 1.669-4.533 4.686v2.663H7.078v3.489h3.047V24a12.15 12.15 0 0 0 3.75 0v-8.438h2.797Z"
+      />
+    </svg>
+  );
+}
+
+function AuthCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="mt-16 sm:mt-14">
+      <h1 className="text-center text-[30px] font-semibold tracking-tight text-slate-950 sm:text-[32px]">
+        {title}
+      </h1>
+      {children}
     </div>
   );
 }
@@ -149,107 +213,87 @@ function LoginView() {
   };
 
   return (
-    <AuthPanelFrame>
-      <HeroSection />
+    <AuthPanelFrame mode="login">
+      <AuthCard title="Bienvenido">
+        <form className="mt-10 space-y-4" onSubmit={handleSubmit(handleLogin)}>
+          <Controller
+            name="email"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                type="email"
+                placeholder="Usuario"
+                leftIcon={<Mail size={14} />}
+                error={fieldState.error?.message ?? formError.fieldErrors.email}
+                disabled={submitting}
+                className="h-[44px] rounded-[8px] border-slate-200 bg-white/92 text-[15px] shadow-none"
+              />
+            )}
+          />
 
-      <section className="flex w-full flex-col justify-center bg-[linear-gradient(180deg,#eef4fb_0%,#dbe6f4_100%)] px-6 py-8 sm:px-10 lg:w-[420px] xl:w-[470px]">
-        <AuthTabs mode="login" />
+          <Controller
+            name="password"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                type="password"
+                placeholder="Contrasena"
+                leftIcon={<LockKeyhole size={14} />}
+                error={fieldState.error?.message ?? formError.fieldErrors.password}
+                disabled={submitting}
+                className="h-[44px] rounded-[8px] border-slate-200 bg-white/92 text-[15px] shadow-none"
+              />
+            )}
+          />
 
-        <div className="mx-auto mt-10 w-full max-w-[320px]">
-          <p className="text-center text-3xl font-semibold text-slate-950">Bienvenido</p>
-
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit(handleLogin)}>
-            <Controller
-              name="email"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  type="email"
-                  placeholder="Usuario"
-                  leftIcon={<Mail size={14} />}
-                  error={fieldState.error?.message ?? formError.fieldErrors.email}
-                  disabled={submitting}
-                  className="rounded-lg border-slate-200 bg-white/78"
-                />
-              )}
-            />
-
-            <Controller
-              name="password"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  type="password"
-                  placeholder="Contraseña"
-                  leftIcon={<LockKeyhole size={14} />}
-                  error={fieldState.error?.message ?? formError.fieldErrors.password}
-                  disabled={submitting}
-                  className="rounded-lg border-slate-200 bg-white/78"
-                />
-              )}
-            />
-
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-[11px] font-medium text-slate-500 transition hover:text-slate-700"
-                disabled
-              >
-                ¿Olvidaste la contraseña?
-              </button>
-            </div>
-
-            {formError.globalMessage ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {formError.globalMessage}
-              </div>
-            ) : null}
-
-            <Button
-              variant="secondary"
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-lg bg-slate-950 py-3 text-sm text-white hover:bg-black"
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="text-[12px] font-medium text-slate-500 transition hover:text-slate-700"
+              disabled
             >
-              {submitting ? "Entrando..." : "Entrar"}
-            </Button>
-          </form>
-
-          <div className="mt-6">
-            <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500">
-              <span className="h-px flex-1 bg-slate-400/50" />
-              <span>O continúa con</span>
-              <span className="h-px flex-1 bg-slate-400/50" />
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-500 opacity-70"
-              >
-                G
-              </button>
-              <button
-                type="button"
-                disabled
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-500 opacity-70"
-              >
-                f
-              </button>
-            </div>
+              Olvidaste la Contrasena?
+            </button>
           </div>
 
-          <p className="mt-7 text-center text-xs text-slate-600">
-            ¿No tienes cuenta?{" "}
-            <Link to="/register" className="font-semibold text-slate-900 no-underline transition hover:text-orange-600">
-              Regístrate
-            </Link>
-          </p>
+          {formError.globalMessage ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError.globalMessage}
+            </div>
+          ) : null}
+
+          <Button
+            variant="secondary"
+            type="submit"
+            disabled={submitting}
+            className="mt-4 h-[48px] w-full rounded-[8px] bg-slate-950 text-[15px] text-white hover:bg-black"
+          >
+            {submitting ? "Entrando..." : "Entrar"}
+          </Button>
+        </form>
+
+        <div className="mt-7">
+          <div className="flex items-center gap-3 text-[12px] font-medium text-slate-500">
+            <span className="h-px flex-1 bg-slate-400/55" />
+            <span>O Continua Con</span>
+            <span className="h-px flex-1 bg-slate-400/55" />
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-4">
+            <SocialButton icon={<GoogleIcon />} />
+            <SocialButton icon={<FacebookIcon />} />
+          </div>
         </div>
-      </section>
+
+        <p className="mt-9 text-center text-[13px] text-slate-600">
+          No Tienes Cuenta?{" "}
+          <Link to="/register" className="font-semibold text-slate-950 no-underline transition hover:text-orange-600">
+            Registrate
+          </Link>
+        </p>
+      </AuthCard>
     </AuthPanelFrame>
   );
 }
@@ -287,111 +331,95 @@ function RegisterView() {
   };
 
   return (
-    <AuthPanelFrame>
-      <HeroSection />
+    <AuthPanelFrame mode="register">
+      <AuthCard title="Crear cuenta">
+        <form className="mt-10 space-y-4" onSubmit={handleSubmit(handleRegister)}>
+          <Controller
+            name="name"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                placeholder="Nombre completo"
+                leftIcon={<User2 size={14} />}
+                error={fieldState.error?.message ?? formError.fieldErrors.name}
+                disabled={submitting}
+                className="h-[44px] rounded-[8px] border-slate-200 bg-white/92 text-[15px] shadow-none"
+              />
+            )}
+          />
 
-      <section className="flex w-full flex-col justify-center bg-[linear-gradient(180deg,#eef4fb_0%,#dbe6f4_100%)] px-6 py-8 sm:px-10 lg:w-[420px] xl:w-[470px]">
-        <AuthTabs mode="register" />
+          <Controller
+            name="email"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                type="email"
+                placeholder="Correo"
+                leftIcon={<Mail size={14} />}
+                error={fieldState.error?.message ?? formError.fieldErrors.email}
+                disabled={submitting}
+                className="h-[44px] rounded-[8px] border-slate-200 bg-white/92 text-[15px] shadow-none"
+              />
+            )}
+          />
 
-        <div className="mx-auto mt-8 w-full max-w-[340px]">
-          <p className="text-center text-3xl font-semibold text-slate-950">Crear cuenta</p>
+          <Controller
+            name="password"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                type="password"
+                placeholder="Contrasena"
+                leftIcon={<LockKeyhole size={14} />}
+                error={fieldState.error?.message ?? formError.fieldErrors.password}
+                disabled={submitting}
+                className="h-[44px] rounded-[8px] border-slate-200 bg-white/92 text-[15px] shadow-none"
+              />
+            )}
+          />
 
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit(handleRegister)}>
-            <Controller
-              name="name"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  placeholder="Nombre completo"
-                  leftIcon={<User2 size={14} />}
-                  error={fieldState.error?.message ?? formError.fieldErrors.name}
-                  disabled={submitting}
-                  className="rounded-lg border-slate-200 bg-white/78"
-                />
-              )}
-            />
+          <Controller
+            name="confirmPassword"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                type="password"
+                placeholder="Confirmar contrasena"
+                leftIcon={<LockKeyhole size={14} />}
+                error={fieldState.error?.message}
+                disabled={submitting}
+                className="h-[44px] rounded-[8px] border-slate-200 bg-white/92 text-[15px] shadow-none"
+              />
+            )}
+          />
 
-            <Controller
-              name="email"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  type="email"
-                  placeholder="Correo"
-                  leftIcon={<Mail size={14} />}
-                  error={fieldState.error?.message ?? formError.fieldErrors.email}
-                  disabled={submitting}
-                  className="rounded-lg border-slate-200 bg-white/78"
-                />
-              )}
-            />
+          {formError.globalMessage ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError.globalMessage}
+            </div>
+          ) : null}
 
-            <Controller
-              name="password"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  type="password"
-                  placeholder="Contraseña"
-                  leftIcon={<LockKeyhole size={14} />}
-                  error={fieldState.error?.message ?? formError.fieldErrors.password}
-                  disabled={submitting}
-                  className="rounded-lg border-slate-200 bg-white/78"
-                />
-              )}
-            />
+          <Button
+            variant="secondary"
+            type="submit"
+            disabled={submitting}
+            className="mt-4 h-[48px] w-full rounded-[8px] bg-slate-950 text-[15px] text-white hover:bg-black"
+          >
+            {submitting ? "Creando..." : "Registrar"}
+          </Button>
+        </form>
 
-            <Controller
-              name="confirmPassword"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  type="password"
-                  placeholder="Confirmar contraseña"
-                  leftIcon={<LockKeyhole size={14} />}
-                  error={fieldState.error?.message}
-                  disabled={submitting}
-                  className="rounded-lg border-slate-200 bg-white/78"
-                />
-              )}
-            />
-
-            {formError.globalMessage ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {formError.globalMessage}
-              </div>
-            ) : null}
-
-            <Button
-              variant="secondary"
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-lg bg-slate-950 py-3 text-sm text-white hover:bg-black"
-            >
-              {submitting ? "Creando..." : "Registrar"}
-            </Button>
-          </form>
-
-          <p className="mt-7 text-center text-xs text-slate-600">
-            ¿Ya tienes cuenta?{" "}
-            <Link to="/login" className="font-semibold text-slate-900 no-underline transition hover:text-orange-600">
-              Inicia sesión
-            </Link>
-          </p>
-
-          <div className="mt-8 rounded-2xl border border-white/60 bg-white/55 px-4 py-4 text-xs leading-5 text-slate-600 backdrop-blur">
-            Tu cuenta se registra con sesión persistida por cookie y cierre automático por inactividad.
-            <span className="mt-2 inline-flex items-center gap-1 font-semibold text-slate-900">
-              Listo para equipos, jugadores y marcador
-              <ArrowRight size={13} />
-            </span>
-          </div>
-        </div>
-      </section>
+        <p className="mt-9 text-center text-[13px] text-slate-600">
+          Ya Tienes Cuenta?{" "}
+          <Link to="/login" className="font-semibold text-slate-950 no-underline transition hover:text-orange-600">
+            Inicia sesion
+          </Link>
+        </p>
+      </AuthCard>
     </AuthPanelFrame>
   );
 }

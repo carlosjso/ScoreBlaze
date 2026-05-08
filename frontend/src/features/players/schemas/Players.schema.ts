@@ -22,14 +22,14 @@ const PLAYER_PHONE_MAX_VALUE = 9_223_372_036_854_775_807n;
 export const PLAYER_FORM_LIMITS = {
   name: 100,
   email: 120,
-  phone: 19,
+  phone: 10,
 } as const;
 
 export const apiPlayerSchema = z.object({
   id: idSchema,
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
-  phone: z.number().int().nullable(),
+  phone: z.preprocess((value) => value ?? null, z.string().nullable()),
   photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
 }) satisfies z.ZodType<ApiPlayer>;
 
@@ -110,8 +110,9 @@ export const playerFormSchema = z.object({
   phone: z
     .string()
     .trim()
-    .max(PLAYER_FORM_LIMITS.phone, "El telefono no puede exceder 19 digitos.")
+    .max(PLAYER_FORM_LIMITS.phone, "El telefono no puede exceder 10 digitos.")
     .refine((value) => value === "" || /^\d+$/.test(value), "El telefono debe contener solo numeros.")
+    .refine((value) => value === "" || value.length === PLAYER_FORM_LIMITS.phone, "El telefono debe tener 10 digitos.")
     .refine(
       (value) => value === "" || !/^\d+$/.test(value) || BigInt(value) <= PLAYER_PHONE_MAX_VALUE,
       "El telefono excede el tamaño maximo permitido.",
@@ -188,7 +189,7 @@ export function buildPlayersView(
       id: player.id,
       name: player.name,
       email: player.email,
-      phone: player.phone === null ? "" : String(player.phone),
+      phone: player.phone ?? "",
       photoBase64: player.photo_base64,
       teamIds,
       teamNames,
@@ -227,7 +228,7 @@ export function toPlayerMutationPayload(values: PlayerFormValues): PlayerMutatio
   return {
     name: normalizedValues.name.trim(),
     email: normalizedValues.email.trim().toLowerCase(),
-    phone: normalizedPhone ? Number(normalizedPhone) : null,
+    phone: normalizedPhone || null,
     photo_base64: normalizedValues.photoBase64?.trim() ? normalizedValues.photoBase64.trim() : null,
     team_ids: sanitizeTeamIds(normalizedValues.teamIds),
   };

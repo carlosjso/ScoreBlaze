@@ -73,12 +73,12 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
               aria-label="Expandir menu"
             >
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-orange-50">
-                <img src="/ScoreBlazeImageLogin.png" alt="S de ScoreBlaze" className="h-6 w-6 object-contain" />
+                <img src="/ScoreBlazeLogoMarkClean.png" alt="S de ScoreBlaze" className="h-6 w-6 object-contain" />
               </span>
             </button>
           ) : (
             <Link to="/dashboard" onClick={onClose} className="flex min-w-0 items-center gap-2 no-underline">
-              <img src="/ScoreBlazeImageLogin.png" alt="S de ScoreBlaze" className="h-10 w-10 object-contain" />
+              <img src="/ScoreBlazeLogoMarkClean.png" alt="S de ScoreBlaze" className="h-10 w-10 object-contain" />
               <span className="truncate text-xl font-semibold leading-none tracking-tight text-slate-900">ScoreBlaze</span>
             </Link>
           )}

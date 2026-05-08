@@ -11,12 +11,14 @@ import {
   type QuickMatchStatsTeamKey,
   type QuickMatchStatsTeamSnapshot,
 } from "@/features/quick-matches/QuickMatchStats.service";
+import { applyRealtimeScoreboardToQuickMatchStatsSnapshot } from "@/features/quick-matches/realtime/quickMatchRealtime";
 import {
   formatMatchDate,
   formatMatchTimeRange,
   getMatchResultLabel,
   getMatchStatusLabel,
 } from "@/features/quick-matches/QuickMatches.types";
+import { useRealtimeScoreboards } from "@/features/scoreboard/hooks/useRealtimeScoreboards";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { cn } from "@/shared/utils/cn";
 
@@ -968,16 +970,32 @@ export default function QuickMatchStatsPage() {
   const { matchId } = useParams();
   const numericMatchId = matchId ? Number(matchId) : Number.NaN;
   const [activePanel, setActivePanel] = useState<StatsPanel>("stats");
+  const realtimeScoreboards = useRealtimeScoreboards(
+    Number.isFinite(numericMatchId) ? [numericMatchId] : [],
+  );
 
   const statsQuery = useQuery({
     queryKey: ["quick-match-stats", numericMatchId],
     enabled: Number.isFinite(numericMatchId),
     queryFn: ({ signal }) => getQuickMatchStatsSnapshot(numericMatchId, signal),
   });
+  const statsSnapshot = useMemo(() => {
+    if (!statsQuery.data) {
+      return null;
+    }
+
+    const realtimeState = realtimeScoreboards[numericMatchId];
+    return realtimeState
+      ? applyRealtimeScoreboardToQuickMatchStatsSnapshot(
+          statsQuery.data,
+          realtimeState,
+        )
+      : statsQuery.data;
+  }, [numericMatchId, realtimeScoreboards, statsQuery.data]);
 
   const stats = useMemo(
-    () => (statsQuery.data ? buildMatchStatsView(statsQuery.data) : null),
-    [statsQuery.data],
+    () => (statsSnapshot ? buildMatchStatsView(statsSnapshot) : null),
+    [statsSnapshot],
   );
 
   if (!Number.isFinite(numericMatchId)) {
