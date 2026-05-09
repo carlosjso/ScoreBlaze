@@ -16,6 +16,7 @@ class MatchBase(BaseModel):
     end_time: time
     team_a_id: int
     team_b_id: int
+    league_id: Optional[int] = None
     court: Optional[str] = Field(default=None, max_length=MATCH_COURT_MAX_LENGTH)
     tournament: Optional[str] = Field(default=None, max_length=MATCH_TOURNAMENT_MAX_LENGTH)
     status: MatchStatus = MatchStatus.SCHEDULED
@@ -34,6 +35,7 @@ class MatchUpdate(BaseModel):
     end_time: time
     team_a_id: int
     team_b_id: int
+    league_id: Optional[int] = Field(...)
     score_team_a: Optional[int] = Field(..., ge=0, le=MAX_MATCH_SCORE)
     score_team_b: Optional[int] = Field(..., ge=0, le=MAX_MATCH_SCORE)
     winner_team_id: Optional[int] = Field(...)
@@ -49,6 +51,7 @@ class MatchPatch(BaseModel):
     end_time: Optional[time] = None
     team_a_id: Optional[int] = None
     team_b_id: Optional[int] = None
+    league_id: Optional[int] = None
     score_team_a: Optional[int] = Field(default=None, ge=0, le=MAX_MATCH_SCORE)
     score_team_b: Optional[int] = Field(default=None, ge=0, le=MAX_MATCH_SCORE)
     winner_team_id: Optional[int] = None

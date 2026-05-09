@@ -13,6 +13,7 @@ import AuthPage from "@/features/auth/AuthPage";
 import { GuestRoute, ProtectedRoute } from "@/features/auth/AuthRouteGuards";
 import BasketballHubPage from "@/features/basketball/BasketballHubPage";
 import LeaguesPage from "@/features/leagues/LeaguesPage";
+import LeagueTeamsPage, { LeagueTeamsManagePage } from "@/features/leagues/LeagueTeamsManagePage";
 import Players from "@/features/players/Players";
 import PlayerTeamAssignmentPage from "@/features/players/PlayerTeamAssignmentPage";
 import Permissions from "@/features/permissions/Permissions";
@@ -65,6 +66,8 @@ export default function App() {
                 <Route path="/settings/roles" element={<Roles />} />
                 <Route path="/settings/users" element={<Users />} />
                 <Route path="/leagues" element={<LeaguesPage />} />
+                <Route path="/leagues/:leagueId/teams" element={<LeagueTeamsPage />} />
+                <Route path="/leagues/:leagueId/teams/manage" element={<LeagueTeamsManagePage />} />
                 <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
                 <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />
                 <Route path="/padel" element={<SportDashboardPage sport="Padel" />} />

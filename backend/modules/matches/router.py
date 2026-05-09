@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from authentication.dependencies import require_authenticated_user
 from modules.matches.dependencies import get_match_service
@@ -13,8 +13,11 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[MatchOut], status_code=status.HTTP_200_OK)
-def list_matches(service: MatchService = Depends(get_match_service)):
-    return service.list()
+def list_matches(
+    league_id: int | None = Query(default=None, ge=1),
+    service: MatchService = Depends(get_match_service),
+):
+    return service.list(league_id=league_id)
 
 
 @router.post("/", response_model=MatchOut, status_code=status.HTTP_201_CREATED)

@@ -24,6 +24,7 @@ const apiMessageTranslations: Record<string, string> = {
   "Autenticación requerida.": "Tu sesión expiró. Inicia sesión nuevamente.",
   "No tienes permisos para realizar esta acción.": "No tienes permisos para realizar esta acción.",
   "Invalid logo. Could not decode Base64": "No se pudo procesar el logo.",
+  "Invalid league logo. Could not decode Base64": "No se pudo procesar el logo de la liga.",
   "Invalid photo. Could not decode Base64": "No se pudo procesar la foto.",
   "Start time must be earlier than end time": "La hora de inicio debe ser anterior a la hora de fin.",
   "Team A and Team B must be different": "El equipo local y visitante no pueden ser el mismo.",

@@ -341,6 +341,10 @@ export default function TeamRosterPage() {
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
               Cargando plantilla...
             </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+              No pudimos cargar la plantilla en este momento.
+            </div>
           ) : teamCount === 0 ? (
             <TableEmptyState
               mode="empty"
@@ -622,6 +626,10 @@ export function TeamRosterManagePage() {
           {loading ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
               Cargando plantilla...
+            </div>
+          ) : panelError ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+              No pudimos cargar la gestion de plantilla en este momento.
             </div>
           ) : teamCount === 0 ? (
             <TableEmptyState
