@@ -19,6 +19,7 @@ class MatchSchemasTest(unittest.TestCase):
             end_time=time(19, 0),
             team_a_id=1,
             team_b_id=2,
+            league_id=None,
             score_team_a=80,
             score_team_b=75,
             winner_team_id=1,

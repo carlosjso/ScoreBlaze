@@ -39,6 +39,12 @@ class Match(Base):
 
     score_team_a = Column(Integer, nullable=True)
     score_team_b = Column(Integer, nullable=True)
+    league_id = Column(
+        BigInteger,
+        ForeignKey("leagues.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     winner_team_id = Column(
         BigInteger,
         ForeignKey("teams.id", ondelete="SET NULL"),
@@ -60,6 +66,7 @@ class Match(Base):
     team_a = relationship("Team", foreign_keys=[team_a_id])
     team_b = relationship("Team", foreign_keys=[team_b_id])
     winner_team = relationship("Team", foreign_keys=[winner_team_id])
+    league = relationship("League", back_populates="matches")
 
     def __repr__(self) -> str:  # pragma: no cover
         return (

@@ -21,6 +21,11 @@ class Team(Base):
         back_populates="team",
         cascade="all, delete-orphan",
     )
+    league_memberships = relationship(
+        "LeagueTeamMembership",
+        back_populates="team",
+        cascade="all, delete-orphan",
+    )
     stats = relationship(
         "TeamStat",
         back_populates="team",

@@ -8,6 +8,7 @@ from authentication.dependencies import require_authenticated_user, require_role
 from authentication.router import router as auth_router
 import database.alchemy as db
 from core.exceptions.handlers import register_exception_handlers
+from modules.leagues.router import router as leagues_router
 from modules.match_events.router import router as match_events_router
 from modules.matches.router import router as matches_router
 from modules.memberships.router import router as memberships_router
@@ -62,6 +63,12 @@ app.include_router(
     teams_router,
     prefix="/api/teams",
     tags=["teams"],
+    dependencies=[Depends(require_authenticated_user)],
+)
+app.include_router(
+    leagues_router,
+    prefix="/api/leagues",
+    tags=["leagues"],
     dependencies=[Depends(require_authenticated_user)],
 )
 app.include_router(

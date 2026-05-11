@@ -23,6 +23,7 @@ export default defineConfig({
       "/player-stats": backendTarget,
       "/api/players": backendTarget,
       "/api/teams": backendTarget,
+      "/api/leagues": backendTarget,
       "/team-stats": backendTarget,
       "/team-memberships": backendTarget,
       "/matches": backendTarget,
