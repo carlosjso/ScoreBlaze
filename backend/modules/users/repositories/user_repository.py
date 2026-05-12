@@ -6,7 +6,7 @@ from typing import Optional
 from sqlalchemy import asc, desc, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from data.orm import User
+from data.orm import Role, User
 
 
 class UserRepository:
@@ -26,7 +26,7 @@ class UserRepository:
     def get(self, user_id: int) -> Optional[User]:
         statement = (
             select(User)
-            .options(selectinload(User.roles))
+            .options(selectinload(User.roles).selectinload(Role.permissions))
             .where(
                 User.id == user_id,
                 User.deleted_at.is_(None),
@@ -37,7 +37,7 @@ class UserRepository:
     def list(self) -> list[User]:
         statement = (
             select(User)
-            .options(selectinload(User.roles))
+            .options(selectinload(User.roles).selectinload(Role.permissions))
             .where(User.deleted_at.is_(None))
             .order_by(User.id.asc())
         )
@@ -84,7 +84,11 @@ class UserRepository:
         return rows, total_items
 
     def get_by_email(self, email: str, include_deleted: bool = False) -> Optional[User]:
-        statement = select(User).options(selectinload(User.roles)).where(User.email == email)
+        statement = (
+            select(User)
+            .options(selectinload(User.roles).selectinload(Role.permissions))
+            .where(User.email == email)
+        )
         if not include_deleted:
             statement = statement.where(User.deleted_at.is_(None))
         return self.db.scalar(statement)

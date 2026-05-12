@@ -26,6 +26,13 @@ class AuthService:
     @staticmethod
     def _serialize_user(user) -> AuthUserOut:
         role_names = sorted({role.name for role in getattr(user, "roles", [])})
+        permission_names = sorted(
+            {
+                permission.name
+                for role in getattr(user, "roles", [])
+                for permission in getattr(role, "permissions", [])
+            }
+        )
         created_at = user.created_at
         if isinstance(created_at, datetime):
             normalized_created_at = created_at
@@ -37,6 +44,7 @@ class AuthService:
             name=user.name,
             email=user.email,
             roles=role_names,
+            permissions=permission_names,
             created_at=normalized_created_at,
         )
 

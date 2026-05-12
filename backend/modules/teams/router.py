@@ -2,6 +2,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, status
 
+from authentication.dependencies import require_permissions
 from core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 
 from modules.players.schemas import PlayerOut
@@ -14,7 +15,10 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[TeamOut], status_code=status.HTTP_200_OK)
-def list_teams(service: TeamService = Depends(get_team_service)):
+def list_teams(
+    service: TeamService = Depends(get_team_service),
+    _=Depends(require_permissions("teams.view")),
+):
     return service.list()
 
 
@@ -26,6 +30,7 @@ def list_teams_table(
     sort_key: Literal["id", "name", "players"] = Query(default="name"),
     sort_dir: Literal["asc", "desc"] = Query(default="asc"),
     service: TeamService = Depends(get_team_service),
+    _=Depends(require_permissions("teams.view")),
 ):
     return service.list_table(
         page=page,
@@ -37,12 +42,20 @@ def list_teams_table(
 
 
 @router.post("/", response_model=TeamOut, status_code=status.HTTP_201_CREATED)
-def create_team(payload: TeamCreate, service: TeamService = Depends(get_team_service)):
+def create_team(
+    payload: TeamCreate,
+    service: TeamService = Depends(get_team_service),
+    _=Depends(require_permissions("teams.create")),
+):
     return service.create(payload)
 
 
 @router.get("/{team_id}", response_model=TeamOut, status_code=status.HTTP_200_OK)
-def get_team(team_id: int, service: TeamService = Depends(get_team_service)):
+def get_team(
+    team_id: int,
+    service: TeamService = Depends(get_team_service),
+    _=Depends(require_permissions("teams.view")),
+):
     return service.get(team_id)
 
 
@@ -51,12 +64,17 @@ def update_team(
     team_id: int,
     payload: TeamUpdate,
     service: TeamService = Depends(get_team_service),
+    _=Depends(require_permissions("teams.edit")),
 ):
     return service.update(team_id, payload)
 
 
 @router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_team(team_id: int, service: TeamService = Depends(get_team_service)):
+def delete_team(
+    team_id: int,
+    service: TeamService = Depends(get_team_service),
+    _=Depends(require_permissions("teams.delete")),
+):
     service.delete(team_id)
 
 
@@ -64,5 +82,6 @@ def delete_team(team_id: int, service: TeamService = Depends(get_team_service)):
 def list_team_players(
     team_id: int,
     service: TeamService = Depends(get_team_service),
+    _=Depends(require_permissions("teams.view")),
 ):
     return service.list_players(team_id)

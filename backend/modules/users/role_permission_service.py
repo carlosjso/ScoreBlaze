@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from core.exceptions import NotFoundException, ValidationException
+from core.exceptions import ForbiddenException, NotFoundException, ValidationException
 from data.orm import Permission, Role
 from database.unit_of_work import UnitOfWork
 
@@ -120,6 +120,8 @@ class RolePermissionService:
         with self.unit_of_work.transaction():
             permissions_by_name = self._sync_catalog_permissions()
             role = self._get_existing_role(role_id)
+            if self._is_system_role(role.name):
+                raise ForbiddenException("No se puede editar un rol del sistema.")
 
             preserved_permissions = [
                 permission

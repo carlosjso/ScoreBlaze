@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, status
 
-from authentication.dependencies import require_authenticated_user
+from authentication.dependencies import require_any_permission, require_permissions
 from modules.matches.dependencies import get_match_service
 from modules.scoreboard.schemas import ScoreboardEventCreate, ScoreboardSnapshotOut
 from modules.scoreboard.dependencies import get_scoreboard_service
@@ -16,6 +16,7 @@ router = APIRouter()
 def list_matches(
     league_id: int | None = Query(default=None, ge=1),
     service: MatchService = Depends(get_match_service),
+    _=Depends(require_permissions("quick_match.view")),
 ):
     return service.list(league_id=league_id)
 
@@ -24,13 +25,17 @@ def list_matches(
 def create_match(
     payload: MatchCreate,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_authenticated_user),
+    _=Depends(require_permissions("quick_match.create")),
 ):
     return service.create(payload)
 
 
 @router.get("/{match_id}", response_model=MatchOut, status_code=status.HTTP_200_OK)
-def get_match(match_id: int, service: MatchService = Depends(get_match_service)):
+def get_match(
+    match_id: int,
+    service: MatchService = Depends(get_match_service),
+    _=Depends(require_permissions("quick_match.view")),
+):
     return service.get(match_id)
 
 
@@ -38,6 +43,7 @@ def get_match(match_id: int, service: MatchService = Depends(get_match_service))
 def get_match_scoreboard(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
+    _=Depends(require_any_permission("quick_match.view", "quick_match.view_stats")),
 ):
     return service.get_snapshot(match_id)
 
@@ -51,7 +57,7 @@ def create_match_scoreboard_event(
     match_id: int,
     payload: ScoreboardEventCreate,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_authenticated_user),
+    _=Depends(require_permissions("quick_match.edit")),
 ):
     return service.record_event(match_id, payload)
 
@@ -60,7 +66,7 @@ def create_match_scoreboard_event(
 def undo_match_scoreboard_event(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_authenticated_user),
+    _=Depends(require_permissions("quick_match.edit")),
 ):
     return service.undo_last_event(match_id)
 
@@ -69,7 +75,7 @@ def undo_match_scoreboard_event(
 def reset_match_scoreboard(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_authenticated_user),
+    _=Depends(require_permissions("quick_match.edit")),
 ):
     return service.reset(match_id)
 
@@ -79,7 +85,7 @@ def update_match(
     match_id: int,
     payload: MatchUpdate,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_authenticated_user),
+    _=Depends(require_permissions("quick_match.edit")),
 ):
     return service.update(match_id, payload)
 
@@ -89,7 +95,7 @@ def patch_match(
     match_id: int,
     payload: MatchPatch,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_authenticated_user),
+    _=Depends(require_permissions("quick_match.edit")),
 ):
     return service.patch(match_id, payload)
 
@@ -98,6 +104,6 @@ def patch_match(
 def delete_match(
     match_id: int,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_authenticated_user),
+    _=Depends(require_permissions("quick_match.delete")),
 ):
     service.delete(match_id)

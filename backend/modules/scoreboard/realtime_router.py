@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
 from pydantic import ValidationError
 
-from authentication.dependencies import get_auth_service, get_websocket_auth_context, has_required_role
+from authentication.dependencies import get_auth_service, get_websocket_auth_context, has_required_permission
 from authentication.service import AuthService
 
 from .domain import ScoreboardRealtimeMessageType, ScoreboardRealtimeRole
@@ -37,12 +37,15 @@ async def scoreboard_realtime_websocket(
             )
             return
 
-        allowed_roles = {"admin", "coach"}
         current_roles = {role_name.strip().lower() for role_name in auth_context.user.roles}
-        if not has_required_role(current_roles, allowed_roles):
+        current_permissions = {
+            permission_name.strip().lower()
+            for permission_name in auth_context.user.permissions
+        }
+        if not has_required_permission(current_roles, current_permissions, {"quick_match.edit"}):
             await websocket.close(
                 code=status.WS_1008_POLICY_VIOLATION,
-                reason="Insufficient role for control channel.",
+                reason="Insufficient permission for control channel.",
             )
             return
 
