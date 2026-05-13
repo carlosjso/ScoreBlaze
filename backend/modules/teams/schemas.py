@@ -79,6 +79,7 @@ class TeamTablePlayerOut(BaseModel):
     email: str
     phone: str
     photo_base64: Optional[str] = None
+    shirt_number: Optional[str] = None
 
 
 class TeamTableRowOut(BaseModel):

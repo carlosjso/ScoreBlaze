@@ -92,7 +92,7 @@ export function TeamDetailModal({
       {team ? (
         <div className="space-y-4">
           {showStatsSlide ? (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="flex items-center justify-between gap-3 px-1 py-1">
               <Button variant="ghost" onClick={goPrev} className="rounded-full px-3 py-2">
                 <ChevronLeft size={16} />
               </Button>
@@ -181,8 +181,15 @@ export function TeamDetailModal({
                           />
 
                           <span className="min-w-0">
-                            <span className="block truncate text-sm font-semibold text-slate-800">
-                              {player.name}
+                            <span className="flex flex-wrap items-center gap-2">
+                              <span className="block truncate text-sm font-semibold text-slate-800">
+                                {player.name}
+                              </span>
+                              {player.shirtNumber ? (
+                                <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-700">
+                                  #{player.shirtNumber}
+                                </span>
+                              ) : null}
                             </span>
                             <span
                               className="block truncate text-xs text-slate-500"

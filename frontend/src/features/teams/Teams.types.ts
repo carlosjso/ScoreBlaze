@@ -39,6 +39,7 @@ export type TeamPlayerSummary = {
   email: string;
   phone: string;
   photoBase64: string | null;
+  shirtNumber: string | null;
 };
 
 export type ApiTeamStat = {

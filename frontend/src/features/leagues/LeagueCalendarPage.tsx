@@ -12,6 +12,7 @@ import type { QuickMatchListItem } from "@/features/quick-matches/QuickMatches.t
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { Button, Modal, PageHeader, Panel, Select } from "@/shared/components/ui";
+import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
 import { cn } from "@/shared/utils/cn";
 
 type CalendarViewMode = "day" | "week" | "month";
@@ -729,18 +730,7 @@ export default function LeagueCalendarPage() {
         <PageHeader
           title="Calendario de jornadas"
           subtitle="Visualiza los partidos de esta liga en formato calendario y filtra rapidamente por equipo."
-          actions={
-            <div className="flex flex-wrap gap-2">
-              {league ? (
-                <Button variant="outline" onClick={() => navigate(`/leagues/${league.id}/matches`)}>
-                  Ver partidos
-                </Button>
-              ) : null}
-              <Button variant="ghost" onClick={() => navigate(league ? `/leagues/${league.id}` : "/leagues")}>
-                Dashboard
-              </Button>
-            </div>
-          }
+          actions={<LeagueSectionNav leagueId={league?.id} />}
         />
 
         <Panel>

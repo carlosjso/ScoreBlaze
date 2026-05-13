@@ -1,4 +1,4 @@
-import { ArrowDownUp, Bolt, ChevronDown, ChevronUp, Pencil, Search, Shirt, Trash2, UsersRound } from "lucide-react";
+import { ArrowDownUp, Bolt, ChevronDown, ChevronUp, Pencil, Shirt, Trash2, UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
@@ -92,11 +92,10 @@ function SkeletonCard() {
 function TeamCardActions({
   team,
   deletingTeamId,
-  onView,
   onEdit,
   onManage,
   onDelete,
-}: Pick<TeamsTableProps, "deletingTeamId" | "onView" | "onEdit" | "onManage" | "onDelete"> & {
+}: Pick<TeamsTableProps, "deletingTeamId" | "onEdit" | "onManage" | "onDelete"> & {
   team: TeamListItem;
 }) {
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -170,15 +169,6 @@ function TeamCardActions({
             <button
               type="button"
               disabled={disabled}
-              onClick={() => runAction(() => onView(team))}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Search size={14} />
-              Ver datos
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
               onClick={() => runAction(() => onEdit(team))}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -217,14 +207,25 @@ function TeamCard({
       : `${team.playerCount} ${team.playerCount === 1 ? "jugador" : "jugadores"}`;
 
   return (
-    <article className="group relative aspect-[11/10] rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_16px_36px_rgba(249,115,22,0.12)] focus-within:border-orange-200 focus-within:shadow-[0_16px_36px_rgba(249,115,22,0.12)]">
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={() => onView(team)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onView(team);
+        }
+      }}
+      aria-label={`Ver datos de ${team.name}`}
+      className="group relative aspect-[11/10] cursor-pointer rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_16px_36px_rgba(249,115,22,0.12)] focus:outline-none focus-visible:border-orange-200 focus-visible:shadow-[0_16px_36px_rgba(249,115,22,0.12)] focus-within:border-orange-200 focus-within:shadow-[0_16px_36px_rgba(249,115,22,0.12)]"
+    >
       <div className="flex h-full flex-col">
         <div className="flex items-start justify-between">
           <p className="text-xs font-semibold text-slate-500">#{team.id}</p>
           <TeamCardActions
             team={team}
             deletingTeamId={deletingTeamId}
-            onView={onView}
             onEdit={onEdit}
             onManage={onManage}
             onDelete={onDelete}

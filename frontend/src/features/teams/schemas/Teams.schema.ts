@@ -76,6 +76,7 @@ const apiTeamTablePlayerSchema = z
     email: z.string().trim().email(),
     phone: z.string(),
     photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
+    shirt_number: z.string().trim().nullable(),
   })
   .transform((player) => ({
     id: player.id,
@@ -83,6 +84,7 @@ const apiTeamTablePlayerSchema = z
     email: player.email,
     phone: player.phone,
     photoBase64: player.photo_base64,
+    shirtNumber: player.shirt_number?.trim() || null,
   }));
 
 export const apiPaginatedTeamsTableSchema = buildPaginatedResponseSchema(
@@ -164,11 +166,16 @@ export function buildTeamsView(
 ): TeamListItem[] {
   const playerById = new Map(players.map((player) => [player.id, player]));
   const playerIdsByTeamId = new Map<number, number[]>();
+  const shirtNumberByTeamAndPlayer = new Map<string, string | null>();
 
   memberships.forEach((membership) => {
     const current = playerIdsByTeamId.get(membership.team_id) ?? [];
     current.push(membership.player_id);
     playerIdsByTeamId.set(membership.team_id, current);
+    shirtNumberByTeamAndPlayer.set(
+      `${membership.team_id}:${membership.player_id}`,
+      membership.shirt_number?.trim() || null,
+    );
   });
 
   return teams.map((team) => {
@@ -182,7 +189,24 @@ export function buildTeamsView(
         email: player.email,
         phone: player.phone === null ? "" : String(player.phone),
         photoBase64: player.photo_base64,
-      }));
+        shirtNumber: shirtNumberByTeamAndPlayer.get(`${team.id}:${player.id}`) ?? null,
+      }))
+      .sort((left, right) => {
+        const leftNumber = left.shirtNumber?.trim() ?? "";
+        const rightNumber = right.shirtNumber?.trim() ?? "";
+        const leftNumeric = /^\d+$/.test(leftNumber) ? Number(leftNumber) : Number.POSITIVE_INFINITY;
+        const rightNumeric = /^\d+$/.test(rightNumber) ? Number(rightNumber) : Number.POSITIVE_INFINITY;
+
+        if (leftNumeric !== rightNumeric) {
+          return leftNumeric - rightNumeric;
+        }
+
+        if (leftNumber !== rightNumber) {
+          return leftNumber.localeCompare(rightNumber, "es", { sensitivity: "base" });
+        }
+
+        return left.name.localeCompare(right.name, "es", { sensitivity: "base" });
+      });
 
     return {
       id: team.id,

@@ -8,7 +8,8 @@ import { leaguesQueryKeys, leaguesService } from "@/features/leagues/Leagues.ser
 import { buildLiveLeagueStandings } from "@/features/leagues/realtime/leagueStandingsRealtime";
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
-import { Button, PageHeader, Panel } from "@/shared/components/ui";
+import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
+import { PageHeader, Panel } from "@/shared/components/ui";
 
 export default function LeagueStandingsPage() {
   const navigate = useNavigate();
@@ -48,18 +49,7 @@ export default function LeagueStandingsPage() {
         <PageHeader
           title="Tabla de posiciones"
           subtitle="Consulta el rendimiento actual de la liga con puntos, diferencia y resultados."
-          actions={
-            <div className="flex flex-wrap gap-2">
-              {league ? (
-                <Button variant="outline" onClick={() => navigate(`/leagues/${league.id}`)}>
-                  Dashboard
-                </Button>
-              ) : null}
-              <Button variant="ghost" onClick={() => navigate("/leagues")}>
-                Ligas
-              </Button>
-            </div>
-          }
+          actions={<LeagueSectionNav leagueId={league?.id} />}
         />
 
         <Panel>

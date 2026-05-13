@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { quickMatchesQueryKeys, quickMatchesService } from "@/features/quick-matches/QuickMatches.service";
@@ -6,6 +7,7 @@ import type {
   MatchMutationPayload,
   MatchStatus,
 } from "@/features/quick-matches/QuickMatches.types";
+import { MatchAttendanceModal } from "@/features/scoreboard/components/MatchAttendanceModal";
 import { TeamControlPanel } from "@/features/scoreboard/components/TeamControlPanel";
 import { GeneralControls } from "@/features/scoreboard/components/GeneralControls";
 import { KeyboardHelp } from "@/features/scoreboard/components/KeyboardHelp";
@@ -16,6 +18,7 @@ import { useScoreboardKeyboard } from "@/features/scoreboard/hooks/useScoreboard
 type MatchStatusUpdate = Extract<MatchStatus, "live" | "finished">;
 
 export default function Scoreboard() {
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const { matchId } = useParams();
   const numericMatchId = matchId ? Number(matchId) : undefined;
   const queryClient = useQueryClient();
@@ -34,6 +37,9 @@ export default function Scoreboard() {
     formattedClock,
     formattedShotClock,
     selectPlayer,
+    setPlayerParticipation,
+    addGuestPlayer,
+    removeGuestPlayer,
     addPoints,
     assist,
     miss,
@@ -296,6 +302,7 @@ export default function Scoreboard() {
           finishMatchLabel={
             currentMatch?.status === "finished" ? "Partido finalizado" : "Finalizar partido"
           }
+          onOpenAttendanceModal={() => setAttendanceModalOpen(true)}
         />
 
         <TeamControlPanel
@@ -311,6 +318,18 @@ export default function Scoreboard() {
           onAssist={assist}
         />
       </div>
+
+      <MatchAttendanceModal
+        isOpen={attendanceModalOpen}
+        onClose={() => setAttendanceModalOpen(false)}
+        teamA={state.teamA}
+        teamB={state.teamB}
+        disabled={controlsDisabled}
+        onSelectPlayer={selectPlayer}
+        onSetParticipation={setPlayerParticipation}
+        onAddGuest={addGuestPlayer}
+        onRemoveGuest={removeGuestPlayer}
+      />
 
       {state.controlMode === "keyboard" ? <KeyboardHelp /> : null}
     </section>

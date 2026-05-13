@@ -20,6 +20,7 @@ import { buildLiveLeagueStandings } from "@/features/leagues/realtime/leagueStan
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
+import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
 import { Button, PageHeader, Panel } from "@/shared/components/ui";
 import { cn } from "@/shared/utils/cn";
 
@@ -227,18 +228,7 @@ export default function LeagueDashboardPage() {
         <PageHeader
           title="Centro de liga"
           subtitle="Administra esta liga desde un solo lugar: equipos, partidos, tabla y ajustes."
-          actions={
-            <div className="flex flex-wrap gap-2">
-              {league ? (
-                <Button variant="outline" onClick={() => navigate(`/leagues/${league.id}/settings`)}>
-                  Ajustes
-                </Button>
-              ) : null}
-              <Button variant="ghost" onClick={() => navigate("/leagues")}>
-                Volver a ligas
-              </Button>
-            </div>
-          }
+          actions={<LeagueSectionNav leagueId={league?.id} active="dashboard" />}
         />
 
         <Panel>

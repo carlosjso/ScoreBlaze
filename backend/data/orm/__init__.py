@@ -3,6 +3,7 @@ from .league_stat import LeagueStat
 from .league_team_membership import LeagueTeamMembership
 from .match import Match
 from .match_event import MatchEvent
+from .match_player_participation import MatchPlayerParticipation
 from .permission import Permission, role_permissions_table
 from .player import Player
 from .player_stat import PlayerStat
@@ -15,6 +16,7 @@ from .user import User
 __all__ = [
     "Match",
     "MatchEvent",
+    "MatchPlayerParticipation",
     "League",
     "LeagueStat",
     "LeagueTeamMembership",

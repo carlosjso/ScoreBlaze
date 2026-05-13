@@ -14,14 +14,112 @@ export function formatTeamStatsDateLabel(value: string) {
   return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(parsed);
 }
 
+function resolveApiMatchOutcome(teamId: number, match: ApiMatch) {
+  if (match.score_team_a !== null && match.score_team_b !== null) {
+    const isTeamA = match.team_a_id === teamId;
+    const ownScore = isTeamA ? match.score_team_a : match.score_team_b;
+    const rivalScore = isTeamA ? match.score_team_b : match.score_team_a;
+
+    return {
+      ownScore,
+      rivalScore,
+      isDraw: ownScore === rivalScore || match.is_draw,
+      isWin: ownScore > rivalScore,
+      canCountResult: true,
+      hasScore: true,
+    };
+  }
+
+  if (match.is_draw) {
+    return {
+      ownScore: null,
+      rivalScore: null,
+      isDraw: true,
+      isWin: false,
+      canCountResult: true,
+      hasScore: false,
+    };
+  }
+
+  if (match.winner_team_id !== null) {
+    return {
+      ownScore: null,
+      rivalScore: null,
+      isDraw: false,
+      isWin: match.winner_team_id === teamId,
+      canCountResult: true,
+      hasScore: false,
+    };
+  }
+
+  return {
+    ownScore: null,
+    rivalScore: null,
+    isDraw: false,
+    isWin: false,
+    canCountResult: false,
+    hasScore: false,
+  };
+}
+
+function resolveQuickMatchOutcome(teamId: number, match: QuickMatchListItem) {
+  if (match.scoreTeamA !== null && match.scoreTeamB !== null) {
+    const isTeamA = match.teamAId === teamId;
+    const ownScore = isTeamA ? match.scoreTeamA : match.scoreTeamB;
+    const rivalScore = isTeamA ? match.scoreTeamB : match.scoreTeamA;
+
+    return {
+      ownScore,
+      rivalScore,
+      isDraw: ownScore === rivalScore || match.isDraw,
+      isWin: ownScore > rivalScore,
+      canCountResult: true,
+      hasScore: true,
+    };
+  }
+
+  if (match.isDraw) {
+    return {
+      ownScore: null,
+      rivalScore: null,
+      isDraw: true,
+      isWin: false,
+      canCountResult: true,
+      hasScore: false,
+    };
+  }
+
+  if (match.winnerTeamId !== null) {
+    return {
+      ownScore: null,
+      rivalScore: null,
+      isDraw: false,
+      isWin: match.winnerTeamId === teamId,
+      canCountResult: true,
+      hasScore: false,
+    };
+  }
+
+  return {
+    ownScore: null,
+    rivalScore: null,
+    isDraw: false,
+    isWin: false,
+    canCountResult: false,
+    hasScore: false,
+  };
+}
+
 export function buildHistoricalTeamStats(
   teamId: number,
   matches: ApiMatch[],
   teamStat: ApiTeamStat | null,
 ): TeamHistoricalStats {
   const teamMatches = matches.filter((match) => match.team_a_id === teamId || match.team_b_id === teamId);
-  const finishedMatches = teamMatches.filter(
-    (match) => match.status === "finished" && match.score_team_a !== null && match.score_team_b !== null,
+  const historicalMatches = teamMatches.filter(
+    (match) =>
+      (match.status === "finished" || match.status === "live")
+      && resolveApiMatchOutcome(teamId, match).canCountResult,
   );
   const liveMatchesCount = teamMatches.filter((match) => match.status === "live").length;
   const scheduledMatchesCount = teamMatches.filter((match) => match.status === "scheduled").length;
@@ -32,32 +130,32 @@ export function buildHistoricalTeamStats(
   let pointsFor = 0;
   let pointsAgainst = 0;
 
-  finishedMatches.forEach((match) => {
-    const isTeamA = match.team_a_id === teamId;
-    const ownScore = isTeamA ? match.score_team_a ?? 0 : match.score_team_b ?? 0;
-    const rivalScore = isTeamA ? match.score_team_b ?? 0 : match.score_team_a ?? 0;
+  historicalMatches.forEach((match) => {
+    const outcome = resolveApiMatchOutcome(teamId, match);
 
-    pointsFor += ownScore;
-    pointsAgainst += rivalScore;
+    if (outcome.hasScore) {
+      pointsFor += outcome.ownScore ?? 0;
+      pointsAgainst += outcome.rivalScore ?? 0;
+    }
 
-    if (ownScore === rivalScore || match.is_draw) {
+    if (outcome.isDraw) {
       draws += 1;
       return;
     }
 
-    if (ownScore > rivalScore) {
+    if (outcome.isWin) {
       wins += 1;
     } else {
       losses += 1;
     }
   });
 
-  const matchesPlayed = finishedMatches.length;
+  const matchesPlayed = historicalMatches.length;
   const pointsDifference = pointsFor - pointsAgainst;
-  const quickMatchesCount = teamMatches.filter((match) => match.league_id === null).length;
-  const leagueMatchesCount = teamMatches.filter((match) => match.league_id !== null).length;
+  const quickMatchesCount = historicalMatches.filter((match) => match.league_id === null).length;
+  const leagueMatchesCount = historicalMatches.filter((match) => match.league_id !== null).length;
   const lastFinishedMatch =
-    [...finishedMatches].sort((left, right) => right.match_date.localeCompare(left.match_date))[0] ?? null;
+    [...historicalMatches].sort((left, right) => right.match_date.localeCompare(left.match_date))[0] ?? null;
 
   return {
     scope: "historical",
@@ -83,8 +181,10 @@ export function buildHistoricalTeamStats(
 
 function buildFallbackLeagueBalance(teamId: number, matches: QuickMatchListItem[]) {
   const teamMatches = matches.filter((match) => match.teamAId === teamId || match.teamBId === teamId);
-  const finishedMatches = teamMatches.filter(
-    (match) => match.status === "finished" && match.scoreTeamA !== null && match.scoreTeamB !== null,
+  const resolvedMatches = teamMatches.filter(
+    (match) =>
+      (match.status === "finished" || match.status === "live")
+      && resolveQuickMatchOutcome(teamId, match).canCountResult,
   );
 
   let wins = 0;
@@ -93,27 +193,27 @@ function buildFallbackLeagueBalance(teamId: number, matches: QuickMatchListItem[
   let pointsFor = 0;
   let pointsAgainst = 0;
 
-  finishedMatches.forEach((match) => {
-    const isTeamA = match.teamAId === teamId;
-    const ownScore = isTeamA ? match.scoreTeamA ?? 0 : match.scoreTeamB ?? 0;
-    const rivalScore = isTeamA ? match.scoreTeamB ?? 0 : match.scoreTeamA ?? 0;
+  resolvedMatches.forEach((match) => {
+    const outcome = resolveQuickMatchOutcome(teamId, match);
 
-    pointsFor += ownScore;
-    pointsAgainst += rivalScore;
+    if (outcome.hasScore) {
+      pointsFor += outcome.ownScore ?? 0;
+      pointsAgainst += outcome.rivalScore ?? 0;
+    }
 
-    if (ownScore === rivalScore || match.isDraw) {
+    if (outcome.isDraw) {
       draws += 1;
       return;
     }
 
-    if (ownScore > rivalScore) {
+    if (outcome.isWin) {
       wins += 1;
     } else {
       losses += 1;
     }
   });
 
-  const matchesPlayed = finishedMatches.length;
+  const matchesPlayed = resolvedMatches.length;
 
   return {
     matchesPlayed,
@@ -125,7 +225,7 @@ function buildFallbackLeagueBalance(teamId: number, matches: QuickMatchListItem[
     pointsDifference: pointsFor - pointsAgainst,
     standingsPoints: wins * LEAGUE_STANDINGS_WIN_POINTS + draws * LEAGUE_STANDINGS_DRAW_POINTS,
     lastFinishedMatch:
-      [...finishedMatches].sort((left, right) => right.matchDate.localeCompare(left.matchDate))[0] ?? null,
+      [...resolvedMatches].sort((left, right) => right.matchDate.localeCompare(left.matchDate))[0] ?? null,
   };
 }
 

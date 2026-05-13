@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { PlayerDetailModal } from "@/features/players/components/PlayerDetailModal";
+import { useLeaguePlayerParticipation } from "@/features/leagues/hooks/useLeaguePlayerParticipation";
 import { useLeagueTeamScopedStats } from "@/features/leagues/hooks/useLeagueTeamScopedStats";
+import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
 import { usePlayersData } from "@/features/players/hooks/usePlayersData";
 import type { PlayerListItem } from "@/features/players/Players.types";
 import { useLeaguesData } from "@/features/leagues/hooks/useLeaguesData";
@@ -296,10 +298,21 @@ export default function LeagueTeamsPage() {
   const [pendingTeamAction, setPendingTeamAction] = useState<TeamListItem | null>(null);
   const [detailTeam, setDetailTeam] = useState<TeamListItem | null>(null);
   const [detailPlayer, setDetailPlayer] = useState<PlayerListItem | null>(null);
+  const [detailPlayerTeamContext, setDetailPlayerTeamContext] = useState<{
+    teamId: number;
+    teamName: string;
+  } | null>(null);
   const detailTeamStatsQuery = useLeagueTeamScopedStats({
     leagueId: hasValidLeagueId ? selectedLeagueId : null,
     leagueName: selectedLeague?.name ?? null,
     teamId: detailTeam?.id ?? null,
+  });
+  const detailPlayerParticipationQuery = useLeaguePlayerParticipation({
+    leagueId: hasValidLeagueId ? selectedLeagueId : null,
+    leagueName: selectedLeague?.name ?? null,
+    teamId: detailPlayerTeamContext?.teamId ?? null,
+    teamName: detailPlayerTeamContext?.teamName ?? null,
+    playerId: detailPlayer?.id ?? null,
   });
 
   const assignedTeamIdsSource = useMemo(() => selectedLeague?.teamIds ?? [], [selectedLeague?.teamIds]);
@@ -312,6 +325,7 @@ export default function LeagueTeamsPage() {
     setPendingTeamAction(null);
     setDetailTeam(null);
     setDetailPlayer(null);
+    setDetailPlayerTeamContext(null);
   }, [selectedLeague?.id]);
 
   const assignedTeams = useMemo(
@@ -373,10 +387,14 @@ export default function LeagueTeamsPage() {
 
   const handleOpenPlayerDetail = (playerId: number) => {
     const player = playerById.get(playerId);
-    if (!player) {
+    if (!player || !detailTeam) {
       return;
     }
 
+    setDetailPlayerTeamContext({
+      teamId: detailTeam.id,
+      teamName: detailTeam.name,
+    });
     setDetailTeam(null);
     setDetailPlayer(player);
   };
@@ -387,16 +405,7 @@ export default function LeagueTeamsPage() {
         <PageHeader
           title="Equipos"
           subtitle="Consulta primero los equipos actuales de esta liga antes de editarla o ajustar su calendario."
-          actions={
-            <div className="flex flex-wrap gap-2">
-              <Button variant="ghost" onClick={() => navigate(selectedLeague ? `/leagues/${selectedLeague.id}/matches` : "/leagues")}>
-                Partidos
-              </Button>
-              <Button variant="outline" onClick={() => navigate("/leagues")}>
-                Volver a ligas
-              </Button>
-            </div>
-          }
+          actions={<LeagueSectionNav leagueId={selectedLeague?.id} active="teams" />}
         />
 
         <Panel className="overflow-hidden p-5 sm:p-6">
@@ -660,7 +669,23 @@ export default function LeagueTeamsPage() {
               <PlayerDetailModal
                 player={detailPlayer}
                 isOpen={detailPlayer !== null}
-                onClose={() => setDetailPlayer(null)}
+                onClose={() => {
+                  setDetailPlayer(null);
+                  setDetailPlayerTeamContext(null);
+                }}
+                leagueParticipation={
+                  detailPlayer && detailPlayerTeamContext
+                    ? {
+                        leagueName: selectedLeague?.name ?? "Liga actual",
+                        teamName: detailPlayerTeamContext.teamName,
+                        playerMatchesPlayed: detailPlayerParticipationQuery.data?.playerMatchesPlayed ?? 0,
+                        teamMatchesPlayed: detailPlayerParticipationQuery.data?.teamMatchesPlayed ?? 0,
+                        participationRate: detailPlayerParticipationQuery.data?.participationRate ?? null,
+                        loading: detailPlayerParticipationQuery.loading,
+                        error: detailPlayerParticipationQuery.error,
+                      }
+                    : null
+                }
               />
             </>
           )}
@@ -817,11 +842,7 @@ export function LeagueTeamsManagePage() {
         <PageHeader
           title="Asignar equipos"
           subtitle="Aqui incorporas o retiras equipos de la liga desde el listado general de equipos."
-          actions={
-            <Button variant="outline" onClick={() => navigate(selectedLeague ? `/leagues/${selectedLeague.id}/teams` : "/leagues")}>
-              Volver a equipos
-            </Button>
-          }
+          actions={<LeagueSectionNav leagueId={selectedLeague?.id} />}
         />
 
         <Panel className="overflow-hidden p-5 sm:p-6">

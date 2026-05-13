@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, Query, status
 
 from authentication.dependencies import require_any_permission, require_permissions
 from modules.matches.dependencies import get_match_service
-from modules.scoreboard.schemas import ScoreboardEventCreate, ScoreboardSnapshotOut
+from modules.scoreboard.schemas import (
+    ScoreboardEventCreate,
+    ScoreboardPlayerParticipationUpdate,
+    ScoreboardSnapshotOut,
+)
 from modules.scoreboard.dependencies import get_scoreboard_service
 from modules.scoreboard.service import ScoreboardService
 
@@ -60,6 +64,21 @@ def create_match_scoreboard_event(
     _=Depends(require_permissions("quick_match.edit")),
 ):
     return service.record_event(match_id, payload)
+
+
+@router.patch(
+    "/{match_id}/scoreboard/players/{player_id}",
+    response_model=ScoreboardSnapshotOut,
+    status_code=status.HTTP_200_OK,
+)
+def update_match_scoreboard_player_participation(
+    match_id: int,
+    player_id: int,
+    payload: ScoreboardPlayerParticipationUpdate,
+    service: ScoreboardService = Depends(get_scoreboard_service),
+    _=Depends(require_permissions("quick_match.edit")),
+):
+    return service.update_player_participation(match_id, player_id, payload)
 
 
 @router.post("/{match_id}/scoreboard/undo", response_model=ScoreboardSnapshotOut, status_code=status.HTTP_200_OK)

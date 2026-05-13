@@ -2,26 +2,22 @@ import type { ChangeEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CalendarDays,
-  ChevronDown,
-  ChevronUp,
   CircleUserRound,
   ImagePlus,
   LayoutGrid,
   Mail,
-  Plus,
+  Pencil,
   ShieldCheck,
   Trash2,
   Upload,
-  UsersRound,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { FormErrors } from "@/features/leagues/components/FormErrors";
 import {
   leagueTrackedStatOptions,
   normalizeLeagueTrackedStats,
-  sanitizeLeagueTeamIds,
   type LeagueDetail,
   type LeagueFormValues,
   type LeagueListItem,
@@ -35,8 +31,8 @@ import {
 } from "@/features/leagues/schemas/Leagues.schema";
 import type { ApiTeam } from "@/features/teams/Teams.types";
 import { mapApiErrorToForm } from "@/shared/api/client";
-import { Button, Input, Modal, Select } from "@/shared/components/ui";
-import { getBase64ImageSrc, imageFileToPngBase64 } from "@/shared/utils/base64Image";
+import { Button, ImageCropperModal, Input, Modal, Select } from "@/shared/components/ui";
+import { getBase64ImageSrc, readImageFileAsDataUrl } from "@/shared/utils/base64Image";
 import { cn } from "@/shared/utils/cn";
 
 type LeagueFormModalProps = {
@@ -58,7 +54,7 @@ export function LeagueFormModal({
   isOpen,
   mode,
   initialLeague,
-  teams,
+  teams: _teams,
   loading = false,
   apiError,
   onClose,
@@ -71,12 +67,10 @@ export function LeagueFormModal({
     defaultValues: toLeagueFormValues(null),
   });
   const [logoError, setLogoError] = useState<string | null>(null);
-  const [teamsExpanded, setTeamsExpanded] = useState(false);
+  const [pendingLogoSource, setPendingLogoSource] = useState<string | null>(null);
   const [dismissedApiFields, setDismissedApiFields] = useState<Partial<Record<LeagueFormFieldName, true>>>({});
-  const teamsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const logoBase64 = watch("logoBase64");
-  const selectedTeamIds = watch("teamIds") ?? [];
   const rawTrackedStats = watch("trackedStats");
   const trackedStats = useMemo(() => rawTrackedStats ?? [], [rawTrackedStats]);
   const logoSrc = getBase64ImageSrc(logoBase64);
@@ -86,17 +80,17 @@ export function LeagueFormModal({
     if (isOpen) {
       const nextValues = toLeagueFormValues(initialLeague);
       setLogoError(null);
+      setPendingLogoSource(null);
       setDismissedApiFields({});
-      setTeamsExpanded(mode === "edit" || nextValues.teamIds.length > 0);
       reset(nextValues);
       return;
     }
 
     setLogoError(null);
+    setPendingLogoSource(null);
     setDismissedApiFields({});
-    setTeamsExpanded(false);
     reset(toLeagueFormValues(null));
-  }, [initialLeague, isOpen, mode, reset]);
+  }, [initialLeague, isOpen, reset]);
 
   useEffect(() => {
     setDismissedApiFields({});
@@ -145,11 +139,8 @@ export function LeagueFormModal({
     dismissApiFieldError("logoBase64");
 
     try {
-      const nextLogoBase64 = await imageFileToPngBase64(file);
-      setValue("logoBase64", nextLogoBase64, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      const nextLogoSource = await readImageFileAsDataUrl(file);
+      setPendingLogoSource(nextLogoSource);
     } catch (error) {
       setLogoError(error instanceof Error ? error.message : "No se pudo cargar el logo.");
     }
@@ -162,6 +153,17 @@ export function LeagueFormModal({
       shouldDirty: true,
       shouldValidate: true,
     });
+  };
+
+  const reopenLogoEditor = () => {
+    const currentLogoSource = getBase64ImageSrc(logoBase64);
+    if (!currentLogoSource) {
+      return;
+    }
+
+    setLogoError(null);
+    dismissApiFieldError("logoBase64");
+    setPendingLogoSource(currentLogoSource);
   };
 
   const toggleTrackedStat = (stat: string) => {
@@ -177,48 +179,19 @@ export function LeagueFormModal({
     });
   };
 
-  const toggleTeam = (teamId: number) => {
-    dismissApiFieldError("teamIds");
-
-    const nextTeamIds = selectedTeamIds.includes(teamId)
-      ? selectedTeamIds.filter((id) => id !== teamId)
-      : sanitizeLeagueTeamIds([...selectedTeamIds, teamId]);
-
-    setValue("teamIds", nextTeamIds, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
-  const toggleTeamsSection = () => {
-    setTeamsExpanded((current) => {
-      const next = !current;
-
-      if (!current) {
-        window.requestAnimationFrame(() => {
-          teamsSectionRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          });
-        });
-      }
-
-      return next;
-    });
-  };
-
   const submitForm = async (values: LeagueFormValues) => {
     await onSubmit(values);
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={loading ? () => undefined : onClose}
-      maxWidthClassName="max-w-5xl"
-      hideCloseButton
-    >
-      <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit(submitForm)}>
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={loading ? () => undefined : onClose}
+        maxWidthClassName="max-w-5xl"
+        hideCloseButton
+      >
+        <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit(submitForm)}>
         <div className="px-2">
           <h2 className="text-[30px] leading-none sm:text-[34px]">{mode === "create" ? "Crear liga" : "Editar liga"}</h2>
         </div>
@@ -247,15 +220,27 @@ export function LeagueFormModal({
                 </label>
 
                 {logoBase64 ? (
-                  <button
-                    type="button"
-                    onClick={clearLogo}
-                    disabled={loading}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Trash2 size={12} />
-                    Quitar
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={reopenLogoEditor}
+                      disabled={loading}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Pencil size={12} />
+                      Editar logo
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={clearLogo}
+                      disabled={loading}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Trash2 size={12} />
+                      Quitar
+                    </button>
+                  </>
                 ) : null}
               </div>
 
@@ -427,142 +412,97 @@ export function LeagueFormModal({
                     )}
                   />
                 ) : null}
-
-                <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,_rgba(255,246,238,0.96),_#ffffff)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-                  <div className="flex items-start gap-3">
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm">
-                      <ShieldCheck size={18} />
-                    </span>
-
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">Datos que se registraran en liga</p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Activa o desactiva las metricas que quieres mostrar desde este torneo.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 space-y-2">
-                    {displayedTrackedStats.map((stat) => {
-                      const active = trackedStats.includes(stat);
-
-                      return (
-                        <div
-                          key={stat}
-                          className={cn(
-                            "flex items-center justify-between rounded-[14px] border px-3 py-2 transition",
-                            active
-                              ? "border-slate-200 bg-white text-slate-700 shadow-sm"
-                              : "border-dashed border-slate-200 bg-slate-50 text-slate-400",
-                          )}
-                        >
-                          <span className="text-sm font-medium">{stat}</span>
-
-                          <button
-                            type="button"
-                            onClick={() => toggleTrackedStat(stat)}
-                            disabled={loading}
-                            className={cn(
-                              "inline-flex h-8 w-8 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50",
-                              active ? "bg-orange-400 text-white hover:bg-orange-500" : "bg-white text-orange-500 shadow-sm hover:bg-orange-50",
-                            )}
-                            aria-label={active ? `Quitar ${stat}` : `Agregar ${stat}`}
-                          >
-                            {active ? <Trash2 size={14} /> : <Plus size={14} />}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {getApiFieldError("trackedStats") ? (
-                    <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{getApiFieldError("trackedStats")}</p>
-                  ) : null}
-                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div
-          ref={teamsSectionRef}
-          className="rounded-[28px] border border-slate-300 bg-white px-5 py-5 shadow-[0_14px_32px_rgba(15,23,42,0.05)]"
-        >
-          <button type="button" onClick={toggleTeamsSection} className="flex w-full items-center justify-between gap-3 text-left">
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <UsersRound size={16} className="text-orange-500" />
-                Equipos participantes
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                {selectedTeamIds.length} seleccionados de {teams.length} disponibles
-              </p>
-            </div>
+            <div className="mt-8 rounded-[26px] border border-orange-100 bg-[linear-gradient(180deg,_rgba(255,246,238,0.96),_#ffffff)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm">
+                    <ShieldCheck size={18} />
+                  </span>
 
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-              {teamsExpanded ? "Ocultar" : "Seleccionar"}
-              {teamsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </span>
-          </button>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">Datos que se registrarán en la liga</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Elige qué métricas quieres habilitar para el seguimiento y la tabla de este torneo.
+                    </p>
+                  </div>
+                </div>
 
-          {teamsExpanded ? (
-            teams.length > 0 ? (
-              <div className="mt-4 grid max-h-64 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
-                {teams.map((team) => {
-                  const active = selectedTeamIds.includes(team.id);
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-orange-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-600 shadow-sm">
+                  <span>{trackedStats.length}</span>
+                  <span>activas</span>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {displayedTrackedStats.map((stat) => {
+                  const active = trackedStats.includes(stat);
 
                   return (
                     <button
-                      key={team.id}
+                      key={stat}
                       type="button"
-                      onClick={() => toggleTeam(team.id)}
+                      onClick={() => toggleTrackedStat(stat)}
                       disabled={loading}
+                      aria-pressed={active}
                       className={cn(
-                        "rounded-[18px] border px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60",
-                        active ? "border-orange-200 bg-orange-50 text-slate-900 shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                        "rounded-[18px] border px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50",
+                        active
+                          ? "border-orange-200 bg-orange-50 text-slate-900 shadow-[0_10px_24px_rgba(249,115,22,0.10)]"
+                          : "border-slate-200 bg-white text-slate-500 hover:border-orange-200 hover:bg-orange-50/50",
                       )}
                     >
-                      <p className="font-semibold">{team.name}</p>
-                      <p className="mt-1 text-xs text-slate-500">{active ? "Actualmente seleccionado" : "Equipo disponible"}</p>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold">{stat}</span>
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em]",
+                            active ? "bg-white text-orange-600" : "bg-slate-100 text-slate-400",
+                          )}
+                        >
+                          {active ? "Activa" : "Oculta"}
+                        </span>
+                      </div>
+                      <p className={cn("mt-2 text-xs", active ? "text-slate-500" : "text-slate-400")}>
+                        {active ? "Se mostrará dentro del seguimiento de esta liga." : "Tócala para activarla en este torneo."}
+                      </p>
                     </button>
                   );
                 })}
               </div>
-            ) : (
-              <div className="mt-4 rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                Todavia no hay equipos para asignar a la liga.
-              </div>
-            )
-          ) : null}
 
-          {getApiFieldError("teamIds") ? (
-            <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{getApiFieldError("teamIds")}</p>
-          ) : selectedTeamIds.length < 2 ? (
-            <p className="mt-3 text-xs font-medium text-amber-700">Se recomienda seleccionar al menos 2 equipos para armar la liga.</p>
-          ) : null}
+              {getApiFieldError("trackedStats") ? (
+                <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{getApiFieldError("trackedStats")}</p>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         <FormErrors message={apiFormError.globalMessage} />
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-h-[20px]" />
-
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={toggleTeamsSection}
-              disabled={loading}
-              className="border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
-            >
-              Asignar equipos
-            </Button>
-            <Button type="submit" variant="primary" disabled={loading || !formState.isValid}>
-              {loading ? "Guardando..." : "Guardar"}
-            </Button>
-          </div>
+        <div className="flex justify-end">
+          <Button type="submit" variant="primary" disabled={loading || !formState.isValid}>
+            {loading ? "Guardando..." : "Guardar"}
+          </Button>
         </div>
-      </form>
-    </Modal>
+        </form>
+      </Modal>
+
+      <ImageCropperModal
+        isOpen={pendingLogoSource !== null}
+        imageSrc={pendingLogoSource}
+        title="Ajustar logo de la liga"
+        onClose={() => setPendingLogoSource(null)}
+        onConfirm={(nextLogoBase64) => {
+          setValue("logoBase64", nextLogoBase64, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          setPendingLogoSource(null);
+        }}
+      />
+    </>
   );
 }

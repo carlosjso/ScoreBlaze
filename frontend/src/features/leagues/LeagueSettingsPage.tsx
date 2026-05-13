@@ -9,6 +9,7 @@ import { leaguesQueryKeys, leaguesService } from "@/features/leagues/Leagues.ser
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
+import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
 import { Button, PageHeader, Panel } from "@/shared/components/ui";
 
 export default function LeagueSettingsPage() {
@@ -62,18 +63,7 @@ export default function LeagueSettingsPage() {
         <PageHeader
           title="Ajustes de liga"
           subtitle="Edita la configuracion principal de esta liga sin regresar al listado."
-          actions={
-            <div className="flex flex-wrap gap-2">
-              {league ? (
-                <Button variant="outline" onClick={() => navigate(`/leagues/${league.id}`)}>
-                  Dashboard
-                </Button>
-              ) : null}
-              <Button variant="ghost" onClick={() => navigate("/leagues")}>
-                Ligas
-              </Button>
-            </div>
-          }
+          actions={<LeagueSectionNav leagueId={league?.id} />}
         />
 
         <Panel>

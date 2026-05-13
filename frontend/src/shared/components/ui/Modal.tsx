@@ -41,28 +41,29 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" onMouseDown={onClose}>
       <div
         className={cn(
-          "w-full rounded-3xl border border-slate-300 bg-slate-50 p-5 shadow-xl",
-          "max-h-[92vh] overflow-y-auto",
+          "w-full max-h-[92vh] overflow-hidden rounded-3xl border border-slate-300 bg-slate-50 shadow-xl",
           maxWidthClassName
         )}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        {(title || !hideCloseButton) && (
-          <div className="mb-4 flex items-start justify-between gap-3">
-            {title ? <h3 className="text-[30px] leading-none sm:text-[32px]">{title}</h3> : <span />}
-            {!hideCloseButton ? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
-                aria-label="Cerrar modal"
-              >
-                <X size={18} />
-              </button>
-            ) : null}
-          </div>
-        )}
-        {children}
+        <div className="max-h-[92vh] overflow-y-auto overscroll-contain p-5 [scrollbar-gutter:stable]">
+          {(title || !hideCloseButton) && (
+            <div className="mb-4 flex items-start justify-between gap-3">
+              {title ? <h3 className="text-[30px] leading-none sm:text-[32px]">{title}</h3> : <span />}
+              {!hideCloseButton ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                  aria-label="Cerrar modal"
+                >
+                  <X size={18} />
+                </button>
+              ) : null}
+            </div>
+          )}
+          {children}
+        </div>
       </div>
     </div>
   );

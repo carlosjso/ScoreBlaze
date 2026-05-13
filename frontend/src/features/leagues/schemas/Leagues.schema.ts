@@ -12,6 +12,7 @@ import {
   type LeagueFormValues,
   type LeagueLeaderSummary,
   type LeagueListItem,
+  type LeaguePlayerRankingRow,
   type LeagueStandingRow,
   type LeagueStatsOverview,
   type LeagueStatsSnapshot,
@@ -222,6 +223,42 @@ const apiLeagueStandingRowSchema = z
     }),
   ) satisfies z.ZodType<LeagueStandingRow>;
 
+const apiLeaguePlayerRankingRowSchema = z
+  .object({
+    position: z.coerce.number().int().min(1),
+    player_id: idSchema,
+    player_name: z.string().trim().min(1),
+    team_id: z.coerce.number().int().nullable().optional(),
+    team_name: z.string().trim().nullable().optional(),
+    matches_played: z.coerce.number().int().min(0),
+    total_points: z.coerce.number().int().min(0),
+    made_1pt: z.coerce.number().int().min(0),
+    made_2pt: z.coerce.number().int().min(0),
+    made_3pt: z.coerce.number().int().min(0),
+    missed_shots: z.coerce.number().int().min(0),
+    total_assists: z.coerce.number().int().min(0),
+    total_rebounds: z.coerce.number().int().min(0),
+    total_fouls: z.coerce.number().int().min(0),
+  })
+  .transform(
+    (row): LeaguePlayerRankingRow => ({
+      position: row.position,
+      playerId: row.player_id,
+      playerName: row.player_name,
+      teamId: row.team_id ?? null,
+      teamName: row.team_name ?? null,
+      matchesPlayed: row.matches_played,
+      totalPoints: row.total_points,
+      made1pt: row.made_1pt,
+      made2pt: row.made_2pt,
+      made3pt: row.made_3pt,
+      missedShots: row.missed_shots,
+      totalAssists: row.total_assists,
+      totalRebounds: row.total_rebounds,
+      totalFouls: row.total_fouls,
+    }),
+  ) satisfies z.ZodType<LeaguePlayerRankingRow>;
+
 export const apiLeagueStatsSnapshotSchema = z
   .object({
     league_id: idSchema,
@@ -231,6 +268,7 @@ export const apiLeagueStatsSnapshotSchema = z
     overview: apiLeagueStatsOverviewSchema,
     team_leaders: apiLeagueTeamLeadersSchema,
     standings: z.array(apiLeagueStandingRowSchema),
+    player_rankings: z.array(apiLeaguePlayerRankingRowSchema).default([]),
     updated_at: z.string().trim().min(1),
   })
   .transform(
@@ -242,6 +280,7 @@ export const apiLeagueStatsSnapshotSchema = z
       overview: snapshot.overview,
       teamLeaders: snapshot.team_leaders,
       standings: snapshot.standings,
+      playerRankings: snapshot.player_rankings,
       updatedAt: snapshot.updated_at,
     }),
   ) satisfies z.ZodType<LeagueStatsSnapshot>;
