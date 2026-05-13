@@ -1,3 +1,4 @@
+import { useTeamHistoricalStats } from "@/features/teams/hooks/useTeamHistoricalStats";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -27,6 +28,7 @@ export default function Teams() {
     sortDir,
   });
   const modals = useTeamsModals();
+  const detailTeamStatsQuery = useTeamHistoricalStats(modals.detailTeam?.id ?? null);
   const {
     submitting,
     deletingTeamId,
@@ -153,6 +155,9 @@ export default function Teams() {
         team={modals.detailTeam}
         isOpen={modals.detailTeam !== null}
         onClose={modals.closeDetail}
+        stats={detailTeamStatsQuery.data ?? null}
+        statsLoading={detailTeamStatsQuery.isPending}
+        statsError={detailTeamStatsQuery.error instanceof Error ? detailTeamStatsQuery.error.message : null}
       />
 
       <ConfirmModal

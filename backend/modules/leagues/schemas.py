@@ -71,6 +71,7 @@ class LeagueTableRowOut(BaseModel):
     responsible_email: str
     start_date: date
     end_date: date
+    logo_base64: Optional[str] = None
     tracked_stats: list[str]
     team_ids: list[int]
     team_count: int

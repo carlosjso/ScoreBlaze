@@ -6,15 +6,17 @@ import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 import {
   apiLeagueDetailSchema,
   apiLeagueSchema,
+  apiLeagueStatsSnapshotSchema,
   apiLeaguesSchema,
   apiPaginatedLeaguesTableSchema,
 } from "@/features/leagues/schemas/Leagues.schema";
-import type { LeagueDetail, LeagueListItem, LeagueMutationPayload, SortDir, SortKey } from "@/features/leagues/Leagues.types";
+import type { LeagueDetail, LeagueListItem, LeagueMutationPayload, LeagueStatsSnapshot, SortDir, SortKey } from "@/features/leagues/Leagues.types";
 
 export const leaguesQueryKeys = {
   all: ["leagues"] as const,
   catalog: () => [...leaguesQueryKeys.all, "catalog"] as const,
   detail: (leagueId: number) => [...leaguesQueryKeys.all, "detail", leagueId] as const,
+  stats: (leagueId: number) => [...leaguesQueryKeys.all, "stats", leagueId] as const,
   table: (params: {
     page: number;
     pageSize?: number;
@@ -55,6 +57,14 @@ export const leaguesService = {
       apiClient.get(`/api/leagues/${leagueId}`, { signal }),
       apiLeagueDetailSchema,
       "El detalle de la liga es invalido.",
+    );
+  },
+
+  getLeagueStats(leagueId: number, signal?: AbortSignal): Promise<LeagueStatsSnapshot> {
+    return requestJson(
+      apiClient.get(`/api/leagues/${leagueId}/stats`, { signal }),
+      apiLeagueStatsSnapshotSchema,
+      "Las estadisticas de la liga son invalidas.",
     );
   },
 

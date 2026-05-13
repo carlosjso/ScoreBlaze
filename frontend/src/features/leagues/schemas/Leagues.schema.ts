@@ -10,7 +10,12 @@ import {
   type ApiLeagueTeamSummary,
   type LeagueDetail,
   type LeagueFormValues,
+  type LeagueLeaderSummary,
   type LeagueListItem,
+  type LeagueStandingRow,
+  type LeagueStatsOverview,
+  type LeagueStatsSnapshot,
+  type LeagueTeamLeaders,
   type LeagueMutationPayload,
   type LeagueTeamSummary,
 } from "@/features/leagues/Leagues.types";
@@ -128,6 +133,7 @@ export const apiLeagueTableRowSchema = z
     status: leagueStatusSchema,
     start_date: z.string().trim().min(1),
     end_date: z.string().trim().min(1),
+    logo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
     tracked_stats: z.array(z.string()),
     team_ids: z.array(idSchema),
     team_count: z.coerce.number().int().min(0),
@@ -135,6 +141,110 @@ export const apiLeagueTableRowSchema = z
   .transform((league): LeagueListItem => toLeagueListItem(league)) satisfies z.ZodType<LeagueListItem>;
 
 export const apiPaginatedLeaguesTableSchema = buildPaginatedResponseSchema(apiLeagueTableRowSchema);
+
+const apiLeagueLeaderSummarySchema = z
+  .object({
+    team_id: z.coerce.number().int().nullable().optional(),
+    team_name: z.string().nullable().optional(),
+    value: z.coerce.number().int().default(0),
+  })
+  .transform(
+    (leader): LeagueLeaderSummary => ({
+      teamId: leader.team_id ?? null,
+      teamName: leader.team_name ?? null,
+      value: leader.value,
+    }),
+  ) satisfies z.ZodType<LeagueLeaderSummary>;
+
+const apiLeagueStatsOverviewSchema = z
+  .object({
+    teams_count: z.coerce.number().int().min(0),
+    total_matches: z.coerce.number().int().min(0),
+    scheduled_matches: z.coerce.number().int().min(0),
+    live_matches: z.coerce.number().int().min(0),
+    finished_matches: z.coerce.number().int().min(0),
+    champion: apiLeagueLeaderSummarySchema.nullable().optional(),
+  })
+  .transform(
+    (overview): LeagueStatsOverview => ({
+      teamsCount: overview.teams_count,
+      totalMatches: overview.total_matches,
+      scheduledMatches: overview.scheduled_matches,
+      liveMatches: overview.live_matches,
+      finishedMatches: overview.finished_matches,
+      champion: overview.champion ?? null,
+    }),
+  ) satisfies z.ZodType<LeagueStatsOverview>;
+
+const apiLeagueTeamLeadersSchema = z
+  .object({
+    top_offense: apiLeagueLeaderSummarySchema.nullable().optional(),
+    best_defense: apiLeagueLeaderSummarySchema.nullable().optional(),
+    most_wins: apiLeagueLeaderSummarySchema.nullable().optional(),
+  })
+  .transform(
+    (leaders): LeagueTeamLeaders => ({
+      topOffense: leaders.top_offense ?? null,
+      bestDefense: leaders.best_defense ?? null,
+      mostWins: leaders.most_wins ?? null,
+    }),
+  ) satisfies z.ZodType<LeagueTeamLeaders>;
+
+const apiLeagueStandingRowSchema = z
+  .object({
+    position: z.coerce.number().int().min(1),
+    team_id: idSchema,
+    team_name: z.string().trim().min(1),
+    matches_played: z.coerce.number().int().min(0),
+    wins: z.coerce.number().int().min(0),
+    losses: z.coerce.number().int().min(0),
+    draws: z.coerce.number().int().min(0),
+    points_for: z.coerce.number().int(),
+    points_against: z.coerce.number().int(),
+    points_difference: z.coerce.number().int(),
+    standings_points: z.coerce.number().int(),
+    total_team_fouls: z.coerce.number().int().min(0),
+  })
+  .transform(
+    (row): LeagueStandingRow => ({
+      position: row.position,
+      teamId: row.team_id,
+      teamName: row.team_name,
+      matchesPlayed: row.matches_played,
+      wins: row.wins,
+      losses: row.losses,
+      draws: row.draws,
+      pointsFor: row.points_for,
+      pointsAgainst: row.points_against,
+      pointsDifference: row.points_difference,
+      standingsPoints: row.standings_points,
+      totalTeamFouls: row.total_team_fouls,
+    }),
+  ) satisfies z.ZodType<LeagueStandingRow>;
+
+export const apiLeagueStatsSnapshotSchema = z
+  .object({
+    league_id: idSchema,
+    league_name: z.string().trim().min(1),
+    league_status: leagueStatusSchema,
+    tracked_stats: z.array(z.string()),
+    overview: apiLeagueStatsOverviewSchema,
+    team_leaders: apiLeagueTeamLeadersSchema,
+    standings: z.array(apiLeagueStandingRowSchema),
+    updated_at: z.string().trim().min(1),
+  })
+  .transform(
+    (snapshot): LeagueStatsSnapshot => ({
+      leagueId: snapshot.league_id,
+      leagueName: snapshot.league_name,
+      leagueStatus: snapshot.league_status,
+      trackedStats: normalizeLeagueTrackedStats(snapshot.tracked_stats),
+      overview: snapshot.overview,
+      teamLeaders: snapshot.team_leaders,
+      standings: snapshot.standings,
+      updatedAt: snapshot.updated_at,
+    }),
+  ) satisfies z.ZodType<LeagueStatsSnapshot>;
 
 export const leagueFormSchema = z
   .object({

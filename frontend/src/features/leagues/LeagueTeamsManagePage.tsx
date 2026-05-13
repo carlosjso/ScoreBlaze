@@ -1,10 +1,15 @@
-import { Check, LayoutGrid, Mail, Minus, Plus, RotateCcw, Save, Trash2, UsersRound } from "lucide-react";
+import { CalendarDays, Check, LayoutGrid, Mail, Minus, Plus, RotateCcw, Save, Trash2, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { PlayerDetailModal } from "@/features/players/components/PlayerDetailModal";
+import { useLeagueTeamScopedStats } from "@/features/leagues/hooks/useLeagueTeamScopedStats";
+import { usePlayersData } from "@/features/players/hooks/usePlayersData";
+import type { PlayerListItem } from "@/features/players/Players.types";
 import { useLeaguesData } from "@/features/leagues/hooks/useLeaguesData";
 import { useLeaguesMutations } from "@/features/leagues/hooks/useLeaguesMutations";
 import type { LeagueListItem } from "@/features/leagues/Leagues.types";
+import { TeamDetailModal } from "@/features/teams/components/TeamDetailModal";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { useTeamsData } from "@/features/teams/hooks/useTeamsData";
 import type { TeamListItem } from "@/features/teams/Teams.types";
@@ -193,15 +198,28 @@ type LeagueTeamCardProps = {
   onAction: (teamId: number) => void;
   statusLabel?: string;
   disabled?: boolean;
+  onDragStart: (teamId: number, zone: "assigned" | "available") => void;
+  onDragEnd: () => void;
 };
 
-function LeagueTeamCard({ team, mode, onAction, statusLabel, disabled = false }: LeagueTeamCardProps) {
+function LeagueTeamCard({
+  team,
+  mode,
+  onAction,
+  statusLabel,
+  disabled = false,
+  onDragStart,
+  onDragEnd,
+}: LeagueTeamCardProps) {
   const isAssigned = mode === "assigned";
 
   return (
     <button
       type="button"
+      draggable={!disabled}
       onClick={() => onAction(team.id)}
+      onDragStart={() => onDragStart(team.id, mode)}
+      onDragEnd={onDragEnd}
       disabled={disabled}
       className={cn(
         "group relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-2xl border px-3 py-3 text-left transition-all duration-200",
@@ -272,17 +290,28 @@ export default function LeagueTeamsPage() {
     loading,
     error,
   } = useLeagueTeamsSnapshot();
+  const { players: leaguePlayers, error: playersError } = usePlayersData();
   const { assigningTeamsLeagueId, mutationErrorMessage, clearMutationError, replaceLeagueTeams } = useLeaguesMutations();
   const [search, setSearch] = useState("");
   const [pendingTeamAction, setPendingTeamAction] = useState<TeamListItem | null>(null);
+  const [detailTeam, setDetailTeam] = useState<TeamListItem | null>(null);
+  const [detailPlayer, setDetailPlayer] = useState<PlayerListItem | null>(null);
+  const detailTeamStatsQuery = useLeagueTeamScopedStats({
+    leagueId: hasValidLeagueId ? selectedLeagueId : null,
+    leagueName: selectedLeague?.name ?? null,
+    teamId: detailTeam?.id ?? null,
+  });
 
   const assignedTeamIdsSource = useMemo(() => selectedLeague?.teamIds ?? [], [selectedLeague?.teamIds]);
   const assignedTeamIds = useMemo(() => new Set(assignedTeamIdsSource), [assignedTeamIdsSource]);
   const teamById = useMemo(() => new Map(orderedTeams.map((team) => [team.id, team])), [orderedTeams]);
+  const playerById = useMemo(() => new Map(leaguePlayers.map((player) => [player.id, player])), [leaguePlayers]);
 
   useEffect(() => {
     setSearch("");
     setPendingTeamAction(null);
+    setDetailTeam(null);
+    setDetailPlayer(null);
   }, [selectedLeague?.id]);
 
   const assignedTeams = useMemo(
@@ -298,7 +327,7 @@ export default function LeagueTeamsPage() {
   const usesSuspensionFlow = selectedLeague !== null && selectedLeague.status !== "Sin empezar";
   const previewEmptyRows = Math.max(0, 6 - assignedTeams.length);
   const queryError = error;
-  const panelError = mutationErrorMessage ?? queryError;
+  const panelError = mutationErrorMessage ?? queryError ?? playersError;
   const isSavingTeams = selectedLeague !== null && assigningTeamsLeagueId === selectedLeague.id;
 
   const handleShuffleTeams = async () => {
@@ -338,6 +367,20 @@ export default function LeagueTeamsPage() {
     void handleRemoveTeam(team.id);
   };
 
+  const handleOpenTeamDetail = (team: TeamListItem) => {
+    setDetailTeam(team);
+  };
+
+  const handleOpenPlayerDetail = (playerId: number) => {
+    const player = playerById.get(playerId);
+    if (!player) {
+      return;
+    }
+
+    setDetailTeam(null);
+    setDetailPlayer(player);
+  };
+
   return (
     <div className="sb-page">
       <div className="sb-page-shell">
@@ -345,9 +388,14 @@ export default function LeagueTeamsPage() {
           title="Equipos"
           subtitle="Consulta primero los equipos actuales de esta liga antes de editarla o ajustar su calendario."
           actions={
-            <Button variant="outline" onClick={() => navigate("/leagues")}>
-              Volver a ligas
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="ghost" onClick={() => navigate(selectedLeague ? `/leagues/${selectedLeague.id}/matches` : "/leagues")}>
+                Partidos
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/leagues")}>
+                Volver a ligas
+              </Button>
+            </div>
           }
         />
 
@@ -404,6 +452,10 @@ export default function LeagueTeamsPage() {
                         Sortear
                       </Button>
                     ) : null}
+                    <Button variant="ghost" onClick={() => navigate(`/leagues/${selectedLeagueId}/matches`)}>
+                      <CalendarDays size={14} />
+                      Partidos
+                    </Button>
                     <Button variant="primary" onClick={() => navigate(`/leagues/${selectedLeagueId}/teams/manage`)} disabled={isSavingTeams}>
                       <Plus size={14} />
                       Buscar equipos
@@ -481,7 +533,11 @@ export default function LeagueTeamsPage() {
                         </thead>
                         <tbody>
                           {assignedTeams.map((team) => (
-                            <tr key={`league-team-row-${team.id}`} className={tableRowClass}>
+                            <tr
+                              key={`league-team-row-${team.id}`}
+                              className={cn(tableRowClass, "cursor-pointer transition hover:bg-orange-50/40")}
+                              onClick={() => handleOpenTeamDetail(team)}
+                            >
                               <td className={tableCellClass}>
                                 <TeamLogo
                                   name={team.name}
@@ -516,7 +572,10 @@ export default function LeagueTeamsPage() {
                               <td className={`${tableCellClass} text-right`}>
                                 <button
                                   type="button"
-                                  onClick={() => handleTeamAction(team)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleTeamAction(team);
+                                  }}
                                   disabled={isSavingTeams}
                                   className={cn(
                                     "inline-flex h-10 w-10 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50",
@@ -587,6 +646,22 @@ export default function LeagueTeamsPage() {
                   void handleRemoveTeam(pendingTeamAction.id);
                 }}
               />
+
+              <TeamDetailModal
+                team={detailTeam}
+                isOpen={detailTeam !== null}
+                onClose={() => setDetailTeam(null)}
+                onPlayerClick={handleOpenPlayerDetail}
+                stats={detailTeamStatsQuery.data ?? null}
+                statsLoading={detailTeam !== null && detailTeamStatsQuery.loading}
+                statsError={detailTeam !== null ? detailTeamStatsQuery.error : null}
+              />
+
+              <PlayerDetailModal
+                player={detailPlayer}
+                isOpen={detailPlayer !== null}
+                onClose={() => setDetailPlayer(null)}
+              />
             </>
           )}
         </Panel>
@@ -610,6 +685,8 @@ export function LeagueTeamsManagePage() {
   const [availableSearch, setAvailableSearch] = useState("");
   const [assignedSearch, setAssignedSearch] = useState("");
   const [draftTeamIds, setDraftTeamIds] = useState<number[]>([]);
+  const [draggedTeam, setDraggedTeam] = useState<{ teamId: number; source: "assigned" | "available" } | null>(null);
+  const [activeDropZone, setActiveDropZone] = useState<"assigned" | "available" | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
 
   const originalTeamIds = useMemo(() => selectedLeague?.teamIds ?? [], [selectedLeague?.teamIds]);
@@ -622,6 +699,8 @@ export function LeagueTeamsManagePage() {
   useEffect(() => {
     setAvailableSearch("");
     setAssignedSearch("");
+    setDraggedTeam(null);
+    setActiveDropZone(null);
     setSaveFeedback("idle");
   }, [selectedLeague?.id]);
 
@@ -684,6 +763,30 @@ export function LeagueTeamsManagePage() {
     clearMutationError();
     setDraftTeamIds(normalizeTeamIds(originalTeamIds));
     setSaveFeedback("idle");
+  };
+
+  const handleDragStart = (teamId: number, source: "assigned" | "available") => {
+    setDraggedTeam({ teamId, source });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTeam(null);
+    setActiveDropZone(null);
+  };
+
+  const handleDropToZone = (zone: "assigned" | "available") => {
+    if (!draggedTeam || draggedTeam.source === zone) {
+      handleDragEnd();
+      return;
+    }
+
+    if (zone === "assigned") {
+      assignTeam(draggedTeam.teamId);
+    } else {
+      unassignTeam(draggedTeam.teamId);
+    }
+
+    handleDragEnd();
   };
 
   const handleSave = async () => {
@@ -785,7 +888,22 @@ export function LeagueTeamsManagePage() {
               ) : null}
 
               <div className="grid gap-5 xl:grid-cols-2">
-                <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+                <section
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    if (draggedTeam?.source === "available") {
+                      setActiveDropZone("assigned");
+                    }
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    handleDropToZone("assigned");
+                  }}
+                  className={cn(
+                    "rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200",
+                    activeDropZone === "assigned" && "border-orange-300 bg-orange-50/40 shadow-[0_0_0_4px_rgba(249,115,22,0.08)]"
+                  )}
+                >
                   <ColumnHeader
                     title="Equipos en la liga"
                     count={assignedTeams.length}
@@ -803,7 +921,7 @@ export function LeagueTeamsManagePage() {
                   </div>
 
                   <p className="mt-3 text-xs text-slate-500">
-                    Aqui ves los equipos actuales de la liga. Toca una tarjeta para retirarla.
+                    Arrastra equipos aqui para incorporarlos a la liga o toca una tarjeta para retirarla.
                   </p>
 
                   <div className="mt-4 max-h-[540px] space-y-3 overflow-y-auto pr-1">
@@ -815,6 +933,8 @@ export function LeagueTeamsManagePage() {
                           mode="assigned"
                           statusLabel={!originalAssignedIds.has(team.id) ? "Nuevo" : undefined}
                           onAction={unassignTeam}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
                           disabled={isSavingTeams}
                         />
                       ))
@@ -834,7 +954,22 @@ export function LeagueTeamsManagePage() {
                   </div>
                 </section>
 
-                <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                <section
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    if (draggedTeam?.source === "assigned") {
+                      setActiveDropZone("available");
+                    }
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    handleDropToZone("available");
+                  }}
+                  className={cn(
+                    "rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm transition-all duration-200",
+                    activeDropZone === "available" && "border-orange-300 bg-orange-100/40 shadow-[0_0_0_4px_rgba(249,115,22,0.08)]"
+                  )}
+                >
                   <ColumnHeader
                     title="Equipos disponibles"
                     count={availableTeams.length}
@@ -852,7 +987,7 @@ export function LeagueTeamsManagePage() {
                   </div>
 
                   <p className="mt-3 text-xs text-slate-500">
-                    Busca y agrega equipos disponibles a esta liga desde esta columna.
+                    Busca y arrastra equipos disponibles a la liga desde esta columna.
                   </p>
 
                   <div className="mt-4 max-h-[540px] space-y-3 overflow-y-auto pr-1">
@@ -864,6 +999,8 @@ export function LeagueTeamsManagePage() {
                           mode="available"
                           statusLabel={originalAssignedIds.has(team.id) ? "Quitado" : undefined}
                           onAction={assignTeam}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
                           disabled={isSavingTeams}
                         />
                       ))

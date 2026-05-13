@@ -9,6 +9,7 @@ import { getApiGlobalErrorMessage } from "@/shared/api/client";
 type SaveQuickMatchArgs = {
   mode: MatchFormMode;
   matchId?: number;
+  leagueId?: number | null;
   values: QuickMatchFormValues;
 };
 
@@ -34,12 +35,12 @@ export function useQuickMatchesMutations() {
 
       return quickMatchesService.updateMatch(matchId, payload);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.snapshot() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.all }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (matchId: number) => quickMatchesService.deleteMatch(matchId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.snapshot() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.all }),
   });
 
   const clearMutationError = () => {
@@ -47,12 +48,12 @@ export function useQuickMatchesMutations() {
     deleteMutation.reset();
   };
 
-  const saveMatch = async ({ mode, matchId, values }: SaveQuickMatchArgs) => {
+  const saveMatch = async ({ mode, matchId, leagueId, values }: SaveQuickMatchArgs) => {
     clearMutationError();
     await saveMutation.mutateAsync({
       mode,
       matchId,
-      payload: toQuickMatchMutationPayload(values),
+      payload: toQuickMatchMutationPayload(values, leagueId ?? null),
     });
   };
 

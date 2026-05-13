@@ -11,6 +11,7 @@ import {
 export const quickMatchesQueryKeys = {
   all: ["quick-matches"] as const,
   snapshot: () => [...quickMatchesQueryKeys.all, "snapshot"] as const,
+  detail: (matchId: number) => [...quickMatchesQueryKeys.all, "detail", matchId] as const,
 };
 
 async function requestJson<T>(
@@ -42,6 +43,14 @@ export const quickMatchesService = {
     ]);
 
     return { matches, teams };
+  },
+
+  getMatch(matchId: number, signal?: AbortSignal) {
+    return requestJson(
+      apiClient.get(`/matches/${matchId}`, { signal }),
+      apiMatchSchema,
+      "La respuesta del partido es invalida.",
+    );
   },
 
   createMatch(payload: MatchMutationPayload, signal?: AbortSignal) {

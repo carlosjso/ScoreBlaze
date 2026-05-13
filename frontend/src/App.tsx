@@ -12,6 +12,11 @@ import { QueryProvider } from "@/app/providers/QueryProvider";
 import AuthPage from "@/features/auth/AuthPage";
 import { GuestRoute, ProtectedRoute } from "@/features/auth/AuthRouteGuards";
 import BasketballHubPage from "@/features/basketball/BasketballHubPage";
+import LeagueCalendarPage from "@/features/leagues/LeagueCalendarPage";
+import LeagueDashboardPage from "@/features/leagues/LeagueDashboardPage";
+import LeagueMatchesPage from "@/features/leagues/LeagueMatchesPage";
+import LeagueSettingsPage from "@/features/leagues/LeagueSettingsPage";
+import LeagueStandingsPage from "@/features/leagues/LeagueStandingsPage";
 import LeaguesPage from "@/features/leagues/LeaguesPage";
 import LeagueTeamsPage, { LeagueTeamsManagePage } from "@/features/leagues/LeagueTeamsManagePage";
 import Players from "@/features/players/Players";
@@ -66,8 +71,14 @@ export default function App() {
                 <Route path="/settings/roles" element={<Roles />} />
                 <Route path="/settings/users" element={<Users />} />
                 <Route path="/leagues" element={<LeaguesPage />} />
+                <Route path="/leagues/:leagueId" element={<LeagueDashboardPage />} />
+                <Route path="/leagues/:leagueId/calendar" element={<LeagueCalendarPage />} />
                 <Route path="/leagues/:leagueId/teams" element={<LeagueTeamsPage />} />
                 <Route path="/leagues/:leagueId/teams/manage" element={<LeagueTeamsManagePage />} />
+                <Route path="/leagues/:leagueId/matches" element={<LeagueMatchesPage />} />
+                <Route path="/leagues/:leagueId/standings" element={<LeagueStandingsPage />} />
+                <Route path="/leagues/:leagueId/settings" element={<LeagueSettingsPage />} />
+                <Route path="/leagues/:leagueId/matches/:matchId/stats" element={<QuickMatchStatsPage />} />
                 <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
                 <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />
                 <Route path="/padel" element={<SportDashboardPage sport="Padel" />} />

@@ -66,6 +66,7 @@ export const apiMatchSchema = z.object({
   end_time: z.string().regex(timeApiRegex),
   team_a_id: idSchema,
   team_b_id: idSchema,
+  league_id: z.preprocess((value) => value ?? null, idSchema.nullable()),
   score_team_a: z.number().int().nullable(),
   score_team_b: z.number().int().nullable(),
   winner_team_id: idSchema.nullable(),
@@ -182,6 +183,7 @@ export function buildQuickMatchesView(matches: ApiMatch[], teams: ApiTeamOption[
       id: match.id,
       teamAId: match.team_a_id,
       teamBId: match.team_b_id,
+      leagueId: match.league_id,
       teamAName,
       teamBName,
       teamALogoBase64: teamA?.logo_base64 ?? null,
@@ -253,7 +255,10 @@ export function toQuickMatchFormValues(
   };
 }
 
-export function toQuickMatchMutationPayload(values: QuickMatchFormValues): MatchMutationPayload {
+export function toQuickMatchMutationPayload(
+  values: QuickMatchFormValues,
+  leagueId: number | null = null,
+): MatchMutationPayload {
   const normalizedValues = quickMatchFormSchema.parse(values);
   const hasScores = normalizedValues.scoreTeamA.trim() !== "" && normalizedValues.scoreTeamB.trim() !== "";
 
@@ -279,6 +284,7 @@ export function toQuickMatchMutationPayload(values: QuickMatchFormValues): Match
     end_time: toApiTime(normalizedValues.endTime),
     team_a_id: normalizedValues.teamAId,
     team_b_id: normalizedValues.teamBId,
+    league_id: leagueId,
     score_team_a: scoreTeamA,
     score_team_b: scoreTeamB,
     winner_team_id: winnerTeamId,

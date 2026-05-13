@@ -509,7 +509,7 @@ function MatchHero({ stats }: { stats: MatchStatsView }) {
   return (
     <section className="rounded-[22px] border border-slate-200/90 bg-white px-5 py-5 shadow-[0_8px_18px_rgba(15,23,42,0.04)] sm:px-6">
       <div className="flex items-center justify-between gap-3 text-[10px] font-semibold text-slate-400 sm:text-[11px]">
-        <span>{stats.match.tournament?.trim() || "Partido rapido"}</span>
+        <span>{stats.match.tournament?.trim() || (stats.match.league_id ? "Partido de liga" : "Partido rapido")}</span>
         <span className={cn("font-bold", statusTextClassName[stats.match.status])}>
           {getMatchStatusLabel(stats.match.status)}
         </span>

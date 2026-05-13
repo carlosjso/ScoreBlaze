@@ -22,7 +22,7 @@ export type ApiLeague = {
   team_ids: number[];
 };
 
-export type ApiLeagueTableRow = Omit<ApiLeague, "logo_base64"> & {
+export type ApiLeagueTableRow = ApiLeague & {
   team_count: number;
 };
 
@@ -44,6 +44,53 @@ export type LeagueTeamSummary = {
   responsibleEmail: string;
   playerCount: number;
   playersLabel: string;
+};
+
+export type LeagueLeaderSummary = {
+  teamId: number | null;
+  teamName: string | null;
+  value: number;
+};
+
+export type LeagueStatsOverview = {
+  teamsCount: number;
+  totalMatches: number;
+  scheduledMatches: number;
+  liveMatches: number;
+  finishedMatches: number;
+  champion: LeagueLeaderSummary | null;
+};
+
+export type LeagueTeamLeaders = {
+  topOffense: LeagueLeaderSummary | null;
+  bestDefense: LeagueLeaderSummary | null;
+  mostWins: LeagueLeaderSummary | null;
+};
+
+export type LeagueStandingRow = {
+  position: number;
+  teamId: number;
+  teamName: string;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  pointsDifference: number;
+  standingsPoints: number;
+  totalTeamFouls: number;
+};
+
+export type LeagueStatsSnapshot = {
+  leagueId: number;
+  leagueName: string;
+  leagueStatus: LeagueStatus;
+  trackedStats: string[];
+  overview: LeagueStatsOverview;
+  teamLeaders: LeagueTeamLeaders;
+  standings: LeagueStandingRow[];
+  updatedAt: string;
 };
 
 export type LeagueListItem = {

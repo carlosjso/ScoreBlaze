@@ -3,6 +3,7 @@ import { z } from "zod";
 import { buildPaginatedResponseSchema } from "@/shared/api/pagination";
 import {
   getTeamRosterStatus,
+  type ApiTeamStat,
   type ApiPlayer,
   type ApiTeam,
   type ApiTeamMembership,
@@ -53,6 +54,20 @@ export const apiTeamMembershipSchema = z.object({
 }) satisfies z.ZodType<ApiTeamMembership>;
 
 export const apiTeamMembershipsSchema = z.array(apiTeamMembershipSchema);
+
+export const apiTeamStatSchema = z.object({
+  team_id: idSchema,
+  matches_played: z.coerce.number().int().min(0),
+  wins: z.coerce.number().int().min(0),
+  losses: z.coerce.number().int().min(0),
+  draws: z.coerce.number().int().min(0),
+  points_for: z.coerce.number().int().min(0),
+  points_against: z.coerce.number().int().min(0),
+  points_difference: z.coerce.number().int(),
+  standings_points: z.coerce.number().int().min(0),
+  total_team_fouls: z.coerce.number().int().min(0),
+  updated_at: z.string().trim().min(1),
+}) satisfies z.ZodType<ApiTeamStat>;
 
 const apiTeamTablePlayerSchema = z
   .object({
