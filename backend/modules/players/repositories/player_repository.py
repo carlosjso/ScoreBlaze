@@ -34,15 +34,30 @@ class PlayerRepository:
         return self.db.scalar(statement)
 
     def list(self) -> list[Player]:
-        statement = select(Player).options(selectinload(Player.team_memberships)).order_by(Player.id.asc())
+        statement = (
+            select(Player)
+            .options(selectinload(Player.team_memberships))
+            .order_by(Player.id.asc())
+        )
         return list(self.db.scalars(statement).all())
 
     def get_by_email(self, email: str) -> Optional[Player]:
         statement = select(Player).where(Player.email == email)
         return self.db.scalar(statement)
 
+    # NUEVO
+    def get_by_name(self, name: str) -> Optional[Player]:
+        statement = select(Player).where(Player.name == name)
+        return self.db.scalar(statement)
+
     def get_many_by_ids(self, ids: list[int]) -> list[Player]:
         if not ids:
             return []
-        statement = select(Player).options(selectinload(Player.team_memberships)).where(Player.id.in_(ids))
+
+        statement = (
+            select(Player)
+            .options(selectinload(Player.team_memberships))
+            .where(Player.id.in_(ids))
+        )
+
         return list(self.db.scalars(statement).all())

@@ -32,6 +32,18 @@ class MembershipRepository:
         )
         return self.db.scalar(statement)
 
+    # NUEVO
+    def get_by_player_and_team(
+        self,
+        player_id: int,
+        team_id: int,
+    ) -> Optional[TeamMembership]:
+        statement = select(TeamMembership).where(
+            TeamMembership.player_id == player_id,
+            TeamMembership.team_id == team_id,
+        )
+        return self.db.scalar(statement)
+
     def list(self) -> list[TeamMembership]:
         statement = select(TeamMembership).order_by(
             TeamMembership.player_id.asc(),

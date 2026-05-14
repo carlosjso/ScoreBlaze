@@ -17,7 +17,7 @@ export type ApiPlayer = {
   id: number;
   name: string;
   email: string;
-  phone: number | null;
+  phone: string | null;
   photo_base64: string | null;
 };
 

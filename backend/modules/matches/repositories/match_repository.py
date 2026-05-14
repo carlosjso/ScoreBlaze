@@ -45,21 +45,25 @@ class MatchRepository:
                 selectinload(Match.team_a),
                 selectinload(Match.team_b),
                 selectinload(Match.winner_team),
+                selectinload(Match.league),
             )
             .where(Match.id == match_id)
         )
         return self.db.scalar(statement)
 
-    def list(self) -> list[Match]:
+    def list(self, league_id: int | None = None) -> list[Match]:
         statement = (
             select(Match)
             .options(
                 selectinload(Match.team_a),
                 selectinload(Match.team_b),
                 selectinload(Match.winner_team),
+                selectinload(Match.league),
             )
-            .order_by(Match.match_date.desc(), Match.start_time.desc(), Match.id.desc())
         )
+        if league_id is not None:
+            statement = statement.where(Match.league_id == league_id)
+        statement = statement.order_by(Match.match_date.desc(), Match.start_time.desc(), Match.id.desc())
         return list(self.db.scalars(statement).all())
 
     def get_existing_team_ids(self, team_ids: list[int]) -> set[int]:

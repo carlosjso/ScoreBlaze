@@ -40,7 +40,7 @@ export const apiPlayerSchema = z.object({
   id: idSchema,
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
-  phone: z.number().int().nullable(),
+  phone: z.preprocess((value) => value ?? null, z.string().nullable()),
   photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
 }) satisfies z.ZodType<ApiPlayer>;
 

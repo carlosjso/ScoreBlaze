@@ -24,6 +24,7 @@ function isBasketballPath(pathname: string) {
     pathname === "/quick-match" ||
     pathname.startsWith("/quick-match/") ||
     pathname === "/leagues" ||
+    pathname.startsWith("/leagues/") ||
     pathname === "/scoreboard" ||
     pathname.startsWith("/scoreboard/")
   );
@@ -91,6 +92,21 @@ export default function AppLayout() {
           { label: "Equipos", to: "/teams" },
           { label: "Plantilla", to: location.pathname.replace(/\/manage$/, "") },
           { label: "Asignar jugadores" },
+        ]
+      : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/teams/manage")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Ligas", to: "/leagues" },
+          { label: "Equipos", to: location.pathname.replace(/\/manage$/, "") },
+          { label: "Asignar equipos" },
+        ]
+      : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/teams")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Ligas", to: "/leagues" },
+          { label: "Equipos" },
         ]
       : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster")
       ? [
