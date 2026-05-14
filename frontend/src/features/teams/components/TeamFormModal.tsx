@@ -41,6 +41,7 @@ export function TeamFormModal({
     resolver: zodResolver(teamFormSchema),
     defaultValues: toTeamFormValues(null),
   });
+
   const [logoError, setLogoError] = useState<string | null>(null);
 
   const teamName = watch("name") ?? "";
@@ -106,6 +107,7 @@ export function TeamFormModal({
       <form className="space-y-5" onSubmit={handleSubmit(submitForm)}>
         <div className="mx-auto max-w-[440px] rounded-[28px] bg-white px-5 py-7 shadow-[0_18px_45px_rgba(15,23,42,0.10)] sm:px-8">
           <div className="mx-auto max-w-[360px]">
+           
             <div className="flex flex-col items-center">
               <label
                 className={cn(
@@ -205,6 +207,7 @@ export function TeamFormModal({
                 )}
               />
 
+              {/* CAMBIO REALIZADO AQUÍ: Validación de 10 dígitos para el teléfono del responsable */}
               <Controller
                 name="responsiblePhone"
                 control={control}
@@ -212,7 +215,12 @@ export function TeamFormModal({
                   <Input
                     label="Telefono del responsable"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, ""); // Solo números
+                      if (val.length <= 10) { // Límite de 10 dígitos
+                        field.onChange(val);
+                      }
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<Phone size={14} />}
                     placeholder="7711777344"
@@ -259,4 +267,3 @@ export function TeamFormModal({
     </Modal>
   );
 }
-
