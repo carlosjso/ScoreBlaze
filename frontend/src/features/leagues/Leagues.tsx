@@ -57,6 +57,22 @@ export default function Leagues() {
     [teamsCatalogQuery.data],
   );
   const leagueById = useMemo(() => new Map(catalogLeagues.map((league) => [league.id, league])), [catalogLeagues]);
+  const tableLeagues = useMemo(
+    () =>
+      leagues.map((league) => {
+        const catalogLeague = leagueById.get(league.id);
+
+        if (!catalogLeague || league.logoBase64) {
+          return league;
+        }
+
+        return {
+          ...league,
+          logoBase64: catalogLeague.logoBase64,
+        };
+      }),
+    [leagueById, leagues],
+  );
 
   const totalLeagues = catalogLeagues.length;
   const activeLeagues = catalogLeagues.filter((league) => league.status === "En curso").length;
@@ -153,7 +169,7 @@ export default function Leagues() {
 
           <div className="mt-4">
             <LeaguesTable
-              leagues={leagues}
+              leagues={tableLeagues}
               loading={loading}
               sortKey={sortKey}
               sortDir={sortDir}
@@ -168,6 +184,7 @@ export default function Leagues() {
                 setSearch("");
                 setCurrentPage(1);
               }}
+              onOpen={(league) => navigate(`/leagues/${league.id}`)}
               onView={modals.openDetail}
               onEdit={(league) => {
                 clearMutationError();

@@ -3,6 +3,7 @@ from __future__ import annotations
 from data.orm import LeagueStat
 from database.unit_of_work import UnitOfWork
 from modules.match_events.repositories import MatchEventRepository
+from modules.match_participations.repositories import MatchPlayerParticipationRepository
 from modules.matches.repositories import MatchRepository
 from modules.players.repositories import PlayerRepository
 from modules.teams.repositories import TeamRepository
@@ -22,6 +23,7 @@ class LeagueStatsService:
         player_repo: PlayerRepository,
         match_repo: MatchRepository,
         match_event_repo: MatchEventRepository,
+        match_participation_repo: MatchPlayerParticipationRepository,
         unit_of_work: UnitOfWork,
         policy: LeaguePolicy,
     ):
@@ -31,6 +33,7 @@ class LeagueStatsService:
         self.player_repo = player_repo
         self.match_repo = match_repo
         self.match_event_repo = match_event_repo
+        self.match_participation_repo = match_participation_repo
         self.unit_of_work = unit_of_work
         self.policy = policy
 
@@ -39,13 +42,24 @@ class LeagueStatsService:
         matches = self.match_repo.list(league_id=league.id)
         match_ids = [match.id for match in matches]
         events = self.match_event_repo.list_by_match_ids(match_ids)
+        participations = self.match_participation_repo.list_by_match_ids(match_ids)
 
         team_ids = set(league.team_ids)
         for match in matches:
             team_ids.add(match.team_a_id)
             team_ids.add(match.team_b_id)
 
-        player_ids = sorted({event.player_id for event in events if event.player_id is not None})
+        player_ids = sorted(
+            {
+                event.player_id
+                for event in events
+                if event.player_id is not None
+            }
+            | {
+                participation.player_id
+                for participation in participations
+            }
+        )
 
         team_lookup = {team.id: team for team in self.team_repo.get_many_by_ids(sorted(team_ids))}
         player_lookup = {player.id: player for player in self.player_repo.get_many_by_ids(player_ids)}
@@ -60,6 +74,7 @@ class LeagueStatsService:
             player_lookup=player_lookup,
             matches=matches,
             events=events,
+            participations=participations,
         )
 
         with self.unit_of_work.transaction():

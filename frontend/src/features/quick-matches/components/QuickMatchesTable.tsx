@@ -25,6 +25,12 @@ type QuickMatchesTableProps = {
   statusFilter: MatchStatusFilter;
   hasActiveFilters: boolean;
   deletingMatchId: number | null;
+  loadingLabel?: string;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  emptyStateActionLabel?: string;
+  buildStatsPath?: (match: QuickMatchListItem) => string;
+  onEmptyAction?: () => void;
   onClearFilters: () => void;
   onView: (match: QuickMatchListItem) => void;
   onEdit: (match: QuickMatchListItem) => void;
@@ -241,17 +247,18 @@ function MatchCardActions({
 function MatchCard({
   match,
   deletingMatchId,
+  buildStatsPath,
   onView,
   onEdit,
   onDelete,
   emphasisLabel,
-}: Pick<QuickMatchesTableProps, "deletingMatchId" | "onView" | "onEdit" | "onDelete"> & {
+}: Pick<QuickMatchesTableProps, "deletingMatchId" | "buildStatsPath" | "onView" | "onEdit" | "onDelete"> & {
   match: QuickMatchListItem;
   emphasisLabel?: string;
 }) {
   const navigate = useNavigate();
   const centerScoreLabel = `${match.scoreTeamA ?? "--"} - ${match.scoreTeamB ?? "--"}`;
-  const openStats = () => navigate(`/quick-match/${match.id}/stats`);
+  const openStats = () => navigate(buildStatsPath ? buildStatsPath(match) : `/quick-match/${match.id}/stats`);
 
   return (
     <article
@@ -364,11 +371,12 @@ function MatchSection({
   matches,
   emptyLabel,
   deletingMatchId,
+  buildStatsPath,
   onView,
   onEdit,
   onDelete,
   firstCardHeader,
-}: Pick<QuickMatchesTableProps, "deletingMatchId" | "onView" | "onEdit" | "onDelete"> & {
+}: Pick<QuickMatchesTableProps, "deletingMatchId" | "buildStatsPath" | "onView" | "onEdit" | "onDelete"> & {
   eyebrow: string;
   title: string;
   matches: QuickMatchListItem[];
@@ -405,6 +413,7 @@ function MatchSection({
                   <MatchCard
                     match={match}
                     deletingMatchId={deletingMatchId}
+                    buildStatsPath={buildStatsPath}
                     onView={onView}
                     onEdit={onEdit}
                     onDelete={onDelete}
@@ -429,6 +438,12 @@ export function QuickMatchesTable({
   statusFilter,
   hasActiveFilters,
   deletingMatchId,
+  loadingLabel = "Cargando partidos...",
+  emptyStateTitle = "No hay partidos rapidos registrados",
+  emptyStateDescription = "Registra tu primer partido rapido para iniciar la agenda de amistosos.",
+  emptyStateActionLabel = "Crear partido",
+  buildStatsPath,
+  onEmptyAction,
   onClearFilters,
   onView,
   onEdit,
@@ -445,7 +460,7 @@ export function QuickMatchesTable({
   if (loading) {
     return (
       <div className="rounded-[28px] border border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-500 shadow-sm">
-        Cargando partidos...
+        {loadingLabel}
       </div>
     );
   }
@@ -455,14 +470,14 @@ export function QuickMatchesTable({
       <div className="rounded-[28px] border border-slate-300 bg-white px-4 py-6 shadow-sm">
         <TableEmptyState
           mode={hasActiveFilters ? "filtered" : "empty"}
-          title={hasActiveFilters ? "Sin resultados para esos filtros" : "No hay partidos rapidos registrados"}
+          title={hasActiveFilters ? "Sin resultados para esos filtros" : emptyStateTitle}
           description={
             hasActiveFilters
               ? "Prueba ajustando la busqueda o el estatus para localizar partidos."
-              : "Registra tu primer partido rapido para iniciar la agenda de amistosos."
+              : emptyStateDescription
           }
-          actionLabel={hasActiveFilters ? "Limpiar filtros" : "Crear partido"}
-          onAction={hasActiveFilters ? onClearFilters : undefined}
+          actionLabel={hasActiveFilters ? "Limpiar filtros" : emptyStateActionLabel}
+          onAction={hasActiveFilters ? onClearFilters : onEmptyAction}
         />
       </div>
     );
@@ -477,6 +492,7 @@ export function QuickMatchesTable({
           matches={liveMatches}
           emptyLabel="No hay partidos en juego en este momento."
           deletingMatchId={deletingMatchId}
+          buildStatsPath={buildStatsPath}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -490,6 +506,7 @@ export function QuickMatchesTable({
           matches={scheduledMatches}
           emptyLabel="No hay partidos programados por ahora."
           deletingMatchId={deletingMatchId}
+          buildStatsPath={buildStatsPath}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -504,6 +521,7 @@ export function QuickMatchesTable({
           matches={finishedMatches}
           emptyLabel="Todavia no hay partidos finalizados."
           deletingMatchId={deletingMatchId}
+          buildStatsPath={buildStatsPath}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}

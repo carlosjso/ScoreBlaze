@@ -70,7 +70,8 @@ class TeamService:
         rows: list[TeamTableRowOut] = []
 
         for team in teams:
-            player_ids = sorted({membership.player_id for membership in team.team_memberships})
+            memberships_by_player_id = {membership.player_id: membership for membership in team.team_memberships}
+            player_ids = sorted(memberships_by_player_id)
             team_players = [
                 TeamTablePlayerOut(
                     id=player.id,
@@ -78,6 +79,7 @@ class TeamService:
                     email=player.email,
                     phone="" if player.phone is None else str(player.phone),
                     photo_base64=player.photo_base64,
+                    shirt_number=memberships_by_player_id[player_id].shirt_number,
                 )
                 for player_id in player_ids
                 for player in [players_by_id.get(player_id)]

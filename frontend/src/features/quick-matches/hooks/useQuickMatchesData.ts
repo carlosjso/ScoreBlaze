@@ -14,10 +14,10 @@ export function useQuickMatchesData() {
 
   const snapshot = snapshotQuery.data;
 
-  const matches = useMemo(
-    () => buildQuickMatchesView(snapshot?.matches ?? [], snapshot?.teams ?? []),
-    [snapshot?.matches, snapshot?.teams]
-  );
+  const matches = useMemo(() => {
+    const quickMatches = (snapshot?.matches ?? []).filter((match) => match.league_id === null);
+    return buildQuickMatchesView(quickMatches, snapshot?.teams ?? []);
+  }, [snapshot?.matches, snapshot?.teams]);
   const liveMatchIds = useMemo(
     () => matches.filter((match) => match.status === "live").map((match) => match.id),
     [matches],

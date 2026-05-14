@@ -7,6 +7,7 @@ import type { TeamMutationPayload, TeamsSnapshot } from "@/features/teams/Teams.
 import {
   apiPaginatedTeamsTableSchema,
   apiPlayersSchema,
+  apiTeamMembershipSchema,
   apiTeamMembershipsSchema,
   apiTeamsSchema,
   apiTeamSchema,
@@ -105,6 +106,20 @@ export const teamsService = {
       apiClient.put(`/api/teams/${teamId}`, payload, { signal }),
       apiTeamSchema,
       "La respuesta del equipo es invalida."
+    );
+  },
+
+  updateTeamMembership(playerId: number, teamId: number, shirtNumber: string | null, signal?: AbortSignal) {
+    return requestJson(
+      apiClient.put(
+        `/team-memberships/${playerId}/${teamId}`,
+        {
+          shirt_number: shirtNumber?.trim() ? shirtNumber.trim() : null,
+        },
+        { signal },
+      ),
+      apiTeamMembershipSchema,
+      "La respuesta de la camiseta es invalida.",
     );
   },
 

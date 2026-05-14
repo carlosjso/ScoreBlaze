@@ -3,6 +3,7 @@ from fastapi import Depends
 from database.dependencies import get_unit_of_work
 from database.unit_of_work import UnitOfWork
 from modules.match_events.repositories import MatchEventRepository
+from modules.match_participations.repositories import MatchPlayerParticipationRepository
 from modules.matches.repositories import MatchRepository
 from modules.players.repositories import PlayerRepository
 from modules.teams.repositories import TeamRepository
@@ -43,6 +44,12 @@ def get_match_event_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_wo
     return MatchEventRepository(unit_of_work.db)
 
 
+def get_match_participation_repository(
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> MatchPlayerParticipationRepository:
+    return MatchPlayerParticipationRepository(unit_of_work.db)
+
+
 def get_league_policy(
     league_repo: LeagueRepository = Depends(get_league_repository),
     team_repo: TeamRepository = Depends(get_team_repository),
@@ -75,6 +82,7 @@ def get_league_stats_service(
     player_repo: PlayerRepository = Depends(get_player_repository),
     match_repo: MatchRepository = Depends(get_match_repository),
     match_event_repo: MatchEventRepository = Depends(get_match_event_repository),
+    match_participation_repo: MatchPlayerParticipationRepository = Depends(get_match_participation_repository),
     unit_of_work: UnitOfWork = Depends(get_unit_of_work),
     policy: LeaguePolicy = Depends(get_league_policy),
 ) -> LeagueStatsService:
@@ -85,6 +93,7 @@ def get_league_stats_service(
         player_repo=player_repo,
         match_repo=match_repo,
         match_event_repo=match_event_repo,
+        match_participation_repo=match_participation_repo,
         unit_of_work=unit_of_work,
         policy=policy,
     )

@@ -19,6 +19,8 @@ export type ScoreboardPlayerOption = {
   label: string;
   name: string;
   shirtNumber: string | null;
+  isPresent: boolean;
+  didPlay: boolean;
 };
 
 export type ScoreboardHistoryEvent = {

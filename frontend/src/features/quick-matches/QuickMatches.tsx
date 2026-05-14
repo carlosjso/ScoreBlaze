@@ -88,6 +88,7 @@ export default function QuickMatches() {
     await saveMatch({
       mode: modals.formMode,
       matchId: modals.editingMatch?.id,
+      leagueId: modals.editingMatch?.leagueId ?? null,
       values,
     });
     clearMutationError();
@@ -141,6 +142,7 @@ export default function QuickMatches() {
               statusFilter={statusFilter}
               hasActiveFilters={hasActiveFilters}
               deletingMatchId={deletingMatchId}
+              onEmptyAction={openCreate}
               onClearFilters={resetFilters}
               onView={modals.openDetail}
               onEdit={(match) => {

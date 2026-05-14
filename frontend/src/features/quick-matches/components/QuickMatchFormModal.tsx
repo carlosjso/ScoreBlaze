@@ -24,6 +24,7 @@ type QuickMatchFormModalProps = {
   mode: "create" | "edit";
   initialMatch?: QuickMatchListItem | null;
   teams: ApiTeamOption[];
+  title?: string;
   loading?: boolean;
   apiError?: unknown;
   onClose: () => void;
@@ -37,6 +38,7 @@ export function QuickMatchFormModal({
   mode,
   initialMatch,
   teams,
+  title,
   loading = false,
   apiError,
   onClose,
@@ -105,7 +107,7 @@ export function QuickMatchFormModal({
     <Modal
       isOpen={isOpen}
       onClose={loading ? () => undefined : onClose}
-      title={mode === "create" ? "Crear partido rapido" : "Editar partido rapido"}
+      title={title ?? (mode === "create" ? "Crear partido rapido" : "Editar partido rapido")}
       maxWidthClassName="max-w-3xl"
     >
       <form className="space-y-4" onSubmit={handleSubmit(submitForm)}>

@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import config
-from authentication.dependencies import require_authenticated_user, require_roles
+from authentication.dependencies import require_authenticated_user
 from authentication.router import router as auth_router
 import database.alchemy as db
 from core.exceptions.handlers import register_exception_handlers
@@ -87,7 +87,6 @@ app.include_router(
     users_router,
     prefix="/users",
     tags=["users"],
-    dependencies=[Depends(require_roles("admin"))],
 )
 
 get_db = db.get_db

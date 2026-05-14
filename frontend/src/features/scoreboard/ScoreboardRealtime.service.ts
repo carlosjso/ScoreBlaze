@@ -33,6 +33,8 @@ const scoreboardPlayerSchema = z.object({
   label: z.string().min(1),
   name: z.string().min(1),
   shirtNumber: z.string().nullable(),
+  isPresent: z.boolean().default(false),
+  didPlay: z.boolean().default(false),
 });
 
 const scoreboardHistoryEventSchema = z.object({

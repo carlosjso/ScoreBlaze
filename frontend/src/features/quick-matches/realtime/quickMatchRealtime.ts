@@ -48,8 +48,8 @@ function toStatsTeamSnapshot(
   return {
     id: team.id ?? fallback.id,
     key: fallback.key,
-    name: team.name || fallback.name,
-    logo_base64: team.logo ?? fallback.logo_base64,
+    name: fallback.name || team.name,
+    logo_base64: fallback.logo_base64 ?? team.logo ?? null,
     score: team.score,
     fouls: team.fouls,
     players:
@@ -96,15 +96,15 @@ export function applyRealtimeScoreboardToQuickMatch(
     match.teamAId,
     match.teamBId,
   );
-  const teamAName = realtimeState.teamA.name || match.teamAName;
-  const teamBName = realtimeState.teamB.name || match.teamBName;
+  const teamAName = match.teamAName || realtimeState.teamA.name;
+  const teamBName = match.teamBName || realtimeState.teamB.name;
 
   return {
     ...match,
     teamAName,
     teamBName,
-    teamALogoBase64: realtimeState.teamA.logo ?? match.teamALogoBase64,
-    teamBLogoBase64: realtimeState.teamB.logo ?? match.teamBLogoBase64,
+    teamALogoBase64: match.teamALogoBase64 ?? realtimeState.teamA.logo ?? null,
+    teamBLogoBase64: match.teamBLogoBase64 ?? realtimeState.teamB.logo ?? null,
     matchupLabel: `${teamAName} vs ${teamBName}`,
     scoreTeamA,
     scoreTeamB,

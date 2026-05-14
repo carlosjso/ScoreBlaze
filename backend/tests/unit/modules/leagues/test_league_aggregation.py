@@ -85,7 +85,7 @@ class LeagueAggregationTest(unittest.TestCase):
             league_id=7,
             league_name="Liga Demo",
             league_status=LeagueStatus.FINISHED.value,
-            tracked_stats=["Triples", "Asistencias", "Puntos", "Faltas"],
+            tracked_stats=["Fallo", "Faltas", "Asistencias", "Rebotes"],
             current_team_ids=[1, 2],
             team_lookup=team_lookup,
             player_lookup=player_lookup,
@@ -107,6 +107,72 @@ class LeagueAggregationTest(unittest.TestCase):
         self.assertEqual(snapshot["standings"][0]["standings_points"], 2)
         self.assertEqual(snapshot["player_rankings"][0]["player_id"], 10)
         self.assertEqual(snapshot["player_rankings"][0]["matches_played"], 1)
+
+    def test_compute_league_stats_snapshot_counts_played_participation_without_events(self):
+        team_lookup = {
+            1: SimpleNamespace(id=1, name="Halcones"),
+            2: SimpleNamespace(id=2, name="Tigres"),
+        }
+        player_lookup = {
+            10: SimpleNamespace(id=10, name="Alicia"),
+            11: SimpleNamespace(id=11, name="Carla"),
+        }
+        matches = [
+            SimpleNamespace(
+                id=100,
+                team_a_id=1,
+                team_b_id=2,
+                score_team_a=50,
+                score_team_b=48,
+                winner_team_id=1,
+                is_draw=False,
+                status=MatchStatus.FINISHED.value,
+            ),
+        ]
+        events = [
+            SimpleNamespace(
+                id=1,
+                match_id=100,
+                team_id=1,
+                player_id=10,
+                event_type=MatchEventType.POINT_2.value,
+                status=MatchEventStatus.ACTIVE.value,
+            ),
+        ]
+        participations = [
+            SimpleNamespace(
+                match_id=100,
+                team_id=1,
+                player_id=10,
+                present=True,
+                played=True,
+            ),
+            SimpleNamespace(
+                match_id=100,
+                team_id=1,
+                player_id=11,
+                present=True,
+                played=True,
+            ),
+        ]
+
+        snapshot = compute_league_stats_snapshot(
+            league_id=7,
+            league_name="Liga Demo",
+            league_status=LeagueStatus.FINISHED.value,
+            tracked_stats=["Fallo", "Faltas", "Asistencias", "Rebotes"],
+            current_team_ids=[1, 2],
+            team_lookup=team_lookup,
+            player_lookup=player_lookup,
+            matches=matches,
+            events=events,
+            participations=participations,
+        )
+
+        player_rows = {row["player_id"]: row for row in snapshot["player_rankings"]}
+        self.assertEqual(player_rows[10]["matches_played"], 1)
+        self.assertEqual(player_rows[11]["matches_played"], 1)
+        self.assertEqual(player_rows[11]["total_points"], 0)
 
 
 if __name__ == "__main__":

@@ -98,6 +98,7 @@ class LeagueService:
                         responsible_email=league.responsible_email,
                         start_date=league.start_date,
                         end_date=league.end_date,
+                        logo_base64=league.logo_base64,
                         tracked_stats=list(league.tracked_stats or []),
                         team_ids=league.team_ids,
                         team_count=len(league.team_ids),

@@ -3,7 +3,7 @@ export type SortKey = "id" | "name" | "status" | "teams";
 export type SortDir = "asc" | "desc";
 export type LeagueFormMode = "create" | "edit";
 
-export const leagueTrackedStatOptions = ["Triples", "Asistencias", "Puntos", "Faltas"] as const;
+export const leagueTrackedStatOptions = ["Fallo", "Faltas", "Asistencias", "Rebotes"] as const;
 
 export type LeagueTrackedStatOption = (typeof leagueTrackedStatOptions)[number];
 export type LeagueTrackedStat = string;
@@ -22,7 +22,7 @@ export type ApiLeague = {
   team_ids: number[];
 };
 
-export type ApiLeagueTableRow = Omit<ApiLeague, "logo_base64"> & {
+export type ApiLeagueTableRow = ApiLeague & {
   team_count: number;
 };
 
@@ -44,6 +44,71 @@ export type LeagueTeamSummary = {
   responsibleEmail: string;
   playerCount: number;
   playersLabel: string;
+};
+
+export type LeagueLeaderSummary = {
+  teamId: number | null;
+  teamName: string | null;
+  value: number;
+};
+
+export type LeagueStatsOverview = {
+  teamsCount: number;
+  totalMatches: number;
+  scheduledMatches: number;
+  liveMatches: number;
+  finishedMatches: number;
+  champion: LeagueLeaderSummary | null;
+};
+
+export type LeagueTeamLeaders = {
+  topOffense: LeagueLeaderSummary | null;
+  bestDefense: LeagueLeaderSummary | null;
+  mostWins: LeagueLeaderSummary | null;
+};
+
+export type LeaguePlayerRankingRow = {
+  position: number;
+  playerId: number;
+  playerName: string;
+  teamId: number | null;
+  teamName: string | null;
+  matchesPlayed: number;
+  totalPoints: number;
+  made1pt: number;
+  made2pt: number;
+  made3pt: number;
+  missedShots: number;
+  totalAssists: number;
+  totalRebounds: number;
+  totalFouls: number;
+};
+
+export type LeagueStandingRow = {
+  position: number;
+  teamId: number;
+  teamName: string;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  pointsDifference: number;
+  standingsPoints: number;
+  totalTeamFouls: number;
+};
+
+export type LeagueStatsSnapshot = {
+  leagueId: number;
+  leagueName: string;
+  leagueStatus: LeagueStatus;
+  trackedStats: string[];
+  overview: LeagueStatsOverview;
+  teamLeaders: LeagueTeamLeaders;
+  standings: LeagueStandingRow[];
+  playerRankings: LeaguePlayerRankingRow[];
+  updatedAt: string;
 };
 
 export type LeagueListItem = {
@@ -113,11 +178,12 @@ export function sanitizeLeagueTeamIds(teamIds: number[]): number[] {
 export function normalizeLeagueTrackedStats(trackedStats: string[]): string[] {
   const seen = new Set<string>();
   const normalizedTrackedStats: string[] = [];
+  const allowedStats = new Set<string>(leagueTrackedStatOptions);
 
   trackedStats.forEach((stat) => {
     const normalizedStat = stat.trim().replace(/\s+/g, " ");
 
-    if (!normalizedStat || seen.has(normalizedStat)) {
+    if (!normalizedStat || seen.has(normalizedStat) || !allowedStats.has(normalizedStat)) {
       return;
     }
 

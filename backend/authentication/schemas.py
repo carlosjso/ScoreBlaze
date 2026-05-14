@@ -19,6 +19,7 @@ class AuthUserOut(BaseModel):
     name: str
     email: EmailStr
     roles: list[str]
+    permissions: list[str] = Field(default_factory=list)
     created_at: datetime
 
 

@@ -106,6 +106,26 @@ def has_required_role(current_roles: set[str], required_roles: set[str]) -> bool
     return not required_roles.isdisjoint(current_roles)
 
 
+def has_required_permission(
+    current_roles: set[str],
+    current_permissions: set[str],
+    required_permissions: set[str],
+) -> bool:
+    if SUPERADMIN_ROLE_NAME in current_roles:
+        return True
+    return required_permissions.issubset(current_permissions)
+
+
+def has_any_required_permission(
+    current_roles: set[str],
+    current_permissions: set[str],
+    required_permissions: set[str],
+) -> bool:
+    if SUPERADMIN_ROLE_NAME in current_roles:
+        return True
+    return not required_permissions.isdisjoint(current_permissions)
+
+
 def require_roles(*required_roles: str):
     normalized_required_roles = {role.strip().lower() for role in required_roles if role.strip()}
 
@@ -114,6 +134,44 @@ def require_roles(*required_roles: str):
     ) -> AuthUserOut:
         current_roles = {role.strip().lower() for role in current_user.roles}
         if not has_required_role(current_roles, normalized_required_roles):
+            raise ForbiddenException("No tienes permisos para realizar esta accion.")
+        return current_user
+
+    return dependency
+
+
+def require_permissions(*required_permissions: str):
+    normalized_required_permissions = {
+        permission.strip().lower()
+        for permission in required_permissions
+        if permission.strip()
+    }
+
+    async def dependency(
+        current_user: AuthUserOut = Depends(require_authenticated_user),
+    ) -> AuthUserOut:
+        current_roles = {role.strip().lower() for role in current_user.roles}
+        current_permissions = {permission.strip().lower() for permission in current_user.permissions}
+        if not has_required_permission(current_roles, current_permissions, normalized_required_permissions):
+            raise ForbiddenException("No tienes permisos para realizar esta accion.")
+        return current_user
+
+    return dependency
+
+
+def require_any_permission(*required_permissions: str):
+    normalized_required_permissions = {
+        permission.strip().lower()
+        for permission in required_permissions
+        if permission.strip()
+    }
+
+    async def dependency(
+        current_user: AuthUserOut = Depends(require_authenticated_user),
+    ) -> AuthUserOut:
+        current_roles = {role.strip().lower() for role in current_user.roles}
+        current_permissions = {permission.strip().lower() for permission in current_user.permissions}
+        if not has_any_required_permission(current_roles, current_permissions, normalized_required_permissions):
             raise ForbiddenException("No tienes permisos para realizar esta accion.")
         return current_user
 

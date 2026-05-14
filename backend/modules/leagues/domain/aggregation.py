@@ -153,6 +153,7 @@ def compute_league_stats_snapshot(
     player_lookup: dict[int, Any],
     matches: list[Any],
     events: list[Any],
+    participations: list[Any] | None = None,
 ) -> dict[str, Any]:
     team_rows: dict[int, dict[str, Any]] = {}
 
@@ -215,6 +216,25 @@ def compute_league_stats_snapshot(
         row["points_difference"] = row["points_for"] - row["points_against"]
 
     player_rows: dict[int, dict[str, Any]] = {}
+
+    for participation in participations or []:
+        if not participation.played:
+            continue
+        if participation.match_id not in live_or_finished_match_ids:
+            continue
+
+        player_row = player_rows.setdefault(
+            participation.player_id,
+            _make_player_row(
+                participation.player_id,
+                player_lookup,
+                team_id=participation.team_id,
+                team_lookup=team_lookup,
+            ),
+        )
+        player_row["team_id"] = participation.team_id
+        player_row["team_name"] = _team_name(team_lookup, participation.team_id)
+        player_row["_match_ids"].add(participation.match_id)
 
     for event in events:
         if event.status != MatchEventStatus.ACTIVE.value:
