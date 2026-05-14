@@ -41,6 +41,7 @@ export function PlayerFormModal({
     resolver: zodResolver(playerFormSchema),
     defaultValues: toPlayerFormValues(null),
   });
+
   const [photoError, setPhotoError] = useState<string | null>(null);
 
   const selectedTeamIds = watch("teamIds");
@@ -64,13 +65,10 @@ export function PlayerFormModal({
   const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setPhotoError("Selecciona un archivo de imagen valido.");
+      setPhotoError("Selecciona un archivo de imagen válido.");
       return;
     }
 
@@ -164,11 +162,11 @@ export function PlayerFormModal({
                 ) : null}
               </div>
 
-              {photoError ? (
+              {photoError && (
                 <p className="mt-2 text-center text-xs font-medium text-red-600">
                   {photoError}
                 </p>
-              ) : null}
+              )}
             </div>
 
             <div className="mt-6 space-y-4">
@@ -195,9 +193,15 @@ export function PlayerFormModal({
                 control={control}
                 render={({ field, fieldState }) => (
                   <Input
-                    label="Telefono del jugador"
+                    label="Teléfono del jugador"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(e) => {
+                      // Solo permite números y máximo 10 dígitos
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val.length <= 10) {
+                        field.onChange(val);
+                      }
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<Phone size={14} />}
                     placeholder="7717777344"
@@ -242,15 +246,10 @@ export function PlayerFormModal({
 
         <div className="flex justify-end">
           <Button variant="secondary" type="submit" disabled={loading}>
-            {loading
-              ? "Guardando..."
-              : mode === "create"
-                ? "Crear"
-                : "Guardar"}
+            {loading ? "Guardando..." : mode === "create" ? "Crear" : "Guardar"}
           </Button>
         </div>
       </form>
     </Modal>
   );
 }
-
