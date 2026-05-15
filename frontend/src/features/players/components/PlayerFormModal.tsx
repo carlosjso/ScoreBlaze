@@ -57,6 +57,7 @@ export function PlayerFormModal({
   const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
+
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setPhotoError("Selecciona un archivo de imagen valido.");
@@ -96,6 +97,7 @@ export function PlayerFormModal({
                 <PlayerPhoto name={playerName || "Jugador"} photoBase64={photoBase64} className="h-24 w-24 text-sm" emptyClassName="border-slate-200 bg-slate-200 text-slate-700" />
                 <input type="file" accept="image/*" className="sr-only" disabled={loading} onChange={handlePhotoChange} />
               </label>
+
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                 <label className={cn("inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100", loading && "pointer-events-none opacity-50")}>
                   <Upload size={12} />
@@ -127,6 +129,7 @@ export function PlayerFormModal({
                     label="Telefono del jugador"
                     value={field.value}
                     onChange={(e) => {
+                      // Solo permite números y limita a un máximo de 10 dígitos
                       const val = e.target.value.replace(/\D/g, "");
                       if (val.length <= 10) field.onChange(val);
                     }}
