@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -33,6 +34,9 @@ class PlayerStatUpdate(BaseModel):
 
 class PlayerStatOut(PlayerStatBase):
     player_id: int
+    tracked_made_shots: Optional[int] = Field(default=None, ge=0)
+    tracked_shot_attempts: Optional[int] = Field(default=None, ge=0)
+    shooting_accuracy: Optional[float] = Field(default=None, ge=0, le=100)
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

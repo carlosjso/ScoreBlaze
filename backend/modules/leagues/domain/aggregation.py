@@ -4,6 +4,7 @@ from typing import Any
 
 from modules.match_events.domain import MatchEventStatus, MatchEventType
 from modules.matches.domain import MatchStatus
+from modules.matches.tracked_stats import does_track_stat, normalize_match_tracked_stats
 
 from .enums import LeagueStatus
 from .rules import LEAGUE_STANDINGS_DRAW_POINTS, LEAGUE_STANDINGS_WIN_POINTS
@@ -156,6 +157,7 @@ def compute_league_stats_snapshot(
     participations: list[Any] | None = None,
 ) -> dict[str, Any]:
     team_rows: dict[int, dict[str, Any]] = {}
+    match_by_id = {match.id: match for match in matches}
 
     for team_id in current_team_ids:
         team_rows[team_id] = _make_team_row(team_id, team_lookup)
@@ -242,10 +244,18 @@ def compute_league_stats_snapshot(
         if event.match_id not in live_or_finished_match_ids:
             continue
 
+        event_match = match_by_id.get(event.match_id)
+        event_tracked_stats = normalize_match_tracked_stats(
+            getattr(event_match, "tracked_stats", None) or tracked_stats,
+        )
         team_row = team_rows.setdefault(event.team_id, _make_team_row(event.team_id, team_lookup))
         event_type = MatchEventType(event.event_type)
 
-        if event.match_id in finished_match_ids and event_type == MatchEventType.FOUL:
+        if (
+            event.match_id in finished_match_ids
+            and event_type == MatchEventType.FOUL
+            and does_track_stat("Faltas", event_tracked_stats)
+        ):
             team_row["total_team_fouls"] += 1
 
         if event.player_id is None:
@@ -269,13 +279,13 @@ def compute_league_stats_snapshot(
         elif event_type == MatchEventType.POINT_3:
             player_row["total_points"] += 3
             player_row["made_3pt"] += 1
-        elif event_type == MatchEventType.MISS:
+        elif event_type == MatchEventType.MISS and does_track_stat("Fallo", event_tracked_stats):
             player_row["missed_shots"] += 1
-        elif event_type == MatchEventType.ASSIST:
+        elif event_type == MatchEventType.ASSIST and does_track_stat("Asistencias", event_tracked_stats):
             player_row["total_assists"] += 1
-        elif event_type == MatchEventType.REBOUND:
+        elif event_type == MatchEventType.REBOUND and does_track_stat("Rebotes", event_tracked_stats):
             player_row["total_rebounds"] += 1
-        elif event_type == MatchEventType.FOUL:
+        elif event_type == MatchEventType.FOUL and does_track_stat("Faltas", event_tracked_stats):
             player_row["total_fouls"] += 1
 
     for row in player_rows.values():

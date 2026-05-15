@@ -12,6 +12,7 @@ type SaveLeagueMatchArgs = {
   mode: MatchFormMode;
   matchId?: number;
   leagueId: number;
+  trackedStats?: string[];
   values: QuickMatchFormValues;
 };
 
@@ -63,13 +64,13 @@ export function useLeagueMatchesMutations() {
     deleteMutation.reset();
   };
 
-  const saveMatch = async ({ mode, matchId, leagueId, values }: SaveLeagueMatchArgs) => {
+  const saveMatch = async ({ mode, matchId, leagueId, trackedStats, values }: SaveLeagueMatchArgs) => {
     clearMutationError();
     await saveMutation.mutateAsync({
       mode,
       matchId,
       leagueId,
-      payload: toQuickMatchMutationPayload(values, leagueId),
+      payload: toQuickMatchMutationPayload(values, leagueId, trackedStats ?? []),
     });
   };
 

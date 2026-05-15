@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
+  ChevronLeft,
   ChevronRight,
   LayoutGrid,
   ListOrdered,
@@ -11,10 +12,11 @@ import {
   UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useLeagueMatchesData } from "@/features/leagues/hooks/useLeagueMatchesData";
+import { buildLeagueLeaderPreviewItems } from "@/features/leagues/leagueLeaders";
 import { leaguesQueryKeys, leaguesService } from "@/features/leagues/Leagues.service";
 import { buildLiveLeagueStandings } from "@/features/leagues/realtime/leagueStandingsRealtime";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
@@ -168,6 +170,8 @@ export default function LeagueDashboardPage() {
   );
   const standingsRows = standingsSnapshot?.rows ?? [];
   const hasLiveStandings = (standingsSnapshot?.liveMatchCount ?? 0) > 0;
+  const leaderPreviewItems = useMemo(() => buildLeagueLeaderPreviewItems(stats), [stats]);
+  const [activeLeaderPage, setActiveLeaderPage] = useState(0);
 
   const actions: DashboardActionCard[] = [
     {
@@ -215,12 +219,44 @@ export default function LeagueDashboardPage() {
           timeStyle: "short",
         })
       : null;
-  const hasLeaderHighlights = Boolean(
-    stats?.teamLeaders.mostWins?.teamName
-    || stats?.teamLeaders.topOffense?.teamName
-    || stats?.teamLeaders.bestDefense?.teamName
-    || stats?.overview.champion?.teamName,
-  );
+  const hasAnyLeaderHighlights = leaderPreviewItems.length > 0;
+  const leaderPageCount = Math.max(1, Math.ceil(leaderPreviewItems.length / 3));
+  const visibleLeaderItems = leaderPreviewItems.slice(activeLeaderPage * 3, activeLeaderPage * 3 + 3);
+  const visibleLeaderSlots: Array<(typeof leaderPreviewItems)[number] | null> = [...visibleLeaderItems];
+  while (visibleLeaderSlots.length < 3) {
+    visibleLeaderSlots.push(null);
+  }
+  const goToRecords = () => navigate(`/leagues/${league?.id}/records`);
+  const goPrevLeader = () => {
+    if (leaderPageCount <= 1) {
+      return;
+    }
+    setActiveLeaderPage((current) =>
+      current === 0 ? leaderPageCount - 1 : current - 1,
+    );
+  };
+  const goNextLeader = () => {
+    if (leaderPageCount <= 1) {
+      return;
+    }
+    setActiveLeaderPage((current) => (current + 1) % leaderPageCount);
+  };
+
+  useEffect(() => {
+    setActiveLeaderPage(0);
+  }, [league?.id, leaderPageCount]);
+
+  useEffect(() => {
+    if (leaderPageCount <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveLeaderPage((current) => (current + 1) % leaderPageCount);
+    }, 3600);
+
+    return () => window.clearInterval(intervalId);
+  }, [leaderPageCount]);
 
   return (
     <div className="sb-page">
@@ -400,44 +436,99 @@ export default function LeagueDashboardPage() {
                 </section>
 
                 <section className="rounded-[28px] border border-slate-300 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Resumen deportivo</p>
-                  <h3 className="mt-1 text-xl font-semibold text-slate-950">Lideres de la competencia</h3>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Resumen deportivo</p>
+                      <h3 className="mt-1 text-xl font-semibold text-slate-950">Lideres de la competencia</h3>
+                      <p className="mt-1 text-xs text-slate-500">Vista previa rotativa de los records actuales.</p>
+                    </div>
 
-                  <div className="mt-4 grid gap-3">
-                    {stats?.teamLeaders.mostWins?.teamName ? (
-                      <LeaderCard
-                        label="Mas victorias"
-                        teamName={stats.teamLeaders.mostWins.teamName}
-                        value={stats.teamLeaders.mostWins.value}
-                      />
-                    ) : null}
-
-                    {stats?.teamLeaders.topOffense?.teamName ? (
-                      <LeaderCard
-                        label="Mejor ofensiva"
-                        teamName={stats.teamLeaders.topOffense.teamName}
-                        value={stats.teamLeaders.topOffense.value}
-                      />
-                    ) : null}
-
-                    {stats?.teamLeaders.bestDefense?.teamName ? (
-                      <LeaderCard
-                        label="Mejor defensa"
-                        teamName={stats.teamLeaders.bestDefense.teamName}
-                        value={stats.teamLeaders.bestDefense.value}
-                      />
-                    ) : null}
-
-                    {stats?.overview.champion?.teamName ? (
-                      <LeaderCard
-                        label="Lider actual"
-                        teamName={stats.overview.champion.teamName}
-                        value={stats.overview.champion.value}
-                      />
-                    ) : null}
+                    <div className="flex items-center gap-2">
+                      {leaderPageCount > 1 ? (
+                        <>
+                          <Button variant="ghost" onClick={goPrevLeader} className="rounded-full px-3 py-2">
+                            <ChevronLeft size={16} />
+                          </Button>
+                          <Button variant="ghost" onClick={goNextLeader} className="rounded-full px-3 py-2">
+                            <ChevronRight size={16} />
+                          </Button>
+                        </>
+                      ) : null}
+                      <Button variant="outline" onClick={goToRecords}>
+                        Ver todos
+                      </Button>
+                    </div>
                   </div>
 
-                  {!hasLeaderHighlights ? (
+                  {visibleLeaderItems.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={goToRecords}
+                      className="mt-4 flex w-full flex-col rounded-[24px] border border-orange-200 bg-[linear-gradient(135deg,#fff9f2_0%,#ffffff_60%,#fff7ed_100%)] px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-[0_16px_28px_rgba(249,115,22,0.14)]"
+                    >
+                      <div className="grid gap-2.5">
+                        {visibleLeaderSlots.map((leader, index) =>
+                          leader ? (
+                            <div
+                              key={leader.key}
+                              className="rounded-[16px] border border-white/80 bg-white/90 px-3 py-2.5 shadow-sm"
+                            >
+                              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-orange-500">
+                                {leader.label}
+                              </p>
+                              <p className="mt-1.5 line-clamp-1 text-base font-black leading-none text-slate-950">
+                                {leader.title}
+                              </p>
+                              <p className="mt-1 line-clamp-1 text-[11px] text-slate-500">
+                                {leader.subtitle ?? "Lider actual de la competencia"}
+                              </p>
+                              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-600">
+                                {leader.valueLabel}
+                              </p>
+                            </div>
+                          ) : (
+                            <div
+                              key={`leader-empty-${activeLeaderPage}-${index}`}
+                              aria-hidden="true"
+                              className="rounded-[16px] border border-dashed border-slate-200 bg-white/60 px-3 py-2.5 shadow-sm"
+                            >
+                              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                                Sin record
+                              </p>
+                              <p className="mt-1.5 line-clamp-1 text-base font-black leading-none text-slate-300">
+                                --
+                              </p>
+                              <p className="mt-1 line-clamp-1 text-[11px] text-slate-300">
+                                Espacio reservado
+                              </p>
+                              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300">
+                                --
+                              </p>
+                            </div>
+                          ),
+                        )}
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          {Array.from({ length: leaderPageCount }, (_, index) => (
+                            <span
+                              key={`leader-page-${index}`}
+                              className={cn(
+                                "h-2.5 w-2.5 rounded-full transition",
+                                index === activeLeaderPage ? "bg-orange-500" : "bg-slate-300",
+                              )}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-semibold text-slate-500">
+                          Toca para ver todos los records
+                        </span>
+                      </div>
+                    </button>
+                  ) : null}
+
+                  {!hasAnyLeaderHighlights ? (
                     <div className="mt-4 rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm text-slate-500">
                       Aun no hay suficientes partidos para mostrar lideres destacados en esta liga.
                     </div>

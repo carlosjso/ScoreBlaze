@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { normalizeLeagueTrackedStats } from "@/features/leagues/Leagues.types";
 import {
   formatMatchDate,
   formatMatchTimeRange,
@@ -73,6 +74,7 @@ export const apiMatchSchema = z.object({
   is_draw: z.boolean(),
   court: z.string().nullable(),
   tournament: z.string().nullable(),
+  tracked_stats: z.array(z.string()),
   status: matchStatusSchema,
 }) satisfies z.ZodType<ApiMatch>;
 
@@ -212,6 +214,7 @@ export function buildQuickMatchesView(matches: ApiMatch[], teams: ApiTeamOption[
       }),
       court,
       tournament,
+      trackedStats: normalizeLeagueTrackedStats(match.tracked_stats),
       venueLabel,
       status: match.status,
       statusLabel: getMatchStatusLabel(match.status),
@@ -258,6 +261,7 @@ export function toQuickMatchFormValues(
 export function toQuickMatchMutationPayload(
   values: QuickMatchFormValues,
   leagueId: number | null = null,
+  trackedStats: string[] = [],
 ): MatchMutationPayload {
   const normalizedValues = quickMatchFormSchema.parse(values);
   const hasScores = normalizedValues.scoreTeamA.trim() !== "" && normalizedValues.scoreTeamB.trim() !== "";
@@ -291,6 +295,7 @@ export function toQuickMatchMutationPayload(
     is_draw: isDraw,
     court: normalizeOptionalText(normalizedValues.court),
     tournament: normalizeOptionalText(normalizedValues.tournament),
+    tracked_stats: normalizeLeagueTrackedStats(trackedStats),
     status: normalizedValues.status,
   };
 }

@@ -108,6 +108,13 @@ export default function AppLayout() {
           { label: "Ligas", to: "/leagues" },
           { label: "Equipos" },
         ]
+      : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/records")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Ligas", to: "/leagues" },
+          { label: "Lideres y records" },
+        ]
       : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster")
       ? [
           { label: "Inicio", to: "/dashboard" },

@@ -52,3 +52,14 @@ class MatchPlayerParticipationRepository:
             )
         )
         return list(self.db.scalars(statement).all())
+
+    def list_by_player(self, player_id: int) -> list[MatchPlayerParticipation]:
+        statement = (
+            select(MatchPlayerParticipation)
+            .where(MatchPlayerParticipation.player_id == player_id)
+            .order_by(
+                MatchPlayerParticipation.match_id.asc(),
+                MatchPlayerParticipation.team_id.asc(),
+            )
+        )
+        return list(self.db.scalars(statement).all())

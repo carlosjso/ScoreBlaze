@@ -21,6 +21,16 @@ export type LeaguePlayerParticipation = {
   playerMatchesPlayed: number;
   teamMatchesPlayed: number;
   participationRate: number | null;
+  rankingPosition: number | null;
+  totalPoints: number;
+  made1pt: number;
+  made2pt: number;
+  made3pt: number;
+  missedShots: number;
+  totalAssists: number;
+  totalRebounds: number;
+  totalFouls: number;
+  trackedStats: string[];
 };
 
 export function useLeaguePlayerParticipation({
@@ -71,8 +81,18 @@ export function useLeaguePlayerParticipation({
       playerMatchesPlayed,
       teamMatchesPlayed,
       participationRate: teamMatchesPlayed > 0 ? (playerMatchesPlayed / teamMatchesPlayed) * 100 : null,
+      rankingPosition: playerRanking?.position ?? null,
+      totalPoints: playerRanking?.totalPoints ?? 0,
+      made1pt: playerRanking?.made1pt ?? 0,
+      made2pt: playerRanking?.made2pt ?? 0,
+      made3pt: playerRanking?.made3pt ?? 0,
+      missedShots: playerRanking?.missedShots ?? 0,
+      totalAssists: playerRanking?.totalAssists ?? 0,
+      totalRebounds: playerRanking?.totalRebounds ?? 0,
+      totalFouls: playerRanking?.totalFouls ?? 0,
+      trackedStats: leagueStatsQuery.data?.trackedStats ?? [],
     } satisfies LeaguePlayerParticipation;
-  }, [leagueId, leagueName, leagueStatsQuery.data?.playerRankings, liveMatchesSnapshot.matches, playerId, shouldLoad, teamId, teamName]);
+  }, [leagueId, leagueName, leagueStatsQuery.data?.playerRankings, leagueStatsQuery.data?.trackedStats, liveMatchesSnapshot.matches, playerId, shouldLoad, teamId, teamName]);
 
   return {
     data,

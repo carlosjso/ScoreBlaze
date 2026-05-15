@@ -107,6 +107,7 @@ export default function LeagueMatchesPage() {
       mode: modals.formMode,
       matchId: modals.editingMatch?.id,
       leagueId: league.id,
+      trackedStats: modals.editingMatch?.trackedStats,
       values,
     });
     clearMutationError();
