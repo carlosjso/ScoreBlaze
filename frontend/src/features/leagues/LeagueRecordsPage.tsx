@@ -294,7 +294,7 @@ export default function LeagueRecordsPage() {
                 <div className="absolute -right-10 bottom-8 h-28 w-28 rounded-full bg-sky-100/50 blur-3xl" />
                 <div className="relative rounded-[28px] border border-white/80 bg-white/92 px-5 py-6 backdrop-blur-sm sm:px-6">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex items-start gap-4">
+                    <div className="flex min-w-0 items-start gap-4">
                       <TeamLogo
                         name={league.name}
                         logoBase64={league.logoBase64}
@@ -305,7 +305,9 @@ export default function LeagueRecordsPage() {
 
                       <div className="min-w-0">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-500">Resumen historico</p>
-                        <h2 className="mt-2 text-[30px] leading-none text-slate-950 sm:text-[34px]">{league.name}</h2>
+                        <h2 className="mt-2 max-w-full truncate text-[30px] leading-none text-slate-950 sm:text-[34px]" title={league.name}>
+                          {league.name}
+                        </h2>
                         <p className="mt-2 text-sm text-slate-500">
                           Aqui ves todos los lideres principales de equipos y jugadores registrados en esta competencia.
                         </p>

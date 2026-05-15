@@ -281,7 +281,7 @@ function LeagueCard({
             />
           </div>
 
-          <h3 className="mt-3 line-clamp-2 min-h-[2.5rem] text-sm font-bold text-slate-950 sm:text-base" title={league.name}>
+          <h3 className="mt-3 max-w-full truncate text-sm font-bold text-slate-950 sm:text-base" title={league.name}>
             {league.name}
           </h3>
         </div>
@@ -306,11 +306,11 @@ function LeagueCard({
           </span>
 
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-700"
+            className="inline-flex max-w-full items-center gap-1.5 overflow-hidden rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-700"
             title={`Tipo de liga: ${leagueTypeLabel}`}
           >
-            <Tag size={12} />
-            {leagueTypeLabel}
+            <Tag size={12} className="shrink-0" />
+            <span className="min-w-0 max-w-[140px] truncate sm:max-w-[180px]">{leagueTypeLabel}</span>
           </span>
         </div>
       </div>

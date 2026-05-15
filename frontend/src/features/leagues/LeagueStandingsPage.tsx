@@ -85,7 +85,9 @@ export default function LeagueStandingsPage() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-500">Competencia activa</p>
-                    <h2 className="mt-2 text-[30px] leading-none text-slate-950 sm:text-[34px]">{league.name}</h2>
+                    <h2 className="mt-2 max-w-full truncate text-[30px] leading-none text-slate-950 sm:text-[34px]" title={league.name}>
+                      {league.name}
+                    </h2>
                   </div>
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -97,9 +99,12 @@ export default function LeagueStandingsPage() {
                       <CalendarDays size={14} />
                       {stats?.overview.totalMatches ?? 0} partidos
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                      <Shield size={14} />
-                      {league.category}
+                    <span
+                      className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                      title={league.category}
+                    >
+                      <Shield size={14} className="shrink-0" />
+                      <span className="min-w-0 truncate">{league.category}</span>
                     </span>
                     <StatusBadge status={league.status} />
                   </div>

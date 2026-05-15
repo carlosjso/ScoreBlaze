@@ -15,6 +15,7 @@ import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
+import { truncateText } from "@/shared/utils/truncateText";
 
 export default function Leagues() {
   const navigate = useNavigate();
@@ -120,6 +121,7 @@ export default function Leagues() {
 
   const editingLeague = modals.editingLeague ? leagueById.get(modals.editingLeague.id) ?? null : null;
   const panelError = mutationErrorMessage ?? tableError ?? catalogError;
+  const deleteLeagueLabel = modals.deleteLeague ? truncateText(modals.deleteLeague.name, 56) : null;
 
   return (
     <div className="sb-page">
@@ -231,7 +233,7 @@ export default function Leagues() {
         title="Eliminar liga"
         message={
           modals.deleteLeague
-            ? `Seguro que deseas eliminar la liga ${modals.deleteLeague.name}. Esta accion no se puede deshacer.`
+            ? `Seguro que deseas eliminar la liga ${deleteLeagueLabel ?? "seleccionada"}. Esta accion no se puede deshacer.`
             : "Seguro que deseas eliminar esta liga. Esta accion no se puede deshacer."
         }
         loading={deletingLeagueId !== null}

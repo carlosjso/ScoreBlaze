@@ -106,7 +106,9 @@ export default function LeagueSettingsPage() {
                       <StatusBadge status={league.status} />
                     </div>
 
-                    <h2 className="mt-3 text-[30px] leading-none text-slate-950 sm:text-[34px]">{league.name}</h2>
+                    <h2 className="mt-3 max-w-full truncate text-[30px] leading-none text-slate-950 sm:text-[34px]" title={league.name}>
+                      {league.name}
+                    </h2>
                     <p className="mt-2 text-sm text-slate-500">
                       Ajusta los datos administrativos, calendario base y metricas que se monitorean en esta liga.
                     </p>
@@ -131,7 +133,7 @@ export default function LeagueSettingsPage() {
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Categoria</p>
-                      <p className="mt-2 font-semibold text-slate-900">{league.category}</p>
+                      <p className="mt-2 font-semibold text-slate-900 [overflow-wrap:anywhere]">{league.category}</p>
                     </div>
                     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Equipos</p>

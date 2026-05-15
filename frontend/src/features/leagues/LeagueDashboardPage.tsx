@@ -305,7 +305,7 @@ export default function LeagueDashboardPage() {
               <section className="rounded-[30px] border border-slate-300 bg-[linear-gradient(135deg,#fff9f3_0%,#ffffff_65%,#f8fafc_100%)] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
                 <div className="rounded-[26px] border border-slate-200 bg-white px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:px-6">
                   <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="flex items-start gap-4">
+                    <div className="flex min-w-0 items-start gap-4">
                       <TeamLogo
                         name={league.name}
                         logoBase64={league.logoBase64}
@@ -321,13 +321,18 @@ export default function LeagueDashboardPage() {
                             Liga #{league.id}
                           </span>
                           <StatusBadge status={league.status} />
-                          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
-                            <Shield size={12} />
-                            {league.category}
+                          <span
+                            className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600"
+                            title={league.category}
+                          >
+                            <Shield size={12} className="shrink-0" />
+                            <span className="min-w-0 truncate">{league.category}</span>
                           </span>
                         </div>
 
-                        <h3 className="mt-3 text-[30px] leading-none text-slate-950 sm:text-[34px]">{league.name}</h3>
+                        <h3 className="mt-3 max-w-full truncate text-[30px] leading-none text-slate-950 sm:text-[34px]" title={league.name}>
+                          {league.name}
+                        </h3>
                         <p className="mt-2 text-sm text-slate-500">
                           {league.startDate} - {league.endDate}
                         </p>
