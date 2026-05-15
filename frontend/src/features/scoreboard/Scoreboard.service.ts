@@ -34,6 +34,8 @@ type ApiScoreboardPlayer = {
   name: string;
   shirt_number: string | null;
   label: string;
+  is_present: boolean;
+  did_play: boolean;
 };
 
 type ApiScoreboardTeam = {
@@ -72,6 +74,8 @@ const apiScoreboardPlayerSchema = z.object({
   name: z.string().trim().min(1),
   shirt_number: z.string().trim().nullable(),
   label: z.string().trim().min(1),
+  is_present: z.boolean().default(false),
+  did_play: z.boolean().default(false),
 }) satisfies z.ZodType<ApiScoreboardPlayer>;
 
 const apiScoreboardTeamSchema = z.object({
@@ -112,6 +116,12 @@ type ScoreboardEventMutationPayload = {
   event_type: ApiScoreboardEventType;
   period: number;
   elapsed_seconds: number;
+};
+
+type ScoreboardPlayerParticipationPayload = {
+  team_key: ApiScoreboardTeamKey;
+  is_present?: boolean;
+  did_play?: boolean;
 };
 
 const FRONTEND_TO_API_EVENT_TYPE: Record<ScoreboardEventType, ApiScoreboardEventType> = {
@@ -160,6 +170,8 @@ function toPlayerOption(player: ApiScoreboardPlayer): ScoreboardPlayerOption {
     label: player.label,
     name: player.name,
     shirtNumber,
+    isPresent: player.is_present,
+    didPlay: player.did_play,
   };
 }
 
@@ -173,6 +185,8 @@ function createFallbackPlayers(team: ApiScoreboardTeamKey): ScoreboardPlayerOpti
       label,
       name: label,
       shirtNumber: null,
+      isPresent: false,
+      didPlay: false,
     };
   });
 }
@@ -322,6 +336,23 @@ export async function saveMatchEvent(
     ),
     apiScoreboardSnapshotSchema,
     "No se pudo guardar el evento del marcador.",
+  );
+
+  return buildScoreboardState(snapshot);
+}
+
+export async function updateMatchPlayerParticipation(
+  matchId: number,
+  playerId: number,
+  payload: ScoreboardPlayerParticipationPayload,
+) {
+  const snapshot = await requestJson(
+    apiClient.patch(
+      `/matches/${matchId}/scoreboard/players/${playerId}`,
+      payload,
+    ),
+    apiScoreboardSnapshotSchema,
+    "No se pudo actualizar la lista del partido.",
   );
 
   return buildScoreboardState(snapshot);

@@ -20,6 +20,7 @@ export function useTeamsData() {
   return {
     teams,
     players: snapshot?.players ?? [],
+    memberships: snapshot?.memberships ?? [],
     loading: snapshotQuery.isPending,
     error: snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null,
     reload: () => snapshotQuery.refetch(),

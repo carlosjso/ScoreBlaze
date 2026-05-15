@@ -1,5 +1,8 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
 from pydantic import ValidationError
+
+from authentication.dependencies import get_auth_service, get_websocket_auth_context, has_required_permission
+from authentication.service import AuthService
 
 from .domain import ScoreboardRealtimeMessageType, ScoreboardRealtimeRole
 from .realtime import scoreboard_realtime_hub
@@ -9,7 +12,11 @@ router = APIRouter()
 
 
 @router.websocket("/ws/scoreboard/{match_id}")
-async def scoreboard_realtime_websocket(websocket: WebSocket, match_id: int):
+async def scoreboard_realtime_websocket(
+    websocket: WebSocket,
+    match_id: int,
+    auth_service: AuthService = Depends(get_auth_service),
+):
     raw_role = websocket.query_params.get("role", ScoreboardRealtimeRole.LIVE).strip().lower()
 
     try:
@@ -20,6 +27,27 @@ async def scoreboard_realtime_websocket(websocket: WebSocket, match_id: int):
             reason="Invalid scoreboard realtime role.",
         )
         return
+
+    if role == ScoreboardRealtimeRole.CONTROL:
+        auth_context = await get_websocket_auth_context(websocket, auth_service, touch=True)
+        if auth_context is None:
+            await websocket.close(
+                code=status.WS_1008_POLICY_VIOLATION,
+                reason="Authentication required for control channel.",
+            )
+            return
+
+        current_roles = {role_name.strip().lower() for role_name in auth_context.user.roles}
+        current_permissions = {
+            permission_name.strip().lower()
+            for permission_name in auth_context.user.permissions
+        }
+        if not has_required_permission(current_roles, current_permissions, {"quick_match.edit"}):
+            await websocket.close(
+                code=status.WS_1008_POLICY_VIOLATION,
+                reason="Insufficient permission for control channel.",
+            )
+            return
 
     latest_state = await scoreboard_realtime_hub.connect(match_id, websocket)
 

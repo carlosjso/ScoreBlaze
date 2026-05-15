@@ -26,6 +26,7 @@ export default function QuickMatches() {
     submitting,
     deletingMatchId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     saveMatch,
     deleteMatch,
@@ -87,6 +88,7 @@ export default function QuickMatches() {
     await saveMatch({
       mode: modals.formMode,
       matchId: modals.editingMatch?.id,
+      leagueId: modals.editingMatch?.leagueId ?? null,
       values,
     });
     clearMutationError();
@@ -104,7 +106,7 @@ export default function QuickMatches() {
     }
   };
 
-  const panelError = mutationError ?? error;
+  const panelError = mutationErrorMessage ?? error;
 
   return (
     <div className="sb-page">
@@ -120,7 +122,7 @@ export default function QuickMatches() {
 
           {!panelError && teams.length < 2 ? (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Necesitas al menos 2 equipos reales en el backend para programar partidos.
+              Necesitas al menos 2 equipos registrados para programar partidos.
             </div>
           ) : null}
 
@@ -140,6 +142,7 @@ export default function QuickMatches() {
               statusFilter={statusFilter}
               hasActiveFilters={hasActiveFilters}
               deletingMatchId={deletingMatchId}
+              onEmptyAction={openCreate}
               onClearFilters={resetFilters}
               onView={modals.openDetail}
               onEdit={(match) => {

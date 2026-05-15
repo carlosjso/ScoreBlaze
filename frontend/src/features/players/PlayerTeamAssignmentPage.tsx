@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PlayerPhoto } from "@/features/players/components/PlayerPhoto";
 import { usePlayersData } from "@/features/players/hooks/usePlayersData";
 import { usePlayersMutations } from "@/features/players/hooks/usePlayersMutations";
-import type { PlayerListItem, TeamFilterValue } from "@/features/players/Players.types";
+import type { TeamFilterValue } from "@/features/players/Players.types";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { Button, PageHeader, Panel, SearchInput, Select } from "@/shared/components/ui";
@@ -92,7 +92,7 @@ export default function PlayerTeamAssignmentPage() {
   const hasValidPlayerId = Number.isInteger(numericPlayerId) && numericPlayerId > 0;
 
   const { players, teams, loading, error } = usePlayersData();
-  const { submitting, mutationError, clearMutationError, savePlayer } = usePlayersMutations();
+  const { submitting, mutationErrorMessage, clearMutationError, savePlayer } = usePlayersMutations();
 
   const selectedPlayer = useMemo(
     () => players.find((player) => player.id === numericPlayerId) ?? null,
@@ -145,7 +145,7 @@ export default function PlayerTeamAssignmentPage() {
   }, [search, teamCards, teamFilter]);
 
   const isDirty = draftTeamIds.join(",") !== originalTeamIdsKey;
-  const panelError = mutationError ?? error;
+  const panelError = mutationErrorMessage ?? error;
 
   const toggleTeam = (teamId: number) => {
     clearMutationError();

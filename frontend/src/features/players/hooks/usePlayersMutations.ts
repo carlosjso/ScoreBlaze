@@ -5,6 +5,7 @@ import { playersQueryKeys, playersService } from "@/features/players/Players.ser
 import type { PlayerFormMode, PlayerFormValues } from "@/features/players/Players.types";
 import { toPlayerMutationPayload } from "@/features/players/schemas/Players.schema";
 import { teamsQueryKeys } from "@/features/teams/Teams.service";
+import { getApiGlobalErrorMessage } from "@/shared/api/client";
 
 type SavePlayerArgs = {
   mode: PlayerFormMode;
@@ -35,16 +36,16 @@ export function usePlayersMutations() {
       return playersService.updatePlayer(playerId, payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (playerId: number) => playersService.deletePlayer(playerId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
     },
   });
 
@@ -73,15 +74,17 @@ export function usePlayersMutations() {
     }
   };
 
-  const mutationError = useMemo(() => {
-    const error = saveMutation.error ?? deleteMutation.error;
-    return error instanceof Error ? error.message : null;
-  }, [deleteMutation.error, saveMutation.error]);
+  const mutationError = saveMutation.error ?? deleteMutation.error;
+  const mutationErrorMessage = useMemo(
+    () => (mutationError ? getApiGlobalErrorMessage(mutationError) : null),
+    [mutationError],
+  );
 
   return {
     submitting: saveMutation.isPending,
     deletingPlayerId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     savePlayer,
     deletePlayer,

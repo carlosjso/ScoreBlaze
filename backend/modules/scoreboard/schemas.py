@@ -22,6 +22,8 @@ class ScoreboardRosterPlayerOut(BaseModel):
     name: str
     shirt_number: Optional[str] = None
     label: str
+    is_present: bool = False
+    did_play: bool = False
 
 
 class ScoreboardTeamSnapshotOut(BaseModel):
@@ -66,12 +68,20 @@ class ScoreboardEventCreate(BaseModel):
     elapsed_seconds: int = Field(..., ge=0)
 
 
+class ScoreboardPlayerParticipationUpdate(BaseModel):
+    team_key: ScoreboardTeamKey
+    is_present: Optional[bool] = None
+    did_play: Optional[bool] = None
+
+
 class ScoreboardRealtimePlayer(BaseModel):
     key: str = Field(..., min_length=1)
     playerId: Optional[int] = None
     label: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     shirtNumber: Optional[str] = None
+    isPresent: bool = False
+    didPlay: bool = False
 
 
 class ScoreboardRealtimeHistoryEvent(BaseModel):

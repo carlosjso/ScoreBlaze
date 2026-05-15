@@ -4,7 +4,6 @@ import {
   formatMatchDate,
   formatMatchTimeRange,
   getMatchResultLabel,
-  getMatchResultOptionFromApiMatch,
   getMatchStatusLabel,
   type ApiMatch,
   type ApiTeamOption,
@@ -15,14 +14,24 @@ import {
 
 const idSchema = z.coerce.number().int();
 const matchStatusSchema = z.enum(["scheduled", "live", "finished"]);
-const matchResultSchema = z.enum(["pending", "draw", "team_a", "team_b"]);
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 const timeInputRegex = /^\d{2}:\d{2}$/;
 const timeApiRegex = /^\d{2}:\d{2}(:\d{2})?$/;
+type QuickMatchFormFieldName = Extract<keyof QuickMatchFormValues, string>;
+export const QUICK_MATCH_SCORE_MAX = 999;
+export const QUICK_MATCH_FORM_LIMITS = {
+  score: 3,
+  court: 80,
+  tournament: 100,
+} as const;
 const scoreInputSchema = z
   .string()
   .trim()
-  .refine((value) => value === "" || /^\d+$/.test(value), "Ingresa un numero entero igual o mayor a 0.");
+  .refine((value) => value === "" || /^\d+$/.test(value), "El marcador debe ser un numero entero igual o mayor a 0.")
+  .refine(
+    (value) => value === "" || !/^\d+$/.test(value) || BigInt(value) <= BigInt(QUICK_MATCH_SCORE_MAX),
+    "El marcador no puede tener mas de 3 digitos.",
+  );
 
 function normalizeTimeInput(value: string): string {
   return value.slice(0, 5);
@@ -57,6 +66,7 @@ export const apiMatchSchema = z.object({
   end_time: z.string().regex(timeApiRegex),
   team_a_id: idSchema,
   team_b_id: idSchema,
+  league_id: z.preprocess((value) => value ?? null, idSchema.nullable()),
   score_team_a: z.number().int().nullable(),
   score_team_b: z.number().int().nullable(),
   winner_team_id: idSchema.nullable(),
@@ -90,15 +100,14 @@ export const quickMatchFormSchema = z
     status: matchStatusSchema,
     scoreTeamA: scoreInputSchema,
     scoreTeamB: scoreInputSchema,
-    result: matchResultSchema,
-    court: z.string().max(250, "La cancha no puede exceder 250 caracteres."),
-    tournament: z.string().max(250, "El torneo no puede exceder 250 caracteres."),
+    court: z.string().trim().max(QUICK_MATCH_FORM_LIMITS.court, "La cancha no puede exceder 80 caracteres."),
+    tournament: z.string().trim().max(QUICK_MATCH_FORM_LIMITS.tournament, "El torneo no puede exceder 100 caracteres."),
   })
   .superRefine((values, context) => {
     if (values.teamAId === values.teamBId) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "El equipo A y el equipo B no pueden ser el mismo.",
+        message: "El equipo local y visitante no pueden ser el mismo.",
         path: ["teamBId"],
       });
     }
@@ -130,6 +139,30 @@ export const quickMatchFormSchema = z
     }
   }) satisfies z.ZodType<QuickMatchFormValues>;
 
+export const quickMatchFormApiFieldMap = {
+  match_date: "matchDate",
+  start_time: "startTime",
+  end_time: "endTime",
+  team_a_id: "teamAId",
+  team_b_id: "teamBId",
+  score_team_a: "scoreTeamA",
+  score_team_b: "scoreTeamB",
+  court: "court",
+  tournament: "tournament",
+  status: "status",
+} satisfies Record<string, QuickMatchFormFieldName>;
+
+export const quickMatchFormApiMessageFieldMap = {
+  "La hora de inicio debe ser anterior a la hora de fin.": "endTime",
+  "El equipo local y visitante no pueden ser el mismo.": "teamBId",
+  "El ganador debe ser uno de los equipos del partido.": ["scoreTeamA", "scoreTeamB"],
+  "Captura ambos marcadores o deja ambos vacios.": ["scoreTeamA", "scoreTeamB"],
+  "Si el resultado es empate, no debe haber ganador.": ["scoreTeamA", "scoreTeamB"],
+  "Si el marcador queda empatado, no debe haber ganador.": ["scoreTeamA", "scoreTeamB"],
+  "No puedes marcar empate si los marcadores son diferentes.": ["scoreTeamA", "scoreTeamB"],
+  "El ganador no coincide con el marcador capturado.": ["scoreTeamA", "scoreTeamB"],
+} satisfies Record<string, QuickMatchFormFieldName | readonly QuickMatchFormFieldName[]>;
+
 export function buildQuickMatchesView(matches: ApiMatch[], teams: ApiTeamOption[]): QuickMatchListItem[] {
   const teamById = new Map(teams.map((team) => [team.id, team]));
 
@@ -150,6 +183,7 @@ export function buildQuickMatchesView(matches: ApiMatch[], teams: ApiTeamOption[
       id: match.id,
       teamAId: match.team_a_id,
       teamBId: match.team_b_id,
+      leagueId: match.league_id,
       teamAName,
       teamBName,
       teamALogoBase64: teamA?.logo_base64 ?? null,
@@ -199,12 +233,6 @@ export function toQuickMatchFormValues(
       status: match.status,
       scoreTeamA: match.scoreTeamA === null ? "" : String(match.scoreTeamA),
       scoreTeamB: match.scoreTeamB === null ? "" : String(match.scoreTeamB),
-      result: getMatchResultOptionFromApiMatch({
-        team_a_id: match.teamAId,
-        team_b_id: match.teamBId,
-        winner_team_id: match.winnerTeamId,
-        is_draw: match.isDraw,
-      }),
       court: match.court,
       tournament: match.tournament,
     };
@@ -222,13 +250,15 @@ export function toQuickMatchFormValues(
     status: "scheduled",
     scoreTeamA: "",
     scoreTeamB: "",
-    result: "pending",
     court: "",
     tournament: "",
   };
 }
 
-export function toQuickMatchMutationPayload(values: QuickMatchFormValues): MatchMutationPayload {
+export function toQuickMatchMutationPayload(
+  values: QuickMatchFormValues,
+  leagueId: number | null = null,
+): MatchMutationPayload {
   const normalizedValues = quickMatchFormSchema.parse(values);
   const hasScores = normalizedValues.scoreTeamA.trim() !== "" && normalizedValues.scoreTeamB.trim() !== "";
 
@@ -246,14 +276,6 @@ export function toQuickMatchMutationPayload(values: QuickMatchFormValues): Match
     } else {
       winnerTeamId = scoreTeamA > scoreTeamB ? normalizedValues.teamAId : normalizedValues.teamBId;
     }
-  } else {
-    if (normalizedValues.result === "draw") {
-      isDraw = true;
-    } else if (normalizedValues.result === "team_a") {
-      winnerTeamId = normalizedValues.teamAId;
-    } else if (normalizedValues.result === "team_b") {
-      winnerTeamId = normalizedValues.teamBId;
-    }
   }
 
   return {
@@ -262,6 +284,7 @@ export function toQuickMatchMutationPayload(values: QuickMatchFormValues): Match
     end_time: toApiTime(normalizedValues.endTime),
     team_a_id: normalizedValues.teamAId,
     team_b_id: normalizedValues.teamBId,
+    league_id: leagueId,
     score_team_a: scoreTeamA,
     score_team_b: scoreTeamB,
     winner_team_id: winnerTeamId,

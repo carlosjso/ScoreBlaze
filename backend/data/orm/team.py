@@ -10,14 +10,19 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
-    name = Column(String(250), nullable=False, unique=True)
-    responsible_name = Column(String(250), nullable=True)
-    responsible_phone = Column(String(30), nullable=True)
-    responsible_email = Column(String(250), nullable=True)
+    name = Column(String(80), nullable=False, unique=True)
+    responsible_name = Column(String(100), nullable=True)
+    responsible_phone = Column(String(19), nullable=True)
+    responsible_email = Column(String(120), nullable=True)
     logo = Column(LargeBinary, nullable=True)
 
     team_memberships = relationship(
         "TeamMembership",
+        back_populates="team",
+        cascade="all, delete-orphan",
+    )
+    league_memberships = relationship(
+        "LeagueTeamMembership",
         back_populates="team",
         cascade="all, delete-orphan",
     )

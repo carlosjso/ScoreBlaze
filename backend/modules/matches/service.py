@@ -28,6 +28,7 @@ class MatchService:
             end_time=data.end_time,
             team_a_id=data.team_a_id,
             team_b_id=data.team_b_id,
+            league_id=data.league_id,
             score_team_a=data.score_team_a,
             score_team_b=data.score_team_b,
             winner_team_id=result.winner_team_id,
@@ -46,8 +47,8 @@ class MatchService:
         self.unit_of_work.refresh(match)
         return match
 
-    def list(self) -> list[Match]:
-        return self.match_repo.list()
+    def list(self, league_id: int | None = None) -> list[Match]:
+        return self.match_repo.list(league_id=league_id)
 
     def get(self, match_id: int) -> Match:
         return self.policy.get_existing_match(match_id)
@@ -60,6 +61,7 @@ class MatchService:
             end_time=match.end_time,
             team_a_id=match.team_a_id,
             team_b_id=match.team_b_id,
+            league_id=match.league_id,
             score_team_a=match.score_team_a,
             score_team_b=match.score_team_b,
             winner_team_id=match.winner_team_id,
@@ -86,6 +88,7 @@ class MatchService:
                 end_time=data.end_time,
                 team_a_id=data.team_a_id,
                 team_b_id=data.team_b_id,
+                league_id=data.league_id,
                 score_team_a=data.score_team_a,
                 score_team_b=data.score_team_b,
                 winner_team_id=result.winner_team_id,

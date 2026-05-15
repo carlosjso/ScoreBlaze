@@ -6,12 +6,13 @@ import { Button, Input, Modal } from "@/shared/components/ui";
 type QuickMatchDetailModalProps = {
   match: QuickMatchListItem | null;
   isOpen: boolean;
+  title?: string;
   onClose: () => void;
 };
 
-export function QuickMatchDetailModal({ match, isOpen, onClose }: QuickMatchDetailModalProps) {
+export function QuickMatchDetailModal({ match, isOpen, title, onClose }: QuickMatchDetailModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalle de partido rapido" maxWidthClassName="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={title ?? "Detalle de partido rapido"} maxWidthClassName="max-w-lg">
       {match ? (
         <div className="grid grid-cols-1 gap-3">
           <Input label="Partido" value={match.matchupLabel} disabled />

@@ -1,7 +1,7 @@
 import type {
-  ScoreboardPlayerOption,
   ScoreboardControlMode,
   ScoreboardHistoryEvent,
+  ScoreboardPlayerOption,
   ScoreboardTeamKey,
   ScoreboardTeamState,
 } from "@/features/scoreboard/Scoreboard.types";
@@ -61,8 +61,11 @@ export function TeamControlPanel({
 }: TeamControlPanelProps) {
   const hasSelectedPlayer = Boolean(team.selectedPlayer);
   const keyboardMode = controlMode === "keyboard";
-  const controlsDisabled = disabled || !hasSelectedPlayer || keyboardMode;
   const selectionDisabled = disabled;
+  const selectedPlayerOption = team.players.find((player) => player.key === team.selectedPlayer) ?? null;
+  const visiblePlayers = team.players.filter((player) => player.isPresent);
+  const controlsDisabled =
+    disabled || !hasSelectedPlayer || !selectedPlayerOption?.isPresent || keyboardMode;
   const shortcuts =
     team.key === "A"
       ? {
@@ -101,9 +104,13 @@ export function TeamControlPanel({
           <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
             Sin jugadores registrados
           </div>
+        ) : visiblePlayers.length === 0 ? (
+          <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+            Aun no llegan jugadores. Marcarlos desde la lista del partido.
+          </div>
         ) : (
           <div className="mt-3 grid grid-cols-3 gap-1 lg:grid-cols-6">
-            {team.players.map((player) => {
+            {visiblePlayers.map((player) => {
               const selected = player.key === team.selectedPlayer;
 
               return (
@@ -138,6 +145,19 @@ export function TeamControlPanel({
                     ].join(" ")}
                   >
                     {getPlayerShortName(player)}
+                  </span>
+
+                  <span className="mt-0.5 flex min-h-[12px] items-center gap-1">
+                    {player.isPresent ? (
+                      <span className="rounded-full bg-emerald-100 px-1.5 py-0 text-[7px] font-black uppercase tracking-[0.1em] text-emerald-700">
+                        L
+                      </span>
+                    ) : null}
+                    {player.didPlay ? (
+                      <span className="rounded-full bg-orange-100 px-1.5 py-0 text-[7px] font-black uppercase tracking-[0.1em] text-orange-700">
+                        J
+                      </span>
+                    ) : null}
                   </span>
 
                   {selected ? (
@@ -235,4 +255,3 @@ export function TeamControlPanel({
     </div>
   );
 }
-

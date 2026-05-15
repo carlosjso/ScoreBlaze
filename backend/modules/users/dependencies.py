@@ -4,12 +4,23 @@ from database.dependencies import get_unit_of_work
 from database.unit_of_work import UnitOfWork
 
 from .policy import UserPolicy
-from .repositories import UserRepository
+from .permission_service import PermissionService
+from .repositories import PermissionRepository, RoleRepository, UserRepository
+from .role_permission_service import RolePermissionService
+from .role_service import RoleService
 from .service import UserService
 
 
 def get_user_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) -> UserRepository:
     return UserRepository(unit_of_work.db)
+
+
+def get_role_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) -> RoleRepository:
+    return RoleRepository(unit_of_work.db)
+
+
+def get_permission_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) -> PermissionRepository:
+    return PermissionRepository(unit_of_work.db)
 
 
 def get_user_policy(user_repo: UserRepository = Depends(get_user_repository)) -> UserPolicy:
@@ -18,7 +29,30 @@ def get_user_policy(user_repo: UserRepository = Depends(get_user_repository)) ->
 
 def get_user_service(
     user_repo: UserRepository = Depends(get_user_repository),
+    role_repo: RoleRepository = Depends(get_role_repository),
     unit_of_work: UnitOfWork = Depends(get_unit_of_work),
     policy: UserPolicy = Depends(get_user_policy),
 ) -> UserService:
-    return UserService(user_repo, unit_of_work, policy)
+    return UserService(user_repo, role_repo, unit_of_work, policy)
+
+
+def get_role_service(
+    role_repo: RoleRepository = Depends(get_role_repository),
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> RoleService:
+    return RoleService(role_repo, unit_of_work)
+
+
+def get_permission_service(
+    permission_repo: PermissionRepository = Depends(get_permission_repository),
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> PermissionService:
+    return PermissionService(permission_repo, unit_of_work)
+
+
+def get_role_permission_service(
+    role_repo: RoleRepository = Depends(get_role_repository),
+    permission_repo: PermissionRepository = Depends(get_permission_repository),
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> RolePermissionService:
+    return RolePermissionService(role_repo, permission_repo, unit_of_work)

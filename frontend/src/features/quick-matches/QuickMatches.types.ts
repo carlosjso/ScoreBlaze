@@ -18,6 +18,7 @@ export type ApiMatch = {
   end_time: string;
   team_a_id: number;
   team_b_id: number;
+  league_id: number | null;
   score_team_a: number | null;
   score_team_b: number | null;
   winner_team_id: number | null;
@@ -36,6 +37,7 @@ export type QuickMatchListItem = {
   id: number;
   teamAId: number;
   teamBId: number;
+  leagueId: number | null;
   teamAName: string;
   teamBName: string;
   teamALogoBase64: string | null;
@@ -69,7 +71,6 @@ export type QuickMatchFormValues = {
   status: MatchStatus;
   scoreTeamA: string;
   scoreTeamB: string;
-  result: MatchResultOption;
   court: string;
   tournament: string;
 };
@@ -80,6 +81,7 @@ export type MatchMutationPayload = {
   end_time: string;
   team_a_id: number;
   team_b_id: number;
+  league_id: number | null;
   score_team_a: number | null;
   score_team_b: number | null;
   winner_team_id: number | null;

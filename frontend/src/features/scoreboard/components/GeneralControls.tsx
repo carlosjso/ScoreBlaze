@@ -1,4 +1,4 @@
-import { Flag, Keyboard, Mouse, Play } from "lucide-react";
+import { Flag, Keyboard, Mouse, Play, UsersRound } from "lucide-react";
 
 import type {
   ScoreboardControlMode,
@@ -28,6 +28,7 @@ type GeneralControlsProps = {
   finishMatchDisabled?: boolean;
   finishMatchPending?: boolean;
   finishMatchLabel?: string;
+  onOpenAttendanceModal?: () => void;
 };
 
 export function GeneralControls({
@@ -52,6 +53,7 @@ export function GeneralControls({
   finishMatchDisabled = false,
   finishMatchPending = false,
   finishMatchLabel = "Finalizar partido",
+  onOpenAttendanceModal,
 }: GeneralControlsProps) {
   const keyboardMode = state.controlMode === "keyboard";
   const actionButtonsDisabled = keyboardMode || disabled;
@@ -91,6 +93,18 @@ export function GeneralControls({
       </div>
 
       <div className="mt-5 grid gap-2">
+        {onOpenAttendanceModal ? (
+          <button
+            type="button"
+            onClick={onOpenAttendanceModal}
+            disabled={disabled}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <UsersRound size={16} />
+            <span>Lista del partido</span>
+          </button>
+        ) : null}
+
         <button
           onClick={onToggleClock}
           disabled={actionButtonsDisabled}

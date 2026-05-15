@@ -5,6 +5,7 @@ import { playersQueryKeys } from "@/features/players/Players.service";
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import type { TeamFormMode, TeamFormValues } from "@/features/teams/Teams.types";
 import { toTeamMutationPayload } from "@/features/teams/schemas/Teams.schema";
+import { getApiGlobalErrorMessage } from "@/shared/api/client";
 
 type SaveTeamArgs = {
   mode: TeamFormMode;
@@ -35,16 +36,16 @@ export function useTeamsMutations() {
       return teamsService.updateTeam(teamId, payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (teamId: number) => teamsService.deleteTeam(teamId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.snapshot() });
-      queryClient.invalidateQueries({ queryKey: playersQueryKeys.snapshot() });
+      queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
     },
   });
 
@@ -73,15 +74,17 @@ export function useTeamsMutations() {
     }
   };
 
-  const mutationError = useMemo(() => {
-    const error = saveMutation.error ?? deleteMutation.error;
-    return error instanceof Error ? error.message : null;
-  }, [deleteMutation.error, saveMutation.error]);
+  const mutationError = saveMutation.error ?? deleteMutation.error;
+  const mutationErrorMessage = useMemo(
+    () => (mutationError ? getApiGlobalErrorMessage(mutationError) : null),
+    [mutationError],
+  );
 
   return {
     submitting: saveMutation.isPending,
     deletingTeamId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     saveTeam,
     deleteTeam,

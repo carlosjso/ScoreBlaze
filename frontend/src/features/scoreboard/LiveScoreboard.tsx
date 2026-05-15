@@ -10,6 +10,10 @@ import {
   buildScoreboardWebSocketUrl,
   parseScoreboardRealtimeMessage,
 } from "@/features/scoreboard/ScoreboardRealtime.service";
+import {
+  mergeRealtimeStatePreservingTeamIdentity,
+  mergeSnapshotIdentityIntoScoreboardState,
+} from "@/features/scoreboard/scoreboardStateIdentity";
 import { getScoreboardSnapshot } from "@/features/scoreboard/Scoreboard.service";
 import type { ScoreboardState } from "@/features/scoreboard/Scoreboard.types";
 
@@ -23,6 +27,8 @@ function createFallbackPlayers(team: "A" | "B") {
       label,
       name: label,
       shirtNumber: null,
+      isPresent: false,
+      didPlay: false,
     };
   });
 }
@@ -99,6 +105,9 @@ export default function LiveScoreboard() {
     void getScoreboardSnapshot(numericMatchId, abortController.signal)
       .then((snapshotState) => {
         if (hasReceivedRealtimeStateRef.current) {
+          setState((current) =>
+            mergeSnapshotIdentityIntoScoreboardState(current, snapshotState),
+          );
           return;
         }
 
@@ -150,7 +159,9 @@ export default function LiveScoreboard() {
         }
 
         hasReceivedRealtimeStateRef.current = true;
-        setState(nextState);
+        setState((current) =>
+          mergeRealtimeStatePreservingTeamIdentity(current, nextState),
+        );
       };
 
       socket.onerror = () => {
