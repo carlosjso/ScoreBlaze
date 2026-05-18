@@ -137,14 +137,32 @@ export function TeamFormModal({
                 name="name"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <Input label="Nombre del equipo" {...field} leftIcon={<CircleUserRound size={14} />} placeholder="Plataneros" error={fieldState.error?.message} disabled={loading} className="bg-slate-100" />
+                  <Input 
+                    label="Nombre del equipo" 
+                    {...field} 
+                    maxLength={50}
+                    leftIcon={<CircleUserRound size={14} />} 
+                    placeholder="Plataneros" 
+                    error={fieldState.error?.message} 
+                    disabled={loading} 
+                    className="bg-slate-100" 
+                  />
                 )}
               />
               <Controller
                 name="responsibleName"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <Input label="Nombre del responsable" {...field} leftIcon={<CircleUserRound size={14} />} placeholder="Platano Alvarado" error={fieldState.error?.message} disabled={loading} className="bg-slate-100" />
+                  <Input 
+                    label="Nombre del responsable" 
+                    {...field} 
+                    maxLength={50}
+                    leftIcon={<CircleUserRound size={14} />} 
+                    placeholder="Platano Alvarado" 
+                    error={fieldState.error?.message} 
+                    disabled={loading} 
+                    className="bg-slate-100" 
+                  />
                 )}
               />
               <Controller
@@ -154,8 +172,8 @@ export function TeamFormModal({
                   <Input
                     label="Telefono del responsable"
                     value={field.value}
+                    maxLength={10}
                     onChange={(e) => {
-                      // Solo permite números y limita a un máximo de 10 caracteres 
                       const val = e.target.value.replace(/\D/g, "");
                       if (val.length <= 10) field.onChange(val);
                     }}
@@ -172,7 +190,16 @@ export function TeamFormModal({
                 name="responsibleEmail"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <Input label="Correo del responsable" {...field} leftIcon={<Mail size={14} />} placeholder="siamel3803@gmail.com" error={fieldState.error?.message} disabled={loading} className="bg-slate-100" />
+                  <Input 
+                    label="Correo del responsable" 
+                    {...field} 
+                    maxLength={60}
+                    leftIcon={<Mail size={14} />} 
+                    placeholder="siamel3803@gmail.com" 
+                    error={fieldState.error?.message} 
+                    disabled={loading} 
+                    className="bg-slate-100" 
+                  />
                 )}
               />
             </div>

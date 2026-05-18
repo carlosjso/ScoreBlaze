@@ -118,7 +118,16 @@ export function PlayerFormModal({
                 name="name"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <Input label="Nombre del jugador" {...field} leftIcon={<CircleUserRound size={14} />} placeholder="Ivan Perez" error={fieldState.error?.message} disabled={loading} className="bg-slate-100" />
+                  <Input 
+                    label="Nombre del jugador" 
+                    {...field} 
+                    maxLength={50}
+                    leftIcon={<CircleUserRound size={14} />} 
+                    placeholder="Ivan Perez" 
+                    error={fieldState.error?.message} 
+                    disabled={loading} 
+                    className="bg-slate-100" 
+                  />
                 )}
               />
               <Controller
@@ -128,8 +137,8 @@ export function PlayerFormModal({
                   <Input
                     label="Telefono del jugador"
                     value={field.value}
+                    maxLength={10}
                     onChange={(e) => {
-                      // Solo permite números y limita a un máximo de 10 dígitos
                       const val = e.target.value.replace(/\D/g, "");
                       if (val.length <= 10) field.onChange(val);
                     }}
@@ -146,7 +155,17 @@ export function PlayerFormModal({
                 name="email"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <Input label="Correo del jugador" type="email" {...field} leftIcon={<Mail size={14} />} placeholder="ivan@email.com" error={fieldState.error?.message} disabled={loading} className="bg-slate-100" />
+                  <Input 
+                    label="Correo del jugador" 
+                    type="email" 
+                    {...field} 
+                    maxLength={60}
+                    leftIcon={<Mail size={14} />} 
+                    placeholder="ivan@email.com" 
+                    error={fieldState.error?.message} 
+                    disabled={loading} 
+                    className="bg-slate-100" 
+                  />
                 )}
               />
               <Input label="Estatus" value={status} disabled leftIcon={<Shield size={14} />} className="bg-slate-100" />
