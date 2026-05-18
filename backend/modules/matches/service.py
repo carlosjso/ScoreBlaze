@@ -44,7 +44,6 @@ class MatchService:
         self.team_stat_repo = team_stat_repo
         self.unit_of_work = unit_of_work
         self.policy = policy
-
     @staticmethod
     def _build_match(data: MatchCreate, result: MatchResult) -> Match:
         return Match(
@@ -65,14 +64,12 @@ class MatchService:
 
     def create(self, data: MatchCreate) -> Match:
         result = self.policy.resolve_create_result(data)
-
         match = self._build_match(data, result)
 
         with self.unit_of_work.transaction():
             self.match_repo.add(match)
 
         self.unit_of_work.refresh(match)
-
         return match
 
     def list(self, league_id: int | None = None) -> list[Match]:
@@ -80,7 +77,6 @@ class MatchService:
 
     def get(self, match_id: int) -> Match:
         return self.policy.get_existing_match(match_id)
-
     @staticmethod
     def _update_from_match(match: Match) -> MatchUpdate:
         return MatchUpdate(
@@ -107,15 +103,9 @@ class MatchService:
             update=data.model_dump(exclude_unset=True)
         )
 
-        return MatchUpdate.model_validate(
-            patched.model_dump()
-        )
+        return MatchUpdate.model_validate(patched.model_dump())
 
-    def _apply_update(
-        self,
-        match: Match,
-        data: MatchUpdate,
-    ) -> Match:
+    def _apply_update(self, match: Match, data: MatchUpdate) -> Match:
         result = self.policy.resolve_update_result(data)
 
         with self.unit_of_work.transaction():
@@ -137,23 +127,13 @@ class MatchService:
             )
 
         self.unit_of_work.refresh(match)
-
         return match
 
-    def update(
-        self,
-        match_id: int,
-        data: MatchUpdate,
-    ) -> Match:
+    def update(self, match_id: int, data: MatchUpdate) -> Match:
         match = self.policy.get_existing_match(match_id)
-
         return self._apply_update(match, data)
 
-    def patch(
-        self,
-        match_id: int,
-        data: MatchPatch,
-    ) -> Match:
+    def patch(self, match_id: int, data: MatchPatch) -> Match:
         match = self.policy.get_existing_match(match_id)
 
         return self._apply_update(
@@ -166,17 +146,14 @@ class MatchService:
 
         with self.unit_of_work.transaction():
             self.match_repo.delete(match)
+    def import_match_data(self, match_id: int, file: UploadFile):
+        match = self.policy.get_existing_match(match_id)
 
-    def import_match_data(
-        self,
-        file: UploadFile,
-    ):
         workbook = load_workbook(file.file)
-
         worksheet = workbook.active
 
-        team_a_name = worksheet["C12"].value
-        team_b_name = worksheet["C13"].value
+        team_a_name = worksheet["C11"].value
+        team_b_name = worksheet["C12"].value
 
         team_a = self.team_repo.get_by_name(team_a_name)
         team_b = self.team_repo.get_by_name(team_b_name)
@@ -192,7 +169,6 @@ class MatchService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Team not found: {team_b_name}",
             )
-
         team_a_players = []
 
         for row in range(27, 42):
@@ -219,10 +195,7 @@ class MatchService:
             if not membership:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=(
-                        f"Player {player_name} "
-                        f"is not member of {team_a.name}"
-                    ),
+                    detail=f"Player {player_name} is not member of {team_a.name}",
                 )
 
             team_a_players.append({
@@ -232,6 +205,9 @@ class MatchService:
                 "points": points,
             })
 
+        # =====================
+        # TEAM B PLAYERS
+        # =====================
         team_b_players = []
 
         for row in range(47, 62):
@@ -258,10 +234,7 @@ class MatchService:
             if not membership:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=(
-                        f"Player {player_name} "
-                        f"is not member of {team_b.name}"
-                    ),
+                    detail=f"Player {player_name} is not member of {team_b.name}",
                 )
 
             team_b_players.append({
@@ -271,7 +244,11 @@ class MatchService:
                 "points": points,
             })
 
+        # =====================
+        # RESPONSE DATA
+        # =====================
         data = {
+            "match_id": match.id,
             "competition": worksheet["C5"].value,
             "match_number": worksheet["C6"].value,
             "date": worksheet["C7"].value,

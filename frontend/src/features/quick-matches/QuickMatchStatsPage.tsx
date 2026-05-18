@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+  type ChangeEvent,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, CalendarDays, Clock3, MapPin, Search } from "lucide-react";
 import { useParams } from "react-router-dom";
 
 import {
   getQuickMatchStatsSnapshot,
+  importQuickMatchExcel,
   type QuickMatchStatsEvent,
   type QuickMatchStatsEventType,
   type QuickMatchStatsSnapshot,
@@ -970,6 +977,7 @@ export default function QuickMatchStatsPage() {
   const { matchId } = useParams();
   const numericMatchId = matchId ? Number(matchId) : Number.NaN;
   const [activePanel, setActivePanel] = useState<StatsPanel>("stats");
+  const [uploading, setUploading] = useState(false);
   const realtimeScoreboards = useRealtimeScoreboards(
     Number.isFinite(numericMatchId) ? [numericMatchId] : [],
   );
@@ -997,6 +1005,36 @@ export default function QuickMatchStatsPage() {
     () => (statsSnapshot ? buildMatchStatsView(statsSnapshot) : null),
     [statsSnapshot],
   );
+  const handleExcelUpload = async (
+  event: ChangeEvent<HTMLInputElement>,
+) => {
+  const file = event.target.files?.[0];
+
+  if (!file) {
+    return;
+  }
+
+  try {
+    setUploading(true);
+
+    await importQuickMatchExcel(numericMatchId, file);
+
+    await statsQuery.refetch();
+
+    alert("Excel importado correctamente.");
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "No se pudo importar el Excel.";
+
+    alert(message);
+  } finally {
+    setUploading(false);
+
+    event.target.value = "";
+  }
+};
 
   if (!Number.isFinite(numericMatchId)) {
     return <ErrorState message="La ruta del partido no es valida." />;
@@ -1032,7 +1070,21 @@ export default function QuickMatchStatsPage() {
           activePanel={activePanel}
           onChange={setActivePanel}
         />
+        {stats.match.status === "finished" ? (
+  <div className="flex justify-end">
+    <label className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
+      {uploading ? "Importando..." : "Importar Excel"}
 
+      <input
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={handleExcelUpload}
+        disabled={uploading}
+      />
+    </label>
+  </div>
+) : null}
         {activePanel === "stats" ? (
           <>
             <MatchStatsTable stats={stats} />

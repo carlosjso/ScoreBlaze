@@ -63,7 +63,7 @@ const quickMatchStatsPlayerSchema = z.object({
   name: z.string().trim().min(1),
   shirt_number: z.string().trim().nullable(),
   label: z.string().trim().min(1),
-}) satisfies z.ZodType<QuickMatchStatsPlayer>;
+}) satisfies ZodType<QuickMatchStatsPlayer>;
 
 const quickMatchStatsTeamSnapshotSchema = z.object({
   id: idSchema,
@@ -73,7 +73,7 @@ const quickMatchStatsTeamSnapshotSchema = z.object({
   score: z.number().int().min(0),
   fouls: z.number().int().min(0),
   players: z.array(quickMatchStatsPlayerSchema),
-}) satisfies z.ZodType<QuickMatchStatsTeamSnapshot>;
+}) satisfies ZodType<QuickMatchStatsTeamSnapshot>;
 
 const quickMatchStatsEventSchema = z.object({
   id: idSchema,
@@ -87,14 +87,14 @@ const quickMatchStatsEventSchema = z.object({
   event_order: z.number().int().min(0),
   status: quickMatchStatsEventStatusSchema,
   created_at: z.string().trim().min(1),
-}) satisfies z.ZodType<QuickMatchStatsEvent>;
+}) satisfies ZodType<QuickMatchStatsEvent>;
 
 const quickMatchStatsSnapshotSchema = z.object({
   match: apiMatchSchema,
   team_a: quickMatchStatsTeamSnapshotSchema,
   team_b: quickMatchStatsTeamSnapshotSchema,
   events: z.array(quickMatchStatsEventSchema),
-}) satisfies z.ZodType<QuickMatchStatsSnapshot>;
+}) satisfies ZodType<QuickMatchStatsSnapshot>;
 
 async function requestJson<T>(
   request: Promise<{ data: unknown }>,
@@ -109,10 +109,30 @@ async function requestJson<T>(
   }
 }
 
-export async function getQuickMatchStatsSnapshot(matchId: number, signal?: AbortSignal) {
+export async function getQuickMatchStatsSnapshot(
+  matchId: number,
+  signal?: AbortSignal,
+) {
   return requestJson(
     apiClient.get(`/matches/${matchId}/scoreboard`, { signal }),
     quickMatchStatsSnapshotSchema,
     "No se pudieron cargar las estadisticas del partido.",
   );
+}
+
+export async function importQuickMatchExcel(matchId: number, file: File) {
+  try {
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    await apiClient.post(
+      `/matches/${matchId}/scoreboard/import-excel`,
+      formData,
+    );
+  } catch (error) {
+    throw new Error(
+      getApiErrorMessage(error, "No se pudo importar el Excel."),
+    );
+  }
 }

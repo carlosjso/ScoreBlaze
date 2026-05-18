@@ -34,13 +34,13 @@ def create_match(
 ):
     return service.create(payload)
 
-@router.post("/import",status_code=status.HTTP_200_OK,)
+@router.post("/{match_id}/scoreboard/import-excel",status_code=status.HTTP_200_OK,)
 def import_match_excel(
+    match_id: int,
     file: UploadFile = File(...),
     service: MatchService = Depends(get_match_service),
-    # _=Depends(require_authenticated_user),
 ):
-    return service.import_match_data(file)
+    return service.import_match_data(match_id, file)
 
 @router.get("/{match_id}", response_model=MatchOut, status_code=status.HTTP_200_OK)
 def get_match(
