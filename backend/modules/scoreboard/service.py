@@ -4,6 +4,7 @@ from core.exceptions import ValidationException
 from data.orm import MatchEvent, MatchPlayerParticipation
 from database.unit_of_work import UnitOfWork
 from modules.match_events.domain import MatchEventStatus
+from modules.matches.tracked_stats import does_track_stat, get_tracked_stat_for_event
 from modules.match_events.repositories import MatchEventRepository
 from modules.match_participations.repositories import MatchPlayerParticipationRepository
 from modules.matches.domain import MatchStatus
@@ -51,6 +52,9 @@ class ScoreboardService:
 
     def record_event(self, match_id: int, data: ScoreboardEventCreate) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        tracked_stat = get_tracked_stat_for_event(data.event_type)
+        if tracked_stat is not None and not does_track_stat(tracked_stat, getattr(match, "tracked_stats", None)):
+            raise ValidationException(f"La metrica {tracked_stat} no esta habilitada para este partido.")
         team = self.actor_resolver.resolve_team(match, data.team_key)
         player_id, guest_name = self.actor_resolver.resolve_actor(team.id, data.player_id, data.guest_name)
 

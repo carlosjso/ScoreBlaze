@@ -16,6 +16,7 @@ import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
 import { PageHeader, Panel } from "@/shared/components/ui";
+import { truncateText } from "@/shared/utils/truncateText";
 
 export default function LeagueMatchesPage() {
   const navigate = useNavigate();
@@ -83,6 +84,8 @@ export default function LeagueMatchesPage() {
 
   const hasActiveFilters = Boolean(search.trim()) || statusFilter !== "all";
   const panelError = mutationErrorMessage ?? error;
+  const deleteMatchLabel = modals.deleteMatch ? truncateText(modals.deleteMatch.matchupLabel, 48) : null;
+  const deleteLeagueLabel = truncateText(league?.name ?? "esta liga", 38);
 
   const resetFilters = () => {
     setSearch("");
@@ -107,6 +110,7 @@ export default function LeagueMatchesPage() {
       mode: modals.formMode,
       matchId: modals.editingMatch?.id,
       leagueId: league.id,
+      trackedStats: modals.editingMatch?.trackedStats,
       values,
     });
     clearMutationError();
@@ -168,7 +172,9 @@ export default function LeagueMatchesPage() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-500">Liga activa</p>
-                    <h2 className="mt-2 text-[30px] leading-none text-slate-950 sm:text-[34px]">{league.name}</h2>
+                    <h2 className="mt-2 max-w-full truncate text-[30px] leading-none text-slate-950 sm:text-[34px]" title={league.name}>
+                      {league.name}
+                    </h2>
                     <p className="mt-2 max-w-2xl text-sm text-slate-500">
                       Aqui solo puedes enfrentar equipos que ya forman parte de esta liga y conservar todo el historial dentro del torneo.
                     </p>
@@ -183,9 +189,12 @@ export default function LeagueMatchesPage() {
                       <CalendarDays size={14} />
                       {matches.length} {matches.length === 1 ? "partido" : "partidos"}
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                      <Shield size={14} />
-                      {league.category}
+                    <span
+                      className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                      title={league.category}
+                    >
+                      <Shield size={14} className="shrink-0" />
+                      <span className="min-w-0 truncate">{league.category}</span>
                     </span>
                     <StatusBadge status={league.status} />
                   </div>
@@ -266,7 +275,7 @@ export default function LeagueMatchesPage() {
         title="Eliminar partido de liga"
         message={
           modals.deleteMatch
-            ? `Seguro que deseas eliminar ${modals.deleteMatch.matchupLabel} de ${league?.name ?? "esta liga"}? Esta accion no se puede deshacer.`
+            ? `Seguro que deseas eliminar ${deleteMatchLabel ?? "este partido"} de ${deleteLeagueLabel}? Esta accion no se puede deshacer.`
             : "Seguro que deseas eliminar este partido de la liga? Esta accion no se puede deshacer."
         }
         loading={deletingMatchId !== null}

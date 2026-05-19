@@ -15,6 +15,7 @@ import BasketballHubPage from "@/features/basketball/BasketballHubPage";
 import LeagueCalendarPage from "@/features/leagues/LeagueCalendarPage";
 import LeagueDashboardPage from "@/features/leagues/LeagueDashboardPage";
 import LeagueMatchesPage from "@/features/leagues/LeagueMatchesPage";
+import LeagueRecordsPage from "@/features/leagues/LeagueRecordsPage";
 import LeagueSettingsPage from "@/features/leagues/LeagueSettingsPage";
 import LeagueStandingsPage from "@/features/leagues/LeagueStandingsPage";
 import LeaguesPage from "@/features/leagues/LeaguesPage";
@@ -73,6 +74,7 @@ export default function App() {
                 <Route path="/leagues" element={<LeaguesPage />} />
                 <Route path="/leagues/:leagueId" element={<LeagueDashboardPage />} />
                 <Route path="/leagues/:leagueId/calendar" element={<LeagueCalendarPage />} />
+                <Route path="/leagues/:leagueId/records" element={<LeagueRecordsPage />} />
                 <Route path="/leagues/:leagueId/teams" element={<LeagueTeamsPage />} />
                 <Route path="/leagues/:leagueId/teams/manage" element={<LeagueTeamsManagePage />} />
                 <Route path="/leagues/:leagueId/matches" element={<LeagueMatchesPage />} />

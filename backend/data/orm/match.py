@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, Column, Date, ForeignKey, Integer, String, Time
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, Column, Date, ForeignKey, Integer, JSON, String, Time
 from sqlalchemy.orm import relationship
 
 from database.alchemy import Base
@@ -55,6 +55,7 @@ class Match(Base):
 
     court = Column(String(80), nullable=True)
     tournament = Column(String(100), nullable=True)
+    tracked_stats = Column(JSON, nullable=False, default=list)
     status = Column(
         String(20),
         nullable=False,

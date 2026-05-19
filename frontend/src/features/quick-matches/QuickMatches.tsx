@@ -30,6 +30,8 @@ export default function QuickMatches() {
     clearMutationError,
     saveMatch,
     deleteMatch,
+    updateTrackedStats,
+    updatingTrackedStatsMatchId,
   } = useQuickMatchesMutations();
 
   const filteredMatches = useMemo(() => {
@@ -89,6 +91,7 @@ export default function QuickMatches() {
       mode: modals.formMode,
       matchId: modals.editingMatch?.id,
       leagueId: modals.editingMatch?.leagueId ?? null,
+      trackedStats: modals.editingMatch?.trackedStats,
       values,
     });
     clearMutationError();
@@ -111,7 +114,10 @@ export default function QuickMatches() {
   return (
     <div className="sb-page">
       <div className="sb-page-shell">
-        <PageHeader title="Partido rapido" subtitle="Programa partidos amistosos fuera de liga entre dos equipos." />
+        <PageHeader
+          title="Partido rapido"
+          subtitle="Programa partidos amistosos fuera de liga entre dos equipos."
+        />
 
         <Panel>
           {panelError ? (
@@ -142,6 +148,8 @@ export default function QuickMatches() {
               statusFilter={statusFilter}
               hasActiveFilters={hasActiveFilters}
               deletingMatchId={deletingMatchId}
+              showTrackedStatsEditor
+              updatingTrackedStatsMatchId={updatingTrackedStatsMatchId}
               onEmptyAction={openCreate}
               onClearFilters={resetFilters}
               onView={modals.openDetail}
@@ -153,6 +161,7 @@ export default function QuickMatches() {
                 clearMutationError();
                 modals.requestDelete(match);
               }}
+              onUpdateTrackedStats={updateTrackedStats}
             />
           </div>
         </Panel>

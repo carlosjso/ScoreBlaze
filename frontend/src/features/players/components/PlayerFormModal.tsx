@@ -44,13 +44,14 @@ export function PlayerFormModal({
   useEffect(() => {
     if (isOpen) {
       setPhotoError(null);
-      reset(toPlayerFormValues(initialPlayer));
+      // Cambia "toPlayerPlayerFormValues" por "toPlayerFormValues"
+      reset(toPlayerFormValues(initialPlayer)); 
       return;
     }
     setPhotoError(null);
     reset(toPlayerFormValues(null));
   }, [initialPlayer, isOpen, reset]);
-
+  
   const normalizedSelectedTeamIds = useMemo(() => selectedTeamIds ?? [], [selectedTeamIds]);
   const status = useMemo(() => getPlayerStatus(normalizedSelectedTeamIds), [normalizedSelectedTeamIds]);
 

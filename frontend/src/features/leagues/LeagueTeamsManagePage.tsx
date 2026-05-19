@@ -139,7 +139,7 @@ function LeagueHeaderCard({ league, rightSlot }: LeagueHeaderCardProps) {
   return (
     <section className="mb-5 rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#fff9f3_0%,#ffffff_65%,#f8fafc_100%)] p-5 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-start gap-4">
+        <div className="flex min-w-0 items-start gap-4">
           <TeamLogo
             name={league.name}
             logoBase64={league.logoBase64}
@@ -157,7 +157,9 @@ function LeagueHeaderCard({ league, rightSlot }: LeagueHeaderCardProps) {
               <StatusBadge status={league.status} />
             </div>
 
-            <h3 className="mt-3 text-[30px] leading-none text-slate-900 sm:text-[34px]">{league.name}</h3>
+            <h3 className="mt-3 max-w-full truncate text-[30px] leading-none text-slate-900 sm:text-[34px]" title={league.name}>
+              {league.name}
+            </h3>
 
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
               <span className="inline-flex items-center gap-1.5">
@@ -168,7 +170,7 @@ function LeagueHeaderCard({ league, rightSlot }: LeagueHeaderCardProps) {
                 <Mail size={12} />
                 {league.responsibleEmail || "Sin correo"}
               </span>
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex max-w-full items-center gap-1.5 [overflow-wrap:anywhere]">
                 <LayoutGrid size={12} />
                 Categoria: {league.category || "Sin categoria"}
               </span>
@@ -493,7 +495,9 @@ export default function LeagueTeamsPage() {
                       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                         Nombre de la liga
                       </p>
-                      <p className="truncate text-sm font-semibold text-slate-900">{selectedLeague.name}</p>
+                      <p className="truncate text-sm font-semibold text-slate-900" title={selectedLeague.name}>
+                        {selectedLeague.name}
+                      </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -681,6 +685,16 @@ export default function LeagueTeamsPage() {
                         playerMatchesPlayed: detailPlayerParticipationQuery.data?.playerMatchesPlayed ?? 0,
                         teamMatchesPlayed: detailPlayerParticipationQuery.data?.teamMatchesPlayed ?? 0,
                         participationRate: detailPlayerParticipationQuery.data?.participationRate ?? null,
+                        rankingPosition: detailPlayerParticipationQuery.data?.rankingPosition ?? null,
+                        totalPoints: detailPlayerParticipationQuery.data?.totalPoints ?? 0,
+                        made1pt: detailPlayerParticipationQuery.data?.made1pt ?? 0,
+                        made2pt: detailPlayerParticipationQuery.data?.made2pt ?? 0,
+                        made3pt: detailPlayerParticipationQuery.data?.made3pt ?? 0,
+                        missedShots: detailPlayerParticipationQuery.data?.missedShots ?? 0,
+                        totalAssists: detailPlayerParticipationQuery.data?.totalAssists ?? 0,
+                        totalRebounds: detailPlayerParticipationQuery.data?.totalRebounds ?? 0,
+                        totalFouls: detailPlayerParticipationQuery.data?.totalFouls ?? 0,
+                        trackedStats: detailPlayerParticipationQuery.data?.trackedStats ?? [],
                         loading: detailPlayerParticipationQuery.loading,
                         error: detailPlayerParticipationQuery.error,
                       }
