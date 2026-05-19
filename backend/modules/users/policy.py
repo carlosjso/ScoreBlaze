@@ -10,7 +10,7 @@ class UserPolicy:
     def get_existing_user(self, user_id: int):
         user = self.user_repo.get(user_id)
         if not user:
-            raise NotFoundException("User not found")
+            raise NotFoundException("Usuario no encontrado.")
         return user
 
     def ensure_email_available(self, email: str, current_user_id: int | None = None) -> None:

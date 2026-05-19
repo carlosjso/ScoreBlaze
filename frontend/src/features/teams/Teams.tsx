@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useTeamHistoricalStats } from "@/features/teams/hooks/useTeamHistoricalStats";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { TeamDetailModal } from "@/features/teams/components/TeamDetailModal";
 import { TeamFormModal } from "@/features/teams/components/TeamFormModal";
 import { TeamsTable } from "@/features/teams/components/TeamsTable";
+import { useTeamsTableData } from "@/features/teams/hooks/useTeamsTableData";
 import { TeamsToolbar } from "@/features/teams/components/TeamsToolbar";
-import { useTeamsData } from "@/features/teams/hooks/useTeamsData";
 import { useTeamsModals } from "@/features/teams/hooks/useTeamsModals";
 import { useTeamsMutations } from "@/features/teams/hooks/useTeamsMutations";
 import type { SortDir, SortKey } from "@/features/teams/Teams.types";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
+import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export default function Teams() {
   const navigate = useNavigate();
@@ -18,38 +20,30 @@ export default function Teams() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(8);
 
-  const { teams, loading, error } = useTeamsData();
+  const { teams, loading, error, page, totalPages } = useTeamsTableData({
+    page: currentPage,
+    search,
+    sortKey,
+    sortDir,
+  });
   const modals = useTeamsModals();
+  const detailTeamStatsQuery = useTeamHistoricalStats(modals.detailTeam?.id ?? null);
   const {
     submitting,
     deletingTeamId,
     mutationError,
+    mutationErrorMessage,
     clearMutationError,
     saveTeam,
     deleteTeam,
   } = useTeamsMutations();
 
-  const orderedTeams = useMemo(() => {
-    const sortedTeams = [...teams].sort((left, right) => {
-      if (sortKey === "id") return left.id - right.id;
-      if (sortKey === "players") return left.playerCount - right.playerCount;
-      return left.name.localeCompare(right.name, "es", { sensitivity: "base" });
-    });
-
-    return sortDir === "asc" ? sortedTeams : sortedTeams.reverse();
-  }, [sortDir, sortKey, teams]);
-
-  const totalPages = Math.max(1, Math.ceil(orderedTeams.length / pageSize));
-  const paginatedTeams = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return orderedTeams.slice(start, start + pageSize);
-  }, [currentPage, orderedTeams, pageSize]);
-
   useEffect(() => {
-    setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
+    if (page !== currentPage) {
+      setCurrentPage(page);
+    }
+  }, [currentPage, page]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey !== key) {
@@ -91,7 +85,7 @@ export default function Teams() {
     }
   };
 
-  const panelError = mutationError ?? error;
+  const panelError = mutationErrorMessage ?? error;
 
   return (
     <div className="sb-page">
@@ -109,12 +103,6 @@ export default function Teams() {
           ) : null}
 
           <TeamsToolbar
-            sortKey={sortKey}
-            onSortKeyChange={(value) => {
-              setSortKey(value);
-              setSortDir("asc");
-              setCurrentPage(1);
-            }}
             search={search}
             onSearchChange={(value) => {
               setSearch(value);
@@ -125,22 +113,16 @@ export default function Teams() {
 
           <div className="mt-4">
             <TeamsTable
-              teams={paginatedTeams}
+              teams={teams}
               loading={loading}
               sortKey={sortKey}
               sortDir={sortDir}
-              currentPage={currentPage}
+              currentPage={page}
               totalPages={totalPages}
-              pageSize={pageSize}
+              pageSize={DEFAULT_TABLE_PAGE_SIZE}
               deletingTeamId={deletingTeamId}
               onToggleSort={toggleSort}
-              onPageChange={(page) =>
-                setCurrentPage(Math.max(1, Math.min(page, totalPages)))
-              }
-              onPageSizeChange={(nextPageSize) => {
-                setPageSize(nextPageSize);
-                setCurrentPage(1);
-              }}
+              onPageChange={setCurrentPage}
               onView={modals.openDetail}
               onEdit={(team) => {
                 clearMutationError();
@@ -173,6 +155,9 @@ export default function Teams() {
         team={modals.detailTeam}
         isOpen={modals.detailTeam !== null}
         onClose={modals.closeDetail}
+        stats={detailTeamStatsQuery.data ?? null}
+        statsLoading={detailTeamStatsQuery.isPending}
+        statsError={detailTeamStatsQuery.error instanceof Error ? detailTeamStatsQuery.error.message : null}
       />
 
       <ConfirmModal

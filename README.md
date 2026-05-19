@@ -1,18 +1,18 @@
-# ScoreBlaze Backend - Guia Rapida
+# ScoreBlaze - Guia Rapida
 
-Esta guia es para levantar **PostgreSQL en Docker** y correr el **backend local** (sin dockerizar la API).
+Esta guia es para levantar **PostgreSQL y Redis en Docker**, correr el **backend local** y levantar el **frontend**.
 
 ## 1) Requisitos
 - Docker Desktop corriendo.
 - Python 3.12 instalado.
 - PowerShell.
 
-## 2) Configurar Docker (solo BD)
+## 2) Configurar Docker
 Desde la raiz del proyecto:
 
 ```powershell
 cd D:\ScoreBlaze
-docker compose up -d db
+docker compose up -d db redis
 ```
 
 La base queda publicada en:
@@ -22,16 +22,21 @@ La base queda publicada en:
 - User: `postgres`
 - Password: `postgres`
 
+Redis queda publicado en:
+- Host: `localhost`
+- Puerto: `6379`
+
 ## 3) Configurar variables de entorno
 Archivo: `D:\ScoreBlaze\backend\.env`
 
 ```env
-APP_ENV=development
-APP_PORT=8000
 DB_URL=postgresql+psycopg2://postgres:postgres@localhost:5435/scoreblaze
-SECRET_KEY=change-me
-LOG_LEVEL=info
+REDIS_URL=redis://localhost:6379/0
+SEED_SUPERADMIN_EMAIL=codexaempresarial@gmail.com
+SEED_SUPERADMIN_PASSWORD=CodexaAdmin2026!
 ```
+
+El resto de opciones avanzadas ya tienen valor por defecto en [backend/config.py](/C:/Users/dell/Documents/GitHub/ScoreBlaze/backend/config.py:17), asi que para local no necesitas llenar todo el archivo.
 
 ## 4) Crear y usar entorno virtual (local del proyecto)
 ```powershell
@@ -63,3 +68,30 @@ Abrir en navegador:
 - `http://localhost:8000/`
 - `http://localhost:8000/docs`
 
+## 6.1) Crear superadmin inicial
+```powershell
+cd D:\ScoreBlaze\backend
+.\.venv\Scripts\Activate.ps1
+python seed_superadmin.py
+```
+
+Credenciales por defecto:
+- Email: `codexaempresarial@gmail.com`
+- Password: `CodexaAdmin2026!`
+
+## 6.2) Poblar catalogo base de permisos
+```powershell
+cd D:\ScoreBlaze\backend
+.\.venv\Scripts\Activate.ps1
+python seed_permissions.py
+```
+
+## 7) Levantar frontend
+```powershell
+cd D:\ScoreBlaze\frontend
+npm install
+npm run dev
+```
+
+Abrir la interfaz en:
+- `http://localhost:5173/`

@@ -17,7 +17,7 @@ export type ApiPlayer = {
   id: number;
   name: string;
   email: string;
-  phone: number | null;
+  phone: string | null;
   photo_base64: string | null;
 };
 
@@ -39,6 +39,21 @@ export type TeamPlayerSummary = {
   email: string;
   phone: string;
   photoBase64: string | null;
+  shirtNumber: string | null;
+};
+
+export type ApiTeamStat = {
+  team_id: number;
+  matches_played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  points_for: number;
+  points_against: number;
+  points_difference: number;
+  standings_points: number;
+  total_team_fouls: number;
+  updated_at: string;
 };
 
 export type TeamListItem = {
@@ -54,6 +69,43 @@ export type TeamListItem = {
   playersLabel: string;
   rosterStatus: TeamRosterStatus;
 };
+
+export type TeamStatsScope = "historical" | "league";
+
+type TeamStatsBase = {
+  scope: TeamStatsScope;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  pointsDifference: number;
+  winRate: number | null;
+  averagePointsFor: number | null;
+  averagePointsAgainst: number | null;
+  liveMatchesCount: number;
+  scheduledMatchesCount: number;
+  totalTeamFouls: number | null;
+  lastMatchDate: string | null;
+  updatedAt: string | null;
+};
+
+export type TeamHistoricalStats = TeamStatsBase & {
+  scope: "historical";
+  quickMatchesCount: number;
+  leagueMatchesCount: number;
+};
+
+export type TeamLeagueStats = TeamStatsBase & {
+  scope: "league";
+  leagueId: number;
+  leagueName: string;
+  leaguePosition: number | null;
+  standingsPoints: number;
+};
+
+export type TeamDetailStats = TeamHistoricalStats | TeamLeagueStats;
 
 export type TeamFormValues = {
   name: string;

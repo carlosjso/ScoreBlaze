@@ -1,34 +1,39 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 
+import { leagueTrackedStatOptions } from "@/features/leagues/Leagues.types";
 import { quickMatchesQueryKeys, quickMatchesService } from "@/features/quick-matches/QuickMatches.service";
 import type {
   MatchMutationPayload,
   MatchStatus,
 } from "@/features/quick-matches/QuickMatches.types";
+import { MatchAttendanceModal } from "@/features/scoreboard/components/MatchAttendanceModal";
 import { TeamControlPanel } from "@/features/scoreboard/components/TeamControlPanel";
 import { GeneralControls } from "@/features/scoreboard/components/GeneralControls";
 import { KeyboardHelp } from "@/features/scoreboard/components/KeyboardHelp";
 import { ScoreboardDisplay } from "@/features/scoreboard/components/ScoreboardDisplay";
 import { useScoreboard } from "@/features/scoreboard/hooks/useScoreboard";
 import { useScoreboardKeyboard } from "@/features/scoreboard/hooks/useScoreboardKeyboard";
-import { useQuickMatchesData } from "@/features/quick-matches/hooks/useQuickMatchesData";
 
 type MatchStatusUpdate = Extract<MatchStatus, "live" | "finished">;
 
 export default function Scoreboard() {
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const { matchId } = useParams();
   const numericMatchId = matchId ? Number(matchId) : undefined;
   const queryClient = useQueryClient();
-  const {
-    matches,
-    loading: loadingMatches,
-    error: matchesError,
-  } = useQuickMatchesData();
-
-  const currentMatch = numericMatchId
-    ? matches.find((match) => match.id === numericMatchId)
-    : null;
+  const matchQuery = useQuery({
+    queryKey: quickMatchesQueryKeys.detail(numericMatchId ?? 0),
+    enabled: Boolean(numericMatchId),
+    queryFn: ({ signal }) => quickMatchesService.getMatch(numericMatchId!, signal),
+  });
+  const currentMatch = matchQuery.data ?? null;
+  const trackedStats = currentMatch?.tracked_stats ?? [...leagueTrackedStatOptions];
+  const canTrackMiss = trackedStats.includes("Fallo");
+  const canTrackFoul = trackedStats.includes("Faltas");
+  const canTrackAssist = trackedStats.includes("Asistencias");
+  const canTrackRebound = trackedStats.includes("Rebotes");
 
   const {
     state,
@@ -38,6 +43,9 @@ export default function Scoreboard() {
     formattedClock,
     formattedShotClock,
     selectPlayer,
+    setPlayerParticipation,
+    addGuestPlayer,
+    removeGuestPlayer,
     addPoints,
     assist,
     miss,
@@ -55,16 +63,7 @@ export default function Scoreboard() {
     awaitPendingSync,
   } = useScoreboard({
     matchId: numericMatchId,
-    matchSetup: currentMatch
-      ? {
-          teamAId: currentMatch.teamAId,
-          teamBId: currentMatch.teamBId,
-          teamAName: currentMatch.teamAName,
-          teamBName: currentMatch.teamBName,
-          scoreTeamA: currentMatch.scoreTeamA,
-          scoreTeamB: currentMatch.scoreTeamB,
-        }
-      : null,
+    matchSetup: null,
   });
   const matchStatusMutation = useMutation({
     mutationFn: async (nextStatus: MatchStatusUpdate) => {
@@ -77,29 +76,31 @@ export default function Scoreboard() {
       const scoreTeamA = state.teamA.score;
       const scoreTeamB = state.teamB.score;
       const payload = {
-        match_date: currentMatch.matchDate,
-        start_time: `${currentMatch.startTime}:00`,
-        end_time: `${currentMatch.endTime}:00`,
-        team_a_id: currentMatch.teamAId,
-        team_b_id: currentMatch.teamBId,
+        match_date: currentMatch.match_date,
+        start_time: currentMatch.start_time,
+        end_time: currentMatch.end_time,
+        team_a_id: currentMatch.team_a_id,
+        team_b_id: currentMatch.team_b_id,
+        league_id: currentMatch.league_id,
         score_team_a: scoreTeamA,
         score_team_b: scoreTeamB,
         winner_team_id:
           scoreTeamA === scoreTeamB
             ? null
             : scoreTeamA > scoreTeamB
-              ? currentMatch.teamAId
-              : currentMatch.teamBId,
+              ? currentMatch.team_a_id
+              : currentMatch.team_b_id,
         is_draw: scoreTeamA === scoreTeamB,
-        court: currentMatch.court || null,
-        tournament: currentMatch.tournament || null,
+        court: currentMatch.court,
+        tournament: currentMatch.tournament,
+        tracked_stats: currentMatch.tracked_stats,
         status: nextStatus,
       } satisfies MatchMutationPayload;
 
       return quickMatchesService.updateMatch(numericMatchId, payload);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.snapshot() });
+      await queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.all });
     },
   });
   const pendingMatchStatus = matchStatusMutation.isPending
@@ -155,14 +156,38 @@ export default function Scoreboard() {
     .filter((event) => event.team === "B")
     .slice()
     .reverse();
+  const handleMiss = (team: "A" | "B") => {
+    if (!canTrackMiss) {
+      return;
+    }
+    miss(team);
+  };
+  const handleFoul = (team: "A" | "B") => {
+    if (!canTrackFoul) {
+      return;
+    }
+    foul(team);
+  };
+  const handleRebound = (team: "A" | "B") => {
+    if (!canTrackRebound) {
+      return;
+    }
+    rebound(team);
+  };
+  const handleAssist = (team: "A" | "B") => {
+    if (!canTrackAssist) {
+      return;
+    }
+    assist(team);
+  };
 
   useScoreboardKeyboard({
     enabled: !loadingScoreboard && state.controlMode === "keyboard",
     onAddPoints: addPoints,
-    onMiss: miss,
-    onFoul: foul,
-    onRebound: rebound,
-    onAssist: assist,
+    onMiss: handleMiss,
+    onFoul: handleFoul,
+    onRebound: handleRebound,
+    onAssist: handleAssist,
     onToggleClock: toggleClock,
     onResetClock: resetClock,
     onResetShotClock24: resetShotClock24,
@@ -229,12 +254,12 @@ export default function Scoreboard() {
 
         {numericMatchId ? (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
-            {loadingMatches ? (
+            {matchQuery.isPending ? (
               "Cargando partido..."
-            ) : matchesError ? (
-              <span className="text-red-600">{matchesError}</span>
+            ) : matchQuery.error instanceof Error ? (
+              <span className="text-red-600">{matchQuery.error.message}</span>
             ) : currentMatch ? (
-              `Partido: ${currentMatch.teamAName} vs ${currentMatch.teamBName}`
+              `Partido: ${state.teamA.name} vs ${state.teamB.name}`
             ) : (
               <span className="text-red-600">
                 No encontramos el partido #{numericMatchId}
@@ -271,15 +296,16 @@ export default function Scoreboard() {
       <div className="grid gap-5 xl:grid-cols-[1fr_360px_1fr]">
         <TeamControlPanel
           team={state.teamA}
+          trackedStats={trackedStats}
           controlMode={state.controlMode}
           history={historyA}
           disabled={controlsDisabled}
           onSelectPlayer={selectPlayer}
           onAddPoints={addPoints}
-          onMiss={miss}
-          onFoul={foul}
-          onRebound={rebound}
-          onAssist={assist}
+          onMiss={handleMiss}
+          onFoul={handleFoul}
+          onRebound={handleRebound}
+          onAssist={handleAssist}
         />
 
         <GeneralControls
@@ -308,21 +334,35 @@ export default function Scoreboard() {
           finishMatchLabel={
             currentMatch?.status === "finished" ? "Partido finalizado" : "Finalizar partido"
           }
+          onOpenAttendanceModal={() => setAttendanceModalOpen(true)}
         />
 
         <TeamControlPanel
           team={state.teamB}
+          trackedStats={trackedStats}
           controlMode={state.controlMode}
           history={historyB}
           disabled={controlsDisabled}
           onSelectPlayer={selectPlayer}
           onAddPoints={addPoints}
-          onMiss={miss}
-          onFoul={foul}
-          onRebound={rebound}
-          onAssist={assist}
+          onMiss={handleMiss}
+          onFoul={handleFoul}
+          onRebound={handleRebound}
+          onAssist={handleAssist}
         />
       </div>
+
+      <MatchAttendanceModal
+        isOpen={attendanceModalOpen}
+        onClose={() => setAttendanceModalOpen(false)}
+        teamA={state.teamA}
+        teamB={state.teamB}
+        disabled={controlsDisabled}
+        onSelectPlayer={selectPlayer}
+        onSetParticipation={setPlayerParticipation}
+        onAddGuest={addGuestPlayer}
+        onRemoveGuest={removeGuestPlayer}
+      />
 
       {state.controlMode === "keyboard" ? <KeyboardHelp /> : null}
     </section>

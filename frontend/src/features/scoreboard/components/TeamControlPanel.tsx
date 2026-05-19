@@ -1,13 +1,14 @@
 import type {
-  ScoreboardPlayerOption,
   ScoreboardControlMode,
   ScoreboardHistoryEvent,
+  ScoreboardPlayerOption,
   ScoreboardTeamKey,
   ScoreboardTeamState,
 } from "@/features/scoreboard/Scoreboard.types";
 
 type TeamControlPanelProps = {
   team: ScoreboardTeamState;
+  trackedStats: string[];
   controlMode: ScoreboardControlMode;
   history: ScoreboardHistoryEvent[];
   disabled?: boolean;
@@ -49,6 +50,7 @@ function getPlayerShortName(player: ScoreboardPlayerOption) {
 
 export function TeamControlPanel({
   team,
+  trackedStats,
   controlMode,
   history,
   disabled = false,
@@ -61,8 +63,11 @@ export function TeamControlPanel({
 }: TeamControlPanelProps) {
   const hasSelectedPlayer = Boolean(team.selectedPlayer);
   const keyboardMode = controlMode === "keyboard";
-  const controlsDisabled = disabled || !hasSelectedPlayer || keyboardMode;
   const selectionDisabled = disabled;
+  const selectedPlayerOption = team.players.find((player) => player.key === team.selectedPlayer) ?? null;
+  const visiblePlayers = team.players.filter((player) => player.isPresent);
+  const controlsDisabled =
+    disabled || !hasSelectedPlayer || !selectedPlayerOption?.isPresent || keyboardMode;
   const shortcuts =
     team.key === "A"
       ? {
@@ -85,6 +90,49 @@ export function TeamControlPanel({
         };
   const withShortcut = (label: string, shortcut: string) =>
     keyboardMode ? `${label} [${shortcut}]` : label;
+  const advancedMetricButtons = [
+    trackedStats.includes("Fallo")
+      ? {
+          key: "miss",
+          label: withShortcut("Fallo", shortcuts.miss),
+          className: "bg-slate-100 text-slate-800",
+          onClick: () => onMiss(team.key),
+        }
+      : null,
+    trackedStats.includes("Faltas")
+      ? {
+          key: "foul",
+          label: withShortcut("Falta", shortcuts.foul),
+          className: "bg-red-50 text-red-700",
+          onClick: () => onFoul(team.key),
+        }
+      : null,
+    trackedStats.includes("Rebotes")
+      ? {
+          key: "rebound",
+          label: withShortcut("Rebote", shortcuts.rebound),
+          className: "bg-slate-100 text-slate-800",
+          onClick: () => onRebound(team.key),
+        }
+      : null,
+    trackedStats.includes("Asistencias")
+      ? {
+          key: "assist",
+          label: withShortcut("Asistencia", shortcuts.assist),
+          className: "bg-slate-100 text-slate-800",
+          onClick: () => onAssist(team.key),
+        }
+      : null,
+  ].filter(
+    (
+      button,
+    ): button is {
+      key: string;
+      label: string;
+      className: string;
+      onClick: () => void;
+    } => Boolean(button),
+  );
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -101,9 +149,13 @@ export function TeamControlPanel({
           <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
             Sin jugadores registrados
           </div>
+        ) : visiblePlayers.length === 0 ? (
+          <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+            Aun no llegan jugadores. Marcarlos desde la lista del partido.
+          </div>
         ) : (
           <div className="mt-3 grid grid-cols-3 gap-1 lg:grid-cols-6">
-            {team.players.map((player) => {
+            {visiblePlayers.map((player) => {
               const selected = player.key === team.selectedPlayer;
 
               return (
@@ -138,6 +190,19 @@ export function TeamControlPanel({
                     ].join(" ")}
                   >
                     {getPlayerShortName(player)}
+                  </span>
+
+                  <span className="mt-0.5 flex min-h-[12px] items-center gap-1">
+                    {player.isPresent ? (
+                      <span className="rounded-full bg-emerald-100 px-1.5 py-0 text-[7px] font-black uppercase tracking-[0.1em] text-emerald-700">
+                        L
+                      </span>
+                    ) : null}
+                    {player.didPlay ? (
+                      <span className="rounded-full bg-orange-100 px-1.5 py-0 text-[7px] font-black uppercase tracking-[0.1em] text-orange-700">
+                        J
+                      </span>
+                    ) : null}
                   </span>
 
                   {selected ? (
@@ -183,39 +248,20 @@ export function TeamControlPanel({
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button
-          onClick={() => onMiss(team.key)}
-          disabled={controlsDisabled}
-          className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {withShortcut("Fallo", shortcuts.miss)}
-        </button>
-
-        <button
-          onClick={() => onFoul(team.key)}
-          disabled={controlsDisabled}
-          className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {withShortcut("Falta", shortcuts.foul)}
-        </button>
-
-        <button
-          onClick={() => onRebound(team.key)}
-          disabled={controlsDisabled}
-          className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {withShortcut("Rebote", shortcuts.rebound)}
-        </button>
-
-        <button
-          onClick={() => onAssist(team.key)}
-          disabled={controlsDisabled}
-          className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {withShortcut("Asistencia", shortcuts.assist)}
-        </button>
-      </div>
+      {advancedMetricButtons.length > 0 ? (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {advancedMetricButtons.map((button) => (
+            <button
+              key={button.key}
+              onClick={button.onClick}
+              disabled={controlsDisabled}
+              className={`rounded-2xl px-4 py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${button.className}`}
+            >
+              {button.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-5 max-h-60 overflow-auto rounded-2xl bg-slate-50 p-4">
         <p className="mb-3 text-sm font-black text-slate-700">Historial</p>
@@ -235,4 +281,3 @@ export function TeamControlPanel({
     </div>
   );
 }
-

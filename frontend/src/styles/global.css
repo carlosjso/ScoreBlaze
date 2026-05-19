@@ -16,6 +16,26 @@
   --sb-danger: #ef4444;
 }
 
+/* --- ANIMACIONES PARA EFECTOS VISUALES --- */
+
+/* Movimiento de los cuadritos (partículas) */
+@keyframes float-particle {
+  0%, 100% { 
+    transform: translateY(0) scale(1); 
+    opacity: 0.4; 
+  }
+  50% { 
+    transform: translateY(-12px) scale(1.3); 
+    opacity: 1; 
+  }
+}
+
+/* Rayo de luz que recorre el borde */
+@keyframes border-beam {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
 @layer base {
   * {
     @apply box-border;
@@ -40,6 +60,52 @@
 }
 
 @layer components {
+  /* --- SISTEMA DE PARTÍCULAS (CUADRITOS DEL VIDEO) --- */
+  
+  .particle-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    padding: 20px;
+    place-items: center;
+  }
+
+  .particle-square {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background-color: currentColor;
+    opacity: 0;
+    transition: opacity 0.5s ease, color 0.5s ease;
+  }
+
+  /* Activación de animación al hacer hover en la card */
+  .group:hover .particle-square {
+    opacity: 1;
+    animation: float-particle 2s infinite ease-in-out;
+  }
+
+  /* --- SISTEMA DE ILUMINACIÓN PERIMETRAL (BORDER BEAM) --- */
+
+  .sb-border-beam {
+    @apply pointer-events-none absolute inset-0 z-20 opacity-0 transition-opacity duration-500;
+    border: 1.5px solid transparent;
+    border-radius: inherit;
+    mask: linear-gradient(white 0 0) content-box, linear-gradient(white 0 0);
+    mask-composite: exclude;
+  }
+
+  .sb-border-beam::after {
+    content: "";
+    @apply absolute aspect-square w-[140px];
+    background: linear-gradient(to left, var(--beam-color), transparent);
+    /* Sigue el radio de 20px/24px de tus tarjetas */
+    offset-path: rect(0 auto auto 0 round 24px);
+    animation: border-beam 3.5s linear infinite;
+  }
+
+  /* --- COMPONENTES ORIGINALES DE SCOREBLAZE --- */
+
   .sb-page {
     @apply p-4 sm:p-6;
   }
@@ -72,6 +138,7 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
+  /* Botones Expandibles */
   .sb-btn-expandable {
     @apply inline-flex min-w-0 items-center gap-0 overflow-hidden rounded-full whitespace-nowrap px-0 py-0;
   }
@@ -80,33 +147,9 @@
     @apply inline-flex shrink-0 items-center justify-center rounded-full;
   }
 
-  .sb-btn-expandable-sm {
-    @apply h-10;
-  }
-
-  .sb-btn-expandable-md {
-    @apply h-11;
-  }
-
-  .sb-btn-expandable-lg {
-    @apply h-12;
-  }
-
-  .sb-filter-bar .sb-btn-expandable {
-    @apply px-0 py-0;
-  }
-
-  .sb-filter-bar .sb-btn-expandable-sm {
-    @apply h-10;
-  }
-
-  .sb-filter-bar .sb-btn-expandable-md {
-    @apply h-11;
-  }
-
-  .sb-filter-bar .sb-btn-expandable-lg {
-    @apply h-12;
-  }
+  .sb-btn-expandable-sm { @apply h-10; }
+  .sb-btn-expandable-md { @apply h-11; }
+  .sb-btn-expandable-lg { @apply h-12; }
 
   .sb-btn-expandable-label {
     @apply inline-flex items-center overflow-hidden text-sm opacity-100 transition-[max-width,opacity,padding,transform] duration-300 ease-out;
@@ -120,6 +163,7 @@
     padding-right: 1rem;
   }
 
+  /* Variantes de Botones */
   .sb-btn-primary {
     color: white;
     background: linear-gradient(135deg, var(--sb-primary), #fb8c3a);
@@ -170,6 +214,7 @@
   }
 }
 
+/* --- LÓGICA DE HOVER PARA BOTONES EXPANDIBLES --- */
 @media (hover: hover) and (pointer: fine) {
   @layer components {
     .sb-btn-expandable-label,

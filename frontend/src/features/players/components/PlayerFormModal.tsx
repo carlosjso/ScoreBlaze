@@ -31,18 +31,12 @@ export function PlayerFormModal({
   onClose,
   onSubmit,
 }: PlayerFormModalProps) {
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-  } = useForm<PlayerFormValues>({
+  const { control, handleSubmit, reset, setValue, watch } = useForm<PlayerFormValues>({
     resolver: zodResolver(playerFormSchema),
     defaultValues: toPlayerFormValues(null),
   });
-  const [photoError, setPhotoError] = useState<string | null>(null);
 
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const selectedTeamIds = watch("teamIds");
   const playerName = watch("name") ?? "";
   const photoBase64 = watch("photoBase64");
@@ -50,14 +44,14 @@ export function PlayerFormModal({
   useEffect(() => {
     if (isOpen) {
       setPhotoError(null);
-      reset(toPlayerFormValues(initialPlayer));
+      // Cambia "toPlayerPlayerFormValues" por "toPlayerFormValues"
+      reset(toPlayerFormValues(initialPlayer)); 
       return;
     }
-
     setPhotoError(null);
     reset(toPlayerFormValues(null));
   }, [initialPlayer, isOpen, reset]);
-
+  
   const normalizedSelectedTeamIds = useMemo(() => selectedTeamIds ?? [], [selectedTeamIds]);
   const status = useMemo(() => getPlayerStatus(normalizedSelectedTeamIds), [normalizedSelectedTeamIds]);
 
@@ -65,23 +59,15 @@ export function PlayerFormModal({
     const file = event.target.files?.[0];
     event.target.value = "";
 
-    if (!file) {
-      return;
-    }
-
+    if (!file) return;
     if (!file.type.startsWith("image/")) {
       setPhotoError("Selecciona un archivo de imagen valido.");
       return;
     }
-
     setPhotoError(null);
-
     try {
       const nextPhotoBase64 = await imageFileToPngBase64(file);
-      setValue("photoBase64", nextPhotoBase64, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue("photoBase64", nextPhotoBase64, { shouldDirty: true, shouldValidate: true });
     } catch (error) {
       setPhotoError(error instanceof Error ? error.message : "No se pudo cargar la foto.");
     }
@@ -89,10 +75,7 @@ export function PlayerFormModal({
 
   const clearPhoto = () => {
     setPhotoError(null);
-    setValue("photoBase64", null, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+    setValue("photoBase64", null, { shouldDirty: true, shouldValidate: true });
   };
 
   const submitForm = async (values: PlayerFormValues) => {
@@ -111,64 +94,24 @@ export function PlayerFormModal({
         <div className="mx-auto max-w-[440px] rounded-[28px] bg-white px-5 py-7 shadow-[0_18px_45px_rgba(15,23,42,0.10)] sm:px-8">
           <div className="mx-auto max-w-[360px]">
             <div className="flex flex-col items-center">
-              <label
-                className={cn(
-                  "relative inline-flex cursor-pointer flex-col items-center gap-2",
-                  loading && "pointer-events-none opacity-50"
-                )}
-              >
-                <span className="sr-only">Seleccionar foto</span>
-                <PlayerPhoto
-                  name={playerName || "Jugador"}
-                  photoBase64={photoBase64}
-                  className="h-24 w-24 text-sm"
-                  emptyClassName="border-slate-200 bg-slate-200 text-slate-700"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  disabled={loading}
-                  onChange={handlePhotoChange}
-                />
+              <label className={cn("relative inline-flex cursor-pointer flex-col items-center gap-2", loading && "pointer-events-none opacity-50")}>
+                <PlayerPhoto name={playerName || "Jugador"} photoBase64={photoBase64} className="h-24 w-24 text-sm" emptyClassName="border-slate-200 bg-slate-200 text-slate-700" />
+                <input type="file" accept="image/*" className="sr-only" disabled={loading} onChange={handlePhotoChange} />
               </label>
 
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                <label
-                  className={cn(
-                    "inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100",
-                    loading && "pointer-events-none opacity-50"
-                  )}
-                >
+                <label className={cn("inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100", loading && "pointer-events-none opacity-50")}>
                   <Upload size={12} />
                   {photoBase64 ? "Cambiar foto" : "Subir foto"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    disabled={loading}
-                    onChange={handlePhotoChange}
-                  />
+                  <input type="file" accept="image/*" className="sr-only" disabled={loading} onChange={handlePhotoChange} />
                 </label>
-
-                {photoBase64 ? (
-                  <button
-                    type="button"
-                    onClick={clearPhoto}
-                    disabled={loading}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Trash2 size={12} />
-                    Quitar
+                {photoBase64 && (
+                  <button type="button" onClick={clearPhoto} disabled={loading} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50">
+                    <Trash2 size={12} /> Quitar
                   </button>
-                ) : null}
+                )}
               </div>
-
-              {photoError ? (
-                <p className="mt-2 text-center text-xs font-medium text-red-600">
-                  {photoError}
-                </p>
-              ) : null}
+              {photoError && <p className="mt-2 text-center text-xs font-medium text-red-600">{photoError}</p>}
             </div>
 
             <div className="mt-6 space-y-4">
@@ -176,20 +119,18 @@ export function PlayerFormModal({
                 name="name"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <Input
-                    label="Nombre del jugador"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    leftIcon={<CircleUserRound size={14} />}
-                    placeholder="Ivan Perez"
-                    error={fieldState.error?.message}
-                    disabled={loading}
-                    className="bg-slate-100"
+                  <Input 
+                    label="Nombre del jugador" 
+                    {...field} 
+                    maxLength={50}
+                    leftIcon={<CircleUserRound size={14} />} 
+                    placeholder="Ivan Perez" 
+                    error={fieldState.error?.message} 
+                    disabled={loading} 
+                    className="bg-slate-100" 
                   />
                 )}
               />
-
               <Controller
                 name="phone"
                 control={control}
@@ -197,7 +138,11 @@ export function PlayerFormModal({
                   <Input
                     label="Telefono del jugador"
                     value={field.value}
-                    onChange={field.onChange}
+                    maxLength={10}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val.length <= 10) field.onChange(val);
+                    }}
                     onBlur={field.onBlur}
                     leftIcon={<Phone size={14} />}
                     placeholder="7717777344"
@@ -207,50 +152,34 @@ export function PlayerFormModal({
                   />
                 )}
               />
-
               <Controller
                 name="email"
                 control={control}
                 render={({ field, fieldState }) => (
-                  <Input
-                    label="Correo del jugador"
-                    type="email"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    leftIcon={<Mail size={14} />}
-                    placeholder="ivan@email.com"
-                    error={fieldState.error?.message}
-                    disabled={loading}
-                    className="bg-slate-100"
+                  <Input 
+                    label="Correo del jugador" 
+                    type="email" 
+                    {...field} 
+                    maxLength={60}
+                    leftIcon={<Mail size={14} />} 
+                    placeholder="ivan@email.com" 
+                    error={fieldState.error?.message} 
+                    disabled={loading} 
+                    className="bg-slate-100" 
                   />
                 )}
               />
-
-              <Input
-                label="Estatus"
-                value={status}
-                disabled
-                leftIcon={<Shield size={14} />}
-                className="bg-slate-100"
-              />
+              <Input label="Estatus" value={status} disabled leftIcon={<Shield size={14} />} className="bg-slate-100" />
             </div>
           </div>
         </div>
-
         <FormErrors message={apiError} />
-
         <div className="flex justify-end">
           <Button variant="secondary" type="submit" disabled={loading}>
-            {loading
-              ? "Guardando..."
-              : mode === "create"
-                ? "Crear"
-                : "Guardar"}
+            {loading ? "Guardando..." : mode === "create" ? "Crear" : "Guardar"}
           </Button>
         </div>
       </form>
     </Modal>
   );
 }
-

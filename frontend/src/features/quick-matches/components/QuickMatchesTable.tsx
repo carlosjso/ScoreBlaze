@@ -1,21 +1,25 @@
 import {
   Bolt,
+  Check,
   Clock3,
   MapPin,
   Monitor,
   Pencil,
   Search,
+  SlidersHorizontal,
   Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { leagueTrackedStatOptions } from "@/features/leagues/Leagues.types";
 import type {
   MatchStatusFilter,
   QuickMatchListItem,
 } from "@/features/quick-matches/QuickMatches.types";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
+import { Modal } from "@/shared/components/ui/Modal";
 import { IconButton } from "@/shared/components/ui";
 import { cn } from "@/shared/utils/cn";
 
@@ -25,10 +29,20 @@ type QuickMatchesTableProps = {
   statusFilter: MatchStatusFilter;
   hasActiveFilters: boolean;
   deletingMatchId: number | null;
+  loadingLabel?: string;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  emptyStateActionLabel?: string;
+  buildStatsPath?: (match: QuickMatchListItem) => string;
+  showTrackedStatsEditor?: boolean;
+  updatingTrackedStatsMatchId?: number | null;
+  onEmptyAction?: () => void;
   onClearFilters: () => void;
   onView: (match: QuickMatchListItem) => void;
   onEdit: (match: QuickMatchListItem) => void;
   onDelete: (match: QuickMatchListItem) => void;
+  onOpenMetrics?: (match: QuickMatchListItem) => void;
+  onUpdateTrackedStats?: (match: QuickMatchListItem, trackedStats: string[]) => void | Promise<void>;
 };
 
 const statusClass = {
@@ -91,16 +105,30 @@ function openMatchBoth(matchId: number) {
 function MatchCardActions({
   match,
   deletingMatchId,
+  showTrackedStatsEditor,
+  updatingTrackedStatsMatchId,
   onView,
   onEdit,
   onDelete,
-}: Pick<QuickMatchesTableProps, "deletingMatchId" | "onView" | "onEdit" | "onDelete"> & {
+  onOpenMetrics,
+  onUpdateTrackedStats,
+}: Pick<
+  QuickMatchesTableProps,
+  | "deletingMatchId"
+  | "showTrackedStatsEditor"
+  | "updatingTrackedStatsMatchId"
+  | "onView"
+  | "onEdit"
+  | "onDelete"
+  | "onOpenMetrics"
+  | "onUpdateTrackedStats"
+> & {
   match: QuickMatchListItem;
 }) {
   const [launchOpen, setLaunchOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const disabled = deletingMatchId === match.id;
+  const disabled = deletingMatchId === match.id || updatingTrackedStatsMatchId === match.id;
 
   useEffect(() => {
     if (!launchOpen && !actionsOpen) {
@@ -203,7 +231,7 @@ function MatchCardActions({
         </IconButton>
 
         {actionsOpen ? (
-          <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+          <div className="absolute right-0 top-full z-20 mt-2 w-44 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
             <button
               type="button"
               disabled={disabled}
@@ -231,6 +259,18 @@ function MatchCardActions({
               <Trash2 size={14} />
               Eliminar
             </button>
+
+            {showTrackedStatsEditor && onUpdateTrackedStats ? (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => runAction(() => onOpenMetrics?.(match))}
+                className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <SlidersHorizontal size={14} />
+                Metricas
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -241,17 +281,33 @@ function MatchCardActions({
 function MatchCard({
   match,
   deletingMatchId,
+  buildStatsPath,
+  showTrackedStatsEditor,
+  updatingTrackedStatsMatchId,
   onView,
   onEdit,
   onDelete,
+  onOpenMetrics,
+  onUpdateTrackedStats,
   emphasisLabel,
-}: Pick<QuickMatchesTableProps, "deletingMatchId" | "onView" | "onEdit" | "onDelete"> & {
+}: Pick<
+  QuickMatchesTableProps,
+  | "deletingMatchId"
+  | "buildStatsPath"
+  | "showTrackedStatsEditor"
+  | "updatingTrackedStatsMatchId"
+  | "onView"
+  | "onEdit"
+  | "onDelete"
+  | "onOpenMetrics"
+  | "onUpdateTrackedStats"
+> & {
   match: QuickMatchListItem;
   emphasisLabel?: string;
 }) {
   const navigate = useNavigate();
   const centerScoreLabel = `${match.scoreTeamA ?? "--"} - ${match.scoreTeamB ?? "--"}`;
-  const openStats = () => navigate(`/quick-match/${match.id}/stats`);
+  const openStats = () => navigate(buildStatsPath ? buildStatsPath(match) : `/quick-match/${match.id}/stats`);
 
   return (
     <article
@@ -301,9 +357,13 @@ function MatchCard({
         <MatchCardActions
           match={match}
           deletingMatchId={deletingMatchId}
+          showTrackedStatsEditor={showTrackedStatsEditor}
+          updatingTrackedStatsMatchId={updatingTrackedStatsMatchId}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          onOpenMetrics={onOpenMetrics}
+          onUpdateTrackedStats={onUpdateTrackedStats}
         />
       </div>
 
@@ -364,11 +424,27 @@ function MatchSection({
   matches,
   emptyLabel,
   deletingMatchId,
+  buildStatsPath,
+  showTrackedStatsEditor,
+  updatingTrackedStatsMatchId,
   onView,
   onEdit,
   onDelete,
+  onOpenMetrics,
+  onUpdateTrackedStats,
   firstCardHeader,
-}: Pick<QuickMatchesTableProps, "deletingMatchId" | "onView" | "onEdit" | "onDelete"> & {
+}: Pick<
+  QuickMatchesTableProps,
+  | "deletingMatchId"
+  | "buildStatsPath"
+  | "showTrackedStatsEditor"
+  | "updatingTrackedStatsMatchId"
+  | "onView"
+  | "onEdit"
+  | "onDelete"
+  | "onOpenMetrics"
+  | "onUpdateTrackedStats"
+> & {
   eyebrow: string;
   title: string;
   matches: QuickMatchListItem[];
@@ -405,9 +481,14 @@ function MatchSection({
                   <MatchCard
                     match={match}
                     deletingMatchId={deletingMatchId}
+                    buildStatsPath={buildStatsPath}
+                    showTrackedStatsEditor={showTrackedStatsEditor}
+                    updatingTrackedStatsMatchId={updatingTrackedStatsMatchId}
                     onView={onView}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onOpenMetrics={onOpenMetrics}
+                    onUpdateTrackedStats={onUpdateTrackedStats}
                   />
                 </div>
               ))}
@@ -429,14 +510,28 @@ export function QuickMatchesTable({
   statusFilter,
   hasActiveFilters,
   deletingMatchId,
+  loadingLabel = "Cargando partidos...",
+  emptyStateTitle = "No hay partidos rapidos registrados",
+  emptyStateDescription = "Registra tu primer partido rapido para iniciar la agenda de amistosos.",
+  emptyStateActionLabel = "Crear partido",
+  buildStatsPath,
+  showTrackedStatsEditor = false,
+  updatingTrackedStatsMatchId = null,
+  onEmptyAction,
   onClearFilters,
   onView,
   onEdit,
   onDelete,
+  onUpdateTrackedStats,
 }: QuickMatchesTableProps) {
+  const [metricsMatchId, setMetricsMatchId] = useState<number | null>(null);
   const liveMatches = sortByUpcoming(matches.filter((match) => match.status === "live"));
   const scheduledMatches = sortByUpcoming(matches.filter((match) => match.status === "scheduled"));
   const finishedMatches = sortByRecent(matches.filter((match) => match.status === "finished"));
+  const selectedMetricsMatch = metricsMatchId === null
+    ? null
+    : matches.find((match) => match.id === metricsMatchId) ?? null;
+  const isUpdatingTrackedStats = selectedMetricsMatch !== null && updatingTrackedStatsMatchId === selectedMetricsMatch.id;
 
   const showLiveSection = statusFilter === "all" || statusFilter === "live";
   const showScheduledSection = statusFilter === "all" || statusFilter === "scheduled";
@@ -445,7 +540,7 @@ export function QuickMatchesTable({
   if (loading) {
     return (
       <div className="rounded-[28px] border border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-500 shadow-sm">
-        Cargando partidos...
+        {loadingLabel}
       </div>
     );
   }
@@ -455,14 +550,14 @@ export function QuickMatchesTable({
       <div className="rounded-[28px] border border-slate-300 bg-white px-4 py-6 shadow-sm">
         <TableEmptyState
           mode={hasActiveFilters ? "filtered" : "empty"}
-          title={hasActiveFilters ? "Sin resultados para esos filtros" : "No hay partidos rapidos registrados"}
+          title={hasActiveFilters ? "Sin resultados para esos filtros" : emptyStateTitle}
           description={
             hasActiveFilters
               ? "Prueba ajustando la busqueda o el estatus para localizar partidos."
-              : "Registra tu primer partido rapido para iniciar la agenda de amistosos."
+              : emptyStateDescription
           }
-          actionLabel={hasActiveFilters ? "Limpiar filtros" : "Crear partido"}
-          onAction={hasActiveFilters ? onClearFilters : undefined}
+          actionLabel={hasActiveFilters ? "Limpiar filtros" : emptyStateActionLabel}
+          onAction={hasActiveFilters ? onClearFilters : onEmptyAction}
         />
       </div>
     );
@@ -477,9 +572,14 @@ export function QuickMatchesTable({
           matches={liveMatches}
           emptyLabel="No hay partidos en juego en este momento."
           deletingMatchId={deletingMatchId}
+          buildStatsPath={buildStatsPath}
+          showTrackedStatsEditor={showTrackedStatsEditor}
+          updatingTrackedStatsMatchId={updatingTrackedStatsMatchId}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          onOpenMetrics={(match) => setMetricsMatchId(match.id)}
+          onUpdateTrackedStats={onUpdateTrackedStats}
         />
       ) : null}
 
@@ -490,9 +590,14 @@ export function QuickMatchesTable({
           matches={scheduledMatches}
           emptyLabel="No hay partidos programados por ahora."
           deletingMatchId={deletingMatchId}
+          buildStatsPath={buildStatsPath}
+          showTrackedStatsEditor={showTrackedStatsEditor}
+          updatingTrackedStatsMatchId={updatingTrackedStatsMatchId}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          onOpenMetrics={(match) => setMetricsMatchId(match.id)}
+          onUpdateTrackedStats={onUpdateTrackedStats}
           firstCardHeader="Proximo partido"
         />
       ) : null}
@@ -504,10 +609,83 @@ export function QuickMatchesTable({
           matches={finishedMatches}
           emptyLabel="Todavia no hay partidos finalizados."
           deletingMatchId={deletingMatchId}
+          buildStatsPath={buildStatsPath}
+          showTrackedStatsEditor={showTrackedStatsEditor}
+          updatingTrackedStatsMatchId={updatingTrackedStatsMatchId}
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          onOpenMetrics={(match) => setMetricsMatchId(match.id)}
+          onUpdateTrackedStats={onUpdateTrackedStats}
         />
+      ) : null}
+
+      {showTrackedStatsEditor && selectedMetricsMatch && onUpdateTrackedStats ? (
+        <Modal
+          isOpen={true}
+          onClose={() => setMetricsMatchId(null)}
+          title="Metricas"
+          maxWidthClassName="max-w-md"
+        >
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-sm font-semibold text-slate-900">{selectedMetricsMatch.matchupLabel}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Activa o desactiva las metricas disponibles para este partido rapido.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {leagueTrackedStatOptions.map((trackedStat) => {
+                const isActive = selectedMetricsMatch.trackedStats.includes(trackedStat);
+                const nextTrackedStats = isActive
+                  ? selectedMetricsMatch.trackedStats.filter((value) => value !== trackedStat)
+                  : [...selectedMetricsMatch.trackedStats, trackedStat];
+
+                return (
+                  <button
+                    key={trackedStat}
+                    type="button"
+                    disabled={isUpdatingTrackedStats}
+                    onClick={() => void onUpdateTrackedStats(selectedMetricsMatch, nextTrackedStats)}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
+                      isActive
+                        ? "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <span>{trackedStat}</span>
+                    <span
+                      className={cn(
+                        "inline-flex h-7 min-w-[76px] items-center justify-center rounded-full border px-3 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                        isActive
+                          ? "border-orange-200 bg-white text-orange-600"
+                          : "border-slate-200 bg-slate-50 text-slate-400",
+                      )}
+                    >
+                      {isActive ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Check size={12} />
+                          Activa
+                        </span>
+                      ) : (
+                        "Off"
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+              <span>{isUpdatingTrackedStats ? "Guardando cambios..." : "Puedes cambiar varias metricas cuando quieras."}</span>
+              <span className="font-semibold uppercase tracking-[0.12em] text-slate-400">
+                {selectedMetricsMatch.trackedStats.length} activas
+              </span>
+            </div>
+          </div>
+        </Modal>
       ) : null}
     </div>
   );

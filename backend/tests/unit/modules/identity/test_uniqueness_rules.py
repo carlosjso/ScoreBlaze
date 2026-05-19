@@ -20,9 +20,9 @@ class UniquenessRulesTest(unittest.TestCase):
     def test_unique_rules_reject_different_existing_entity(self):
         with self.assertRaisesRegex(AppException, "Team name"):
             validate_unique_team_name(existing_team_id=7, current_team_id=8)
-        with self.assertRaisesRegex(AppException, "Email"):
+        with self.assertRaisesRegex(AppException, "Email|correo"):
             validate_unique_player_email(existing_player_id=7, current_player_id=8)
-        with self.assertRaisesRegex(AppException, "Email"):
+        with self.assertRaisesRegex(AppException, "Email|correo"):
             validate_unique_user_email(existing_user_id=7, current_user_id=8)
 
 

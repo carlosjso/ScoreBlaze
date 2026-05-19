@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from core.exceptions import NotFoundException
 from data.orm import Match
 from database.unit_of_work import UnitOfWork
 from modules.matches.domain import MatchResult
@@ -7,6 +8,7 @@ from modules.matches.repositories import MatchRepository
 
 from .policy import MatchPolicy
 from .schemas import MatchCreate, MatchPatch, MatchUpdate
+from .tracked_stats import normalize_match_tracked_stats
 
 
 class MatchService:
@@ -21,33 +23,46 @@ class MatchService:
         self.policy = policy
 
     @staticmethod
-    def _build_match(data: MatchCreate, result: MatchResult) -> Match:
+    def _build_match(data: MatchCreate, result: MatchResult, tracked_stats: list[str]) -> Match:
         return Match(
             match_date=data.match_date,
             start_time=data.start_time,
             end_time=data.end_time,
             team_a_id=data.team_a_id,
             team_b_id=data.team_b_id,
+            league_id=data.league_id,
             score_team_a=data.score_team_a,
             score_team_b=data.score_team_b,
             winner_team_id=result.winner_team_id,
             is_draw=result.is_draw,
             court=data.court,
             tournament=data.tournament,
+            tracked_stats=tracked_stats,
             status=data.status.value,
         )
 
+    def _resolve_tracked_stats(self, league_id: int | None, tracked_stats: list[str] | None) -> list[str]:
+        if league_id is None:
+            return normalize_match_tracked_stats(tracked_stats)
+
+        league = self.policy.league_repo.get(league_id)
+        if not league:
+            raise NotFoundException("Liga no encontrada para este partido.")
+
+        return normalize_match_tracked_stats(list(league.tracked_stats or []))
+
     def create(self, data: MatchCreate) -> Match:
         result = self.policy.resolve_create_result(data)
+        tracked_stats = self._resolve_tracked_stats(data.league_id, data.tracked_stats)
 
-        match = self._build_match(data, result)
+        match = self._build_match(data, result, tracked_stats)
         with self.unit_of_work.transaction():
             self.match_repo.add(match)
         self.unit_of_work.refresh(match)
         return match
 
-    def list(self) -> list[Match]:
-        return self.match_repo.list()
+    def list(self, league_id: int | None = None) -> list[Match]:
+        return self.match_repo.list(league_id=league_id)
 
     def get(self, match_id: int) -> Match:
         return self.policy.get_existing_match(match_id)
@@ -60,12 +75,14 @@ class MatchService:
             end_time=match.end_time,
             team_a_id=match.team_a_id,
             team_b_id=match.team_b_id,
+            league_id=match.league_id,
             score_team_a=match.score_team_a,
             score_team_b=match.score_team_b,
             winner_team_id=match.winner_team_id,
             is_draw=match.is_draw,
             court=match.court,
             tournament=match.tournament,
+            tracked_stats=normalize_match_tracked_stats(list(match.tracked_stats or [])),
             status=match.status,
         )
 
@@ -77,6 +94,7 @@ class MatchService:
 
     def _apply_update(self, match: Match, data: MatchUpdate) -> Match:
         result = self.policy.resolve_update_result(data)
+        tracked_stats = self._resolve_tracked_stats(data.league_id, data.tracked_stats)
 
         with self.unit_of_work.transaction():
             self.match_repo.update(
@@ -86,12 +104,14 @@ class MatchService:
                 end_time=data.end_time,
                 team_a_id=data.team_a_id,
                 team_b_id=data.team_b_id,
+                league_id=data.league_id,
                 score_team_a=data.score_team_a,
                 score_team_b=data.score_team_b,
                 winner_team_id=result.winner_team_id,
                 is_draw=result.is_draw,
                 court=data.court,
                 tournament=data.tournament,
+                tracked_stats=tracked_stats,
                 status=data.status.value,
             )
         self.unit_of_work.refresh(match)

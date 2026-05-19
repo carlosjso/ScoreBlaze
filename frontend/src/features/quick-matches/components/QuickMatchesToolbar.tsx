@@ -7,6 +7,8 @@ type QuickMatchesToolbarProps = {
   search: string;
   statusFilter: MatchStatusFilter;
   disabled?: boolean;
+  searchPlaceholder?: string;
+  createButtonLabel?: string;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: MatchStatusFilter) => void;
   onCreate: () => void;
@@ -16,6 +18,8 @@ export function QuickMatchesToolbar({
   search,
   statusFilter,
   disabled = false,
+  searchPlaceholder = "Buscar por equipo, estatus o fecha",
+  createButtonLabel = "Crear partido",
   onSearchChange,
   onStatusFilterChange,
   onCreate,
@@ -26,7 +30,7 @@ export function QuickMatchesToolbar({
         <SearchInput
           value={search}
           onChange={onSearchChange}
-          placeholder="Buscar por equipo, estatus o fecha"
+          placeholder={searchPlaceholder}
         />
       </div>
 
@@ -46,7 +50,7 @@ export function QuickMatchesToolbar({
         disabled={disabled}
         className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
       >
-        Crear partido
+        {createButtonLabel}
       </Button>
     </div>
   );

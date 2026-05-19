@@ -21,3 +21,13 @@ class NotFoundException(AppException):
 class ConflictException(AppException):
     def __init__(self, message: str):
         super().__init__(message, status_code=409)
+
+
+class UnauthorizedException(AppException):
+    def __init__(self, message: str = "Unauthorized"):
+        super().__init__(message, status_code=401)
+
+
+class ForbiddenException(AppException):
+    def __init__(self, message: str = "Forbidden"):
+        super().__init__(message, status_code=403)

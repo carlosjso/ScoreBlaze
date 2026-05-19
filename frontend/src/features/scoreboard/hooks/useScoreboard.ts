@@ -4,12 +4,17 @@ import {
   resetMatchScoreboard,
   saveMatchEvent,
   undoMatchEvent,
+  updateMatchPlayerParticipation,
 } from "@/features/scoreboard/Scoreboard.service";
 import {
   buildScoreboardWebSocketUrl,
   createScoreboardRealtimeMessage,
   parseScoreboardRealtimeMessage,
 } from "@/features/scoreboard/ScoreboardRealtime.service";
+import {
+  mergeRealtimeStatePreservingTeamIdentity,
+  mergeSnapshotIdentityIntoScoreboardState,
+} from "@/features/scoreboard/scoreboardStateIdentity";
 
 import type {
   ScoreboardControlMode,
@@ -58,8 +63,41 @@ function createGuestPlayers(team: ScoreboardTeamKey): ScoreboardPlayerOption[] {
       label,
       name: label,
       shirtNumber: null,
+      isPresent: false,
+      didPlay: false,
     };
   });
+}
+
+function createTemporaryGuestPlayer(
+  team: ScoreboardTeamKey,
+  guestName: string,
+  guestShirtNumber?: string,
+): ScoreboardPlayerOption {
+  const trimmedName = guestName.trim();
+  const trimmedShirtNumber = guestShirtNumber?.trim() || null;
+  return {
+    key: `guest-temp:${team}:${Date.now()}:${Math.random().toString(16).slice(2, 8)}`,
+    playerId: null,
+    label: trimmedShirtNumber ? `#${trimmedShirtNumber} ${trimmedName}` : trimmedName,
+    name: trimmedName,
+    shirtNumber: trimmedShirtNumber,
+    isPresent: true,
+    didPlay: false,
+  };
+}
+
+function resolveNextSelectedPlayerAfterGuestRemoval(
+  currentSelectedPlayer: string | null,
+  removedPlayerKey: string,
+  remainingPlayers: ScoreboardPlayerOption[],
+) {
+  if (currentSelectedPlayer !== removedPlayerKey) {
+    return currentSelectedPlayer;
+  }
+
+  const firstPresentPlayer = remainingPlayers.find((player) => player.isPresent);
+  return firstPresentPlayer?.key ?? remainingPlayers[0]?.key ?? null;
 }
 
 function buildTeamState(
@@ -140,23 +178,24 @@ function mergeServerState(
   current: ScoreboardState,
   serverState: ScoreboardState,
 ): ScoreboardState {
+  const identityMerged = mergeRealtimeStatePreservingTeamIdentity(current, serverState);
   const mergedTeamA = {
-    ...serverState.teamA,
+    ...identityMerged.teamA,
     selectedPlayer: resolveSelectedPlayer(
       current.teamA.selectedPlayer,
-      serverState.teamA.players,
+      identityMerged.teamA.players,
     ),
   };
   const mergedTeamB = {
-    ...serverState.teamB,
+    ...identityMerged.teamB,
     selectedPlayer: resolveSelectedPlayer(
       current.teamB.selectedPlayer,
-      serverState.teamB.players,
+      identityMerged.teamB.players,
     ),
   };
 
   return {
-    ...serverState,
+    ...identityMerged,
     teamA: mergedTeamA,
     teamB: mergedTeamB,
   };
@@ -233,6 +272,31 @@ function getPointEventType(points: number) {
 
 function getSelectedPlayerOption(team: ScoreboardTeamState) {
   return team.players.find((player) => player.key === team.selectedPlayer) ?? null;
+}
+
+function applyPlayerParticipation(
+  player: ScoreboardPlayerOption,
+  updates: {
+    isPresent?: boolean;
+    didPlay?: boolean;
+  },
+): ScoreboardPlayerOption {
+  let nextIsPresent = updates.isPresent ?? player.isPresent;
+  let nextDidPlay = updates.didPlay ?? player.didPlay;
+
+  if (nextDidPlay) {
+    nextIsPresent = true;
+  }
+
+  if (!nextIsPresent) {
+    nextDidPlay = false;
+  }
+
+  return {
+    ...player,
+    isPresent: nextIsPresent,
+    didPlay: nextDidPlay,
+  };
 }
 
 function createEventText(
@@ -389,6 +453,12 @@ export function useScoreboard({
       .then((serverState) => {
         hasLoadedSnapshotRef.current = true;
         if (hasHydratedFromRealtimeRef.current) {
+          commitState(
+            mergeSnapshotIdentityIntoScoreboardState(
+              stateRef.current,
+              serverState,
+            ),
+          );
           return;
         }
 
@@ -428,6 +498,7 @@ export function useScoreboard({
     }
 
     let cancelled = false;
+    let connectTimeoutId: number | null = null;
     setRealtimeStatus("connecting");
 
     const connect = () => {
@@ -469,8 +540,11 @@ export function useScoreboard({
       };
 
       socket.onerror = () => {
+        if (cancelled || realtimeSocketRef.current !== socket) {
+          return;
+        }
+
         setRealtimeStatus("reconnecting");
-        console.error("Fallo la conexion realtime del marcador.");
       };
 
       socket.onclose = () => {
@@ -493,14 +567,26 @@ export function useScoreboard({
       };
     };
 
-    connect();
+    connectTimeoutId = window.setTimeout(() => {
+      connectTimeoutId = null;
+      connect();
+    }, 0);
 
     return () => {
       cancelled = true;
       clearReconnectTimeout();
       clearRealtimeBootstrapTimeout();
 
+      if (connectTimeoutId !== null) {
+        window.clearTimeout(connectTimeoutId);
+        connectTimeoutId = null;
+      }
+
       if (realtimeSocketRef.current) {
+        realtimeSocketRef.current.onopen = null;
+        realtimeSocketRef.current.onmessage = null;
+        realtimeSocketRef.current.onerror = null;
+        realtimeSocketRef.current.onclose = null;
         realtimeSocketRef.current.close();
         realtimeSocketRef.current = null;
       }
@@ -550,6 +636,108 @@ export function useScoreboard({
     [updateState],
   );
 
+  const setPlayerParticipation = useCallback(
+    (
+      team: ScoreboardTeamKey,
+      playerKey: string,
+      updates: {
+        isPresent?: boolean;
+        didPlay?: boolean;
+      },
+    ) => {
+      const current = stateRef.current;
+      const teamField = getTeamField(team);
+      const player = current[teamField].players.find((item) => item.key === playerKey);
+
+      if (!player) {
+        return;
+      }
+      const nextState = {
+        ...current,
+        [teamField]: {
+          ...current[teamField],
+          players: current[teamField].players.map((item) =>
+            item.key === playerKey ? applyPlayerParticipation(item, updates) : item,
+          ),
+        },
+      };
+
+      commitState(nextState);
+
+      if (matchId && player.playerId !== null) {
+        enqueueServerSync(() =>
+          updateMatchPlayerParticipation(matchId, player.playerId!, {
+            team_key: team,
+            is_present: updates.isPresent,
+            did_play: updates.didPlay,
+          }),
+        );
+      }
+    },
+    [commitState, enqueueServerSync, matchId],
+  );
+
+  const addGuestPlayer = useCallback(
+    (
+      team: ScoreboardTeamKey,
+      guestName: string,
+      guestShirtNumber?: string,
+    ) => {
+      const trimmedName = guestName.trim();
+      if (!trimmedName) {
+        return;
+      }
+
+      updateState((current) => {
+        const teamField = getTeamField(team);
+        const guestPlayer = createTemporaryGuestPlayer(
+          team,
+          trimmedName,
+          guestShirtNumber,
+        );
+
+        return {
+          ...current,
+          [teamField]: {
+            ...current[teamField],
+            selectedPlayer: guestPlayer.key,
+            players: [...current[teamField].players, guestPlayer],
+          },
+        };
+      });
+    },
+    [updateState],
+  );
+
+  const removeGuestPlayer = useCallback(
+    (team: ScoreboardTeamKey, playerKey: string) => {
+      updateState((current) => {
+        const teamField = getTeamField(team);
+        const playerToRemove = current[teamField].players.find((player) => player.key === playerKey);
+
+        if (!playerToRemove || !playerToRemove.key.startsWith("guest-temp:") || playerToRemove.didPlay) {
+          return current;
+        }
+
+        const remainingPlayers = current[teamField].players.filter((player) => player.key !== playerKey);
+
+        return {
+          ...current,
+          [teamField]: {
+            ...current[teamField],
+            selectedPlayer: resolveNextSelectedPlayerAfterGuestRemoval(
+              current[teamField].selectedPlayer,
+              playerKey,
+              remainingPlayers,
+            ),
+            players: remainingPlayers,
+          },
+        };
+      });
+    },
+    [updateState],
+  );
+
   const appendEvent = useCallback(
     (team: ScoreboardTeamKey, type: ScoreboardHistoryEvent["type"], points?: number) => {
       const current = stateRef.current;
@@ -581,6 +769,11 @@ export function useScoreboard({
         ...current,
         [teamField]: {
           ...teamState,
+          players: teamState.players.map((player) =>
+            player.key === selectedPlayer.key
+              ? applyPlayerParticipation(player, { isPresent: true, didPlay: true })
+              : player,
+          ),
           score:
             type === "POINT_1" || type === "POINT_2" || type === "POINT_3"
               ? teamState.score + (points ?? 0)
@@ -851,6 +1044,9 @@ export function useScoreboard({
     formattedClock,
     formattedShotClock,
     selectPlayer,
+    setPlayerParticipation,
+    addGuestPlayer,
+    removeGuestPlayer,
     addHistoryEvent,
     addPoints,
     assist,

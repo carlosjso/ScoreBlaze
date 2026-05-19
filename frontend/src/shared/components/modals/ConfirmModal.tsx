@@ -21,7 +21,7 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title={title} maxWidthClassName="max-w-md">
-      <p className="mb-6 text-sm text-slate-600">{message}</p>
+      <p className="mb-6 text-sm text-slate-600 [overflow-wrap:anywhere]">{message}</p>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={loading}>
           Cancelar
