@@ -136,7 +136,7 @@ export default function LeagueMatchesPage() {
         <PageHeader
           title="Partidos de liga"
           subtitle="Programa y administra partidos usando solo los equipos asignados a esta liga."
-          actions={<LeagueSectionNav leagueId={league?.id} active="matches" />}
+          actions={<LeagueSectionNav league={league} active="matches" />}
         />
 
         <Panel>

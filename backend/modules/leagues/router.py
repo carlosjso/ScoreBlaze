@@ -7,6 +7,7 @@ from core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from modules.matches.schemas import MatchOut
 
 from .dependencies import get_league_service, get_league_stats_service
+from .domain import LeagueCompetitionType
 from .schemas import (
     LeagueCreate,
     LeagueDetailOut,
@@ -24,10 +25,11 @@ router = APIRouter()
 
 @router.get("/", response_model=list[LeagueOut], status_code=status.HTTP_200_OK)
 def list_leagues(
+    competition_type: LeagueCompetitionType | None = Query(default=None),
     service: LeagueService = Depends(get_league_service),
     _=Depends(require_permissions("leagues.view")),
 ):
-    return service.list()
+    return service.list(competition_type=competition_type.value if competition_type else None)
 
 
 @router.get("/table", response_model=PaginatedLeaguesTableOut, status_code=status.HTTP_200_OK)
@@ -37,6 +39,7 @@ def list_leagues_table(
     search: str = Query(default=""),
     sort_key: Literal["id", "name", "status", "teams"] = Query(default="name"),
     sort_dir: Literal["asc", "desc"] = Query(default="asc"),
+    competition_type: LeagueCompetitionType | None = Query(default=None),
     service: LeagueService = Depends(get_league_service),
     _=Depends(require_permissions("leagues.view")),
 ):
@@ -46,6 +49,7 @@ def list_leagues_table(
         search=search,
         sort_key=sort_key,
         sort_dir=sort_dir,
+        competition_type=competition_type.value if competition_type else None,
     )
 
 

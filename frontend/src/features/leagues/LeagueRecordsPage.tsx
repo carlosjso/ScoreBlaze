@@ -25,7 +25,6 @@ function RecordsCard({
   valueLabel,
   category,
   teamId,
-  playerId,
   teamLogoBase64,
   playerPhotoBase64,
 }: RecordsCardProps) {
@@ -251,7 +250,7 @@ export default function LeagueRecordsPage() {
         <PageHeader
           title="Lideres y records"
           subtitle="Consulta el resumen completo de lideres de equipos y jugadores dentro de esta liga."
-          actions={<LeagueSectionNav leagueId={league?.id} />}
+          actions={<LeagueSectionNav league={league} />}
         />
 
         <Panel>

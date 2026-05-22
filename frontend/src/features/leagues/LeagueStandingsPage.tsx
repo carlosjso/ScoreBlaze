@@ -4,6 +4,7 @@ import { CalendarDays, Shield, UsersRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useLeagueMatchesData } from "@/features/leagues/hooks/useLeagueMatchesData";
+import { getCompetitionCapabilities } from "@/features/leagues/competitionCapabilities";
 import { leaguesQueryKeys, leaguesService } from "@/features/leagues/Leagues.service";
 import { buildLiveLeagueStandings } from "@/features/leagues/realtime/leagueStandingsRealtime";
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
@@ -39,6 +40,7 @@ export default function LeagueStandingsPage() {
   );
   const standingsRows = standingsSnapshot?.rows ?? [];
   const hasLiveStandings = (standingsSnapshot?.liveMatchCount ?? 0) > 0;
+  const capabilities = league ? getCompetitionCapabilities(league) : null;
   const panelError =
     (detailQuery.error instanceof Error ? detailQuery.error.message : null)
     ?? (statsQuery.error instanceof Error ? statsQuery.error.message : null);
@@ -49,7 +51,7 @@ export default function LeagueStandingsPage() {
         <PageHeader
           title="Tabla de posiciones"
           subtitle="Consulta el rendimiento actual de la liga con puntos, diferencia y resultados."
-          actions={<LeagueSectionNav leagueId={league?.id} />}
+          actions={<LeagueSectionNav league={league} active="standings" />}
         />
 
         <Panel>
@@ -79,7 +81,17 @@ export default function LeagueStandingsPage() {
             />
           ) : null}
 
-          {league ? (
+          {league && capabilities && !capabilities.showStandings ? (
+            <TableEmptyState
+              mode="filtered"
+              title="Esta competencia no usa tabla de posiciones"
+              description={`${capabilities.label} se gestiona por bracket o formato eliminatorio, asi que la vista principal debe ser partidos, equipos y llaves.`}
+              actionLabel="Volver al dashboard"
+              onAction={() => navigate(`/leagues/${league.id}`)}
+            />
+          ) : null}
+
+          {league && capabilities?.showStandings ? (
             <>
               <section className="mb-4 rounded-[28px] border border-slate-300 bg-[linear-gradient(135deg,#fff9f3_0%,#ffffff_65%,#f8fafc_100%)] p-5 shadow-sm">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

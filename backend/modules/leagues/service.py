@@ -43,12 +43,26 @@ class LeagueService:
         return decode_base64_payload(logo_base64, "Invalid league logo. Could not decode Base64")
 
     def create(self, data: LeagueCreate) -> League:
-        tracked_stats, team_ids = self.policy.prepare_payload(
+        tracked_stats, team_ids, final_phase_settings = self.policy.prepare_payload(
             name=data.name,
             start_date=data.start_date,
             end_date=data.end_date,
             tracked_stats=data.tracked_stats,
             team_ids=data.team_ids,
+            competition_type=data.competition_type,
+            final_phase_enabled=data.final_phase_enabled,
+            final_phase_preset=data.final_phase_preset,
+            final_phase_qualified_teams=data.final_phase_qualified_teams,
+            final_phase_byes=data.final_phase_byes,
+            final_phase_format=data.final_phase_format,
+            final_phase_two_legs=data.final_phase_two_legs,
+            final_phase_third_place_match=data.final_phase_third_place_match,
+            final_phase_seeded_home_advantage=data.final_phase_seeded_home_advantage,
+            final_phase_play_in_slots=data.final_phase_play_in_slots,
+            final_phase_round_best_of=data.final_phase_round_best_of,
+            final_phase_final_best_of=data.final_phase_final_best_of,
+            final_phase_reseed_each_round=data.final_phase_reseed_each_round,
+            final_phase_grand_final_reset=data.final_phase_grand_final_reset,
         )
 
         league = League(
@@ -61,6 +75,7 @@ class LeagueService:
             end_date=data.end_date,
             logo=self._decode_logo(data.logo_base64),
             tracked_stats=tracked_stats,
+            **final_phase_settings,
         )
 
         with self.unit_of_work.transaction():
@@ -70,8 +85,11 @@ class LeagueService:
 
         return self.policy.get_existing_league(league.id)
 
-    def list(self) -> list[League]:
-        return self.league_repo.list()
+    def list(self, *, competition_type: str | None = None) -> list[League]:
+        leagues = self.league_repo.list()
+        if competition_type:
+            return [league for league in leagues if str(league.competition_type) == competition_type]
+        return leagues
 
     def list_table(
         self,
@@ -81,8 +99,11 @@ class LeagueService:
         search: str,
         sort_key: str,
         sort_dir: str,
+        competition_type: str | None = None,
     ) -> PaginatedLeaguesTableOut:
         leagues = self.league_repo.list()
+        if competition_type:
+            leagues = [league for league in leagues if str(league.competition_type) == competition_type]
         row_entries: list[dict[str, object]] = []
 
         for league in leagues:
@@ -94,12 +115,26 @@ class LeagueService:
                         name=league.name,
                         category=league.category,
                         status=league.status,
+                        competition_type=league.competition_type,
                         responsible_name=league.responsible_name,
                         responsible_email=league.responsible_email,
                         start_date=league.start_date,
                         end_date=league.end_date,
                         logo_base64=league.logo_base64,
                         tracked_stats=list(league.tracked_stats or []),
+                        final_phase_enabled=bool(league.final_phase_enabled),
+                        final_phase_preset=league.final_phase_preset,
+                        final_phase_qualified_teams=int(league.final_phase_qualified_teams or 0),
+                        final_phase_byes=int(league.final_phase_byes or 0),
+                        final_phase_format=league.final_phase_format,
+                        final_phase_two_legs=bool(league.final_phase_two_legs),
+                        final_phase_third_place_match=bool(league.final_phase_third_place_match),
+                        final_phase_seeded_home_advantage=bool(league.final_phase_seeded_home_advantage),
+                        final_phase_play_in_slots=int(league.final_phase_play_in_slots or 0),
+                        final_phase_round_best_of=int(league.final_phase_round_best_of or 1),
+                        final_phase_final_best_of=int(league.final_phase_final_best_of or 1),
+                        final_phase_reseed_each_round=bool(league.final_phase_reseed_each_round),
+                        final_phase_grand_final_reset=bool(league.final_phase_grand_final_reset),
                         team_ids=league.team_ids,
                         team_count=len(league.team_ids),
                     ),
@@ -117,6 +152,7 @@ class LeagueService:
                 or normalized_search in row.name.lower()
                 or normalized_search in row.category.lower()
                 or normalized_search in row.status.value.lower()
+                or normalized_search in row.competition_type.value.lower()
                 or normalized_search in row.responsible_name.lower()
                 or normalized_search in row.responsible_email.lower()
                 or any(normalized_search in team_name.lower() for team_name in entry["team_names"])
@@ -181,9 +217,23 @@ class LeagueService:
             responsible_email=league.responsible_email,
             category=league.category,
             status=league.status,
+            competition_type=league.competition_type,
             start_date=league.start_date,
             end_date=league.end_date,
             tracked_stats=list(league.tracked_stats or []),
+            final_phase_enabled=bool(league.final_phase_enabled),
+            final_phase_preset=league.final_phase_preset,
+            final_phase_qualified_teams=int(league.final_phase_qualified_teams or 0),
+            final_phase_byes=int(league.final_phase_byes or 0),
+            final_phase_format=league.final_phase_format,
+            final_phase_two_legs=bool(league.final_phase_two_legs),
+            final_phase_third_place_match=bool(league.final_phase_third_place_match),
+            final_phase_seeded_home_advantage=bool(league.final_phase_seeded_home_advantage),
+            final_phase_play_in_slots=int(league.final_phase_play_in_slots or 0),
+            final_phase_round_best_of=int(league.final_phase_round_best_of or 1),
+            final_phase_final_best_of=int(league.final_phase_final_best_of or 1),
+            final_phase_reseed_each_round=bool(league.final_phase_reseed_each_round),
+            final_phase_grand_final_reset=bool(league.final_phase_grand_final_reset),
             logo_base64=league.logo_base64,
             team_ids=league.team_ids,
             teams=teams,
@@ -196,12 +246,26 @@ class LeagueService:
 
     def update(self, league_id: int, data: LeagueUpdate) -> League:
         league = self.policy.get_existing_league(league_id)
-        tracked_stats, team_ids = self.policy.prepare_payload(
+        tracked_stats, team_ids, final_phase_settings = self.policy.prepare_payload(
             name=data.name,
             start_date=data.start_date,
             end_date=data.end_date,
             tracked_stats=data.tracked_stats,
             team_ids=data.team_ids,
+            competition_type=data.competition_type,
+            final_phase_enabled=data.final_phase_enabled,
+            final_phase_preset=data.final_phase_preset,
+            final_phase_qualified_teams=data.final_phase_qualified_teams,
+            final_phase_byes=data.final_phase_byes,
+            final_phase_format=data.final_phase_format,
+            final_phase_two_legs=data.final_phase_two_legs,
+            final_phase_third_place_match=data.final_phase_third_place_match,
+            final_phase_seeded_home_advantage=data.final_phase_seeded_home_advantage,
+            final_phase_play_in_slots=data.final_phase_play_in_slots,
+            final_phase_round_best_of=data.final_phase_round_best_of,
+            final_phase_final_best_of=data.final_phase_final_best_of,
+            final_phase_reseed_each_round=data.final_phase_reseed_each_round,
+            final_phase_grand_final_reset=data.final_phase_grand_final_reset,
             current_league_id=league.id,
         )
 
@@ -218,6 +282,7 @@ class LeagueService:
                 end_date=data.end_date,
                 logo=self._decode_logo(data.logo_base64),
                 tracked_stats=tracked_stats,
+                **final_phase_settings,
             )
 
         return self.policy.get_existing_league(league.id)
@@ -225,6 +290,7 @@ class LeagueService:
     def replace_team_assignments(self, league_id: int, data: LeagueTeamAssignmentsUpdate) -> League:
         league = self.policy.get_existing_league(league_id)
         team_ids = self.policy.resolve_team_ids(data.team_ids)
+        self.policy.validate_final_phase_for_team_assignments(league=league, team_count=len(team_ids))
 
         with self.unit_of_work.transaction():
             self.league_membership_repo.replace_team_ids_for_league(league.id, team_ids)

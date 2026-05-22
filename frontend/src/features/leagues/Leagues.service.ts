@@ -10,11 +10,19 @@ import {
   apiLeaguesSchema,
   apiPaginatedLeaguesTableSchema,
 } from "@/features/leagues/schemas/Leagues.schema";
-import type { LeagueDetail, LeagueListItem, LeagueMutationPayload, LeagueStatsSnapshot, SortDir, SortKey } from "@/features/leagues/Leagues.types";
+import type {
+  CompetitionType,
+  LeagueDetail,
+  LeagueListItem,
+  LeagueMutationPayload,
+  LeagueStatsSnapshot,
+  SortDir,
+  SortKey,
+} from "@/features/leagues/Leagues.types";
 
 export const leaguesQueryKeys = {
   all: ["leagues"] as const,
-  catalog: () => [...leaguesQueryKeys.all, "catalog"] as const,
+  catalog: (competitionType?: CompetitionType) => [...leaguesQueryKeys.all, "catalog", competitionType ?? "ALL"] as const,
   detail: (leagueId: number) => [...leaguesQueryKeys.all, "detail", leagueId] as const,
   stats: (leagueId: number) => [...leaguesQueryKeys.all, "stats", leagueId] as const,
   table: (params: {
@@ -23,6 +31,7 @@ export const leaguesQueryKeys = {
     search: string;
     sortKey: SortKey;
     sortDir: SortDir;
+    competitionType?: CompetitionType;
   }) => [...leaguesQueryKeys.all, "table", params] as const,
 };
 
@@ -48,8 +57,17 @@ async function requestVoid(request: Promise<unknown>, fallbackMessage: string): 
 }
 
 export const leaguesService = {
-  getCatalog(signal?: AbortSignal): Promise<LeagueListItem[]> {
-    return requestJson(apiClient.get("/api/leagues/", { signal }), apiLeaguesSchema, "La lista de ligas es invalida.");
+  getCatalog(competitionType?: CompetitionType, signal?: AbortSignal): Promise<LeagueListItem[]> {
+    return requestJson(
+      apiClient.get("/api/leagues/", {
+        signal,
+        params: {
+          competition_type: competitionType,
+        },
+      }),
+      apiLeaguesSchema,
+      "La lista de ligas es invalida.",
+    );
   },
 
   getLeague(leagueId: number, signal?: AbortSignal): Promise<LeagueDetail> {
@@ -75,6 +93,7 @@ export const leaguesService = {
       search: string;
       sortKey: SortKey;
       sortDir: SortDir;
+      competitionType?: CompetitionType;
     },
     signal?: AbortSignal,
   ): Promise<PaginatedResponse<LeagueListItem>> {
@@ -87,6 +106,7 @@ export const leaguesService = {
           search: params.search,
           sort_key: params.sortKey,
           sort_dir: params.sortDir,
+          competition_type: params.competitionType,
         },
       }),
       apiPaginatedLeaguesTableSchema,

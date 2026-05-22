@@ -17,6 +17,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useLeagueMatchesData } from "@/features/leagues/hooks/useLeagueMatchesData";
 import { buildLeagueLeaderPreviewItems } from "@/features/leagues/leagueLeaders";
+import { getCompetitionCapabilities } from "@/features/leagues/competitionCapabilities";
 import { leaguesQueryKeys, leaguesService } from "@/features/leagues/Leagues.service";
 import { buildLiveLeagueStandings } from "@/features/leagues/realtime/leagueStandingsRealtime";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
@@ -120,26 +121,6 @@ function SummaryCard({
   );
 }
 
-function LeaderCard({
-  label,
-  teamName,
-  value,
-}: {
-  label: string;
-  teamName: string;
-  value: number;
-}) {
-  return (
-    <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-      <p className="mt-2 truncate text-sm font-semibold text-slate-900" title={teamName}>
-        {teamName}
-      </p>
-      <p className="mt-1 text-xs text-slate-500">{value}</p>
-    </div>
-  );
-}
-
 export default function LeagueDashboardPage() {
   const navigate = useNavigate();
   const { leagueId: leagueIdParam } = useParams();
@@ -171,12 +152,13 @@ export default function LeagueDashboardPage() {
   const standingsRows = standingsSnapshot?.rows ?? [];
   const hasLiveStandings = (standingsSnapshot?.liveMatchCount ?? 0) > 0;
   const leaderPreviewItems = useMemo(() => buildLeagueLeaderPreviewItems(stats), [stats]);
+  const capabilities = league ? getCompetitionCapabilities(league) : null;
   const [activeLeaderPage, setActiveLeaderPage] = useState(0);
 
   const actions: DashboardActionCard[] = [
     {
       title: "Equipos",
-      description: "Consulta los equipos actuales inscritos en la liga.",
+      description: "Consulta los equipos actuales inscritos en esta competencia.",
       icon: <UsersRound size={18} />,
       to: "/leagues/:leagueId/teams",
     },
@@ -188,9 +170,17 @@ export default function LeagueDashboardPage() {
     },
     {
       title: "Calendario",
-      description: "Visualiza las jornadas de la liga en formato calendario.",
+      description: "Visualiza las jornadas de la competencia en formato calendario.",
       icon: <CalendarDays size={18} />,
       to: "/leagues/:leagueId/calendar",
+      disabled: !capabilities?.showLeagueCalendar,
+    },
+    {
+      title: "Llaves",
+      description: "Organiza y consulta cruces de bracket, semifinales, finales o eliminatorias.",
+      icon: <Trophy size={18} />,
+      to: "/leagues/:leagueId/bracket",
+      disabled: !capabilities?.showBracket,
     },
     {
       title: "Partidos",
@@ -203,6 +193,7 @@ export default function LeagueDashboardPage() {
       description: "Revisa la tabla actual con puntos, victorias y diferencia.",
       icon: <ListOrdered size={18} />,
       to: "/leagues/:leagueId/standings",
+      disabled: !capabilities?.showStandings,
     },
     {
       title: "Ajustes de liga",
@@ -211,6 +202,7 @@ export default function LeagueDashboardPage() {
       to: "/leagues/:leagueId/settings",
     },
   ];
+  const visibleActions = actions.filter((item) => !item.disabled);
 
   const updatedAtLabel =
     stats?.updatedAt
@@ -262,9 +254,9 @@ export default function LeagueDashboardPage() {
     <div className="sb-page">
       <div className="sb-page-shell max-w-[1320px]">
         <PageHeader
-          title="Centro de liga"
-          subtitle="Administra esta liga desde un solo lugar: equipos, partidos, tabla y ajustes."
-          actions={<LeagueSectionNav leagueId={league?.id} active="dashboard" />}
+          title={league?.competitionType === "ELIMINATION" ? "Centro de eliminatoria" : "Centro de liga"}
+          subtitle="Administra esta competencia desde un solo lugar: equipos, partidos, estructura y ajustes."
+          actions={<LeagueSectionNav league={league} active="dashboard" />}
         />
 
         <Panel>
@@ -318,8 +310,13 @@ export default function LeagueDashboardPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-700">
                             <Trophy size={12} />
-                            Liga #{league.id}
+                            {league.competitionType === "ELIMINATION" ? "Eliminatoria" : "Liga"} #{league.id}
                           </span>
+                          {capabilities ? (
+                            <span className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
+                              {capabilities.label}
+                            </span>
+                          ) : null}
                           <StatusBadge status={league.status} />
                           <span
                             className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600"
@@ -364,7 +361,7 @@ export default function LeagueDashboardPage() {
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
                         Menu principal
                       </p>
-                      <h3 className="mt-1 text-2xl font-semibold text-slate-950">Todo lo importante de la liga</h3>
+                      <h3 className="mt-1 text-2xl font-semibold text-slate-950">Todo lo importante de la competencia</h3>
                     </div>
                     {updatedAtLabel ? (
                       <p className="text-xs text-slate-500">Actualizado: {updatedAtLabel}</p>
@@ -372,20 +369,21 @@ export default function LeagueDashboardPage() {
                   </div>
 
                   <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                    {actions.slice(0, 3).map((item) => (
+                    {visibleActions.slice(0, 3).map((item) => (
                       <DashboardAction key={item.title} item={item} leagueId={league.id} />
                     ))}
                   </div>
 
                   <div className="mt-6 grid gap-4 lg:mt-10 lg:grid-cols-3">
-                    {actions.slice(3).map((item) => (
+                    {visibleActions.slice(3).map((item) => (
                       <DashboardAction key={item.title} item={item} leagueId={league.id} />
                     ))}
                   </div>
                 </div>
               </section>
 
-              <div className="mt-5 grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className={cn("mt-5 grid gap-5", capabilities?.showStandings ? "xl:grid-cols-[1.15fr_0.85fr]" : "xl:grid-cols-1")}>
+                {capabilities?.showStandings ? (
                 <section className="rounded-[28px] border border-slate-300 bg-white p-5 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -439,6 +437,7 @@ export default function LeagueDashboardPage() {
                     </div>
                   )}
                 </section>
+                ) : null}
 
                 <section className="rounded-[28px] border border-slate-300 bg-white p-5 shadow-sm">
                   <div className="flex items-center justify-between gap-3">

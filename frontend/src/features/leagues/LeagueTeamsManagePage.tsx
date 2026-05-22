@@ -407,7 +407,7 @@ export default function LeagueTeamsPage() {
         <PageHeader
           title="Equipos"
           subtitle="Consulta primero los equipos actuales de esta liga antes de editarla o ajustar su calendario."
-          actions={<LeagueSectionNav leagueId={selectedLeague?.id} active="teams" />}
+          actions={<LeagueSectionNav league={selectedLeague} active="teams" />}
         />
 
         <Panel className="overflow-hidden p-5 sm:p-6">
@@ -856,7 +856,7 @@ export function LeagueTeamsManagePage() {
         <PageHeader
           title="Asignar equipos"
           subtitle="Aqui incorporas o retiras equipos de la liga desde el listado general de equipos."
-          actions={<LeagueSectionNav leagueId={selectedLeague?.id} />}
+          actions={<LeagueSectionNav league={selectedLeague} />}
         />
 
         <Panel className="overflow-hidden p-5 sm:p-6">

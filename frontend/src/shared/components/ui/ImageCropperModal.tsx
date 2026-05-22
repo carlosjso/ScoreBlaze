@@ -1,7 +1,7 @@
 import { Minus, Move, Plus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { cropImageSourceToPngBase64, loadImageElement, removeImageBackgroundFromSource } from "@/shared/utils/base64Image";
+import { cropImageSourceToPngBase64, getImageAlphaBoundsFromSource, loadImageElement, removeImageBackgroundFromSource } from "@/shared/utils/base64Image";
 import { cn } from "@/shared/utils/cn";
 
 import { Button } from "@/shared/components/ui/Button";
@@ -17,18 +17,23 @@ type ImageCropperModalProps = {
   imageSrc: string | null;
   title?: string;
   previewShape?: "circle" | "square";
+  exportShape?: "circle" | "square";
   onClose: () => void;
   onConfirm: (base64: string) => void;
 };
 
 const VIEWPORT_INSET_RATIO = 0.08;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 3;
+const ZOOM_STEP = 0.05;
+const AUTO_FIT_FILL_RATIO = 0.9;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
 function clampOffsets(offsetX: number, offsetY: number, image: LoadedImage, viewportSize: number, zoom: number) {
-  const baseScale = Math.max(viewportSize / image.width, viewportSize / image.height);
+  const baseScale = Math.min(viewportSize / image.width, viewportSize / image.height);
   const displayWidth = image.width * baseScale * zoom;
   const displayHeight = image.height * baseScale * zoom;
   const maxOffsetX = Math.max(0, (displayWidth - viewportSize) / 2);
@@ -45,6 +50,7 @@ export function ImageCropperModal({
   imageSrc,
   title = "Ajustar imagen",
   previewShape = "circle",
+  exportShape = "square",
   onClose,
   onConfirm,
 }: ImageCropperModalProps) {
@@ -61,7 +67,10 @@ export function ImageCropperModal({
   const [cropError, setCropError] = useState<string | null>(null);
   const viewportInset = cropSize * VIEWPORT_INSET_RATIO;
   const viewportSize = cropSize - viewportInset * 2;
+  const contentViewportSize = viewportSize;
+  const contentViewportInset = viewportInset;
   const activeImageSrc = backgroundRemovedSrc ?? imageSrc;
+  const zoomPercent = Math.round((zoom - 1) * 100);
 
   useEffect(() => {
     if (!isOpen || !activeImageSrc) {
@@ -89,6 +98,39 @@ export function ImageCropperModal({
           width: image.naturalWidth || image.width,
           height: image.naturalHeight || image.height,
         });
+
+        void getImageAlphaBoundsFromSource(activeImageSrc)
+          .then((bounds) => {
+            if (cancelled || !bounds) {
+              return;
+            }
+
+            const imageWidth = image.naturalWidth || image.width;
+            const imageHeight = image.naturalHeight || image.height;
+            const hasUsefulTransparency = bounds.coverage < 0.92;
+            if (!hasUsefulTransparency) {
+              return;
+            }
+
+            const baseScale = Math.min(contentViewportSize / imageWidth, contentViewportSize / imageHeight);
+            const dominantSize = Math.max(bounds.width, bounds.height);
+            if (!dominantSize || !baseScale) {
+              return;
+            }
+
+            const autoZoom = clamp((contentViewportSize * AUTO_FIT_FILL_RATIO) / (dominantSize * baseScale), MIN_ZOOM, MAX_ZOOM);
+            const scaled = baseScale * autoZoom;
+            const contentCenterX = bounds.x + bounds.width / 2;
+            const contentCenterY = bounds.y + bounds.height / 2;
+            const nextOffsetX = scaled * (imageWidth / 2 - contentCenterX);
+            const nextOffsetY = scaled * (imageHeight / 2 - contentCenterY);
+            const clamped = clampOffsets(nextOffsetX, nextOffsetY, { width: imageWidth, height: imageHeight }, contentViewportSize, autoZoom);
+
+            setZoom(autoZoom);
+            setOffsetX(clamped.x);
+            setOffsetY(clamped.y);
+          })
+          .catch(() => undefined);
       })
       .catch((error) => {
         if (!cancelled) {
@@ -99,7 +141,7 @@ export function ImageCropperModal({
     return () => {
       cancelled = true;
     };
-  }, [activeImageSrc, isOpen]);
+  }, [activeImageSrc, contentViewportSize, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -137,21 +179,21 @@ export function ImageCropperModal({
       return;
     }
 
-    const clamped = clampOffsets(offsetX, offsetY, loadedImage, viewportSize, zoom);
+    const clamped = clampOffsets(offsetX, offsetY, loadedImage, contentViewportSize, zoom);
     if (clamped.x !== offsetX) {
       setOffsetX(clamped.x);
     }
     if (clamped.y !== offsetY) {
       setOffsetY(clamped.y);
     }
-  }, [loadedImage, offsetX, offsetY, viewportSize, zoom]);
+  }, [contentViewportSize, loadedImage, offsetX, offsetY, zoom]);
 
   const displayMetrics = useMemo(() => {
     if (!loadedImage) {
       return null;
     }
 
-    const baseScale = Math.max(viewportSize / loadedImage.width, viewportSize / loadedImage.height);
+    const baseScale = Math.min(contentViewportSize / loadedImage.width, contentViewportSize / loadedImage.height);
     const effectiveScale = baseScale * zoom;
     const width = loadedImage.width * effectiveScale;
     const height = loadedImage.height * effectiveScale;
@@ -160,19 +202,19 @@ export function ImageCropperModal({
       effectiveScale,
       width,
       height,
-      left: viewportInset + (viewportSize - width) / 2 + offsetX,
-      top: viewportInset + (viewportSize - height) / 2 + offsetY,
+      left: contentViewportInset + (contentViewportSize - width) / 2 + offsetX,
+      top: contentViewportInset + (contentViewportSize - height) / 2 + offsetY,
     };
-  }, [loadedImage, offsetX, offsetY, viewportInset, viewportSize, zoom]);
+  }, [contentViewportInset, contentViewportSize, loadedImage, offsetX, offsetY, zoom]);
 
   const updateZoom = (nextZoom: number) => {
     if (!loadedImage) {
-      setZoom(nextZoom);
+      setZoom(clamp(nextZoom, MIN_ZOOM, MAX_ZOOM));
       return;
     }
 
-    const safeZoom = clamp(nextZoom, 1, 3);
-    const clamped = clampOffsets(offsetX, offsetY, loadedImage, viewportSize, safeZoom);
+    const safeZoom = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
+    const clamped = clampOffsets(offsetX, offsetY, loadedImage, contentViewportSize, safeZoom);
     setZoom(safeZoom);
     setOffsetX(clamped.x);
     setOffsetY(clamped.y);
@@ -200,7 +242,7 @@ export function ImageCropperModal({
 
     const nextOffsetX = dragStateRef.current.startOffsetX + (event.clientX - dragStateRef.current.startX);
     const nextOffsetY = dragStateRef.current.startOffsetY + (event.clientY - dragStateRef.current.startY);
-    const clamped = clampOffsets(nextOffsetX, nextOffsetY, loadedImage, viewportSize, zoom);
+    const clamped = clampOffsets(nextOffsetX, nextOffsetY, loadedImage, contentViewportSize, zoom);
     setOffsetX(clamped.x);
     setOffsetY(clamped.y);
   };
@@ -221,16 +263,21 @@ export function ImageCropperModal({
     setCropError(null);
 
     try {
-      const cropX = clamp((viewportInset - displayMetrics.left) / displayMetrics.effectiveScale, 0, loadedImage.width);
-      const cropY = clamp((viewportInset - displayMetrics.top) / displayMetrics.effectiveScale, 0, loadedImage.height);
-      const cropWidth = Math.min(loadedImage.width - cropX, viewportSize / displayMetrics.effectiveScale);
-      const cropHeight = Math.min(loadedImage.height - cropY, viewportSize / displayMetrics.effectiveScale);
+      const rawCropX = (contentViewportInset - displayMetrics.left) / displayMetrics.effectiveScale;
+      const rawCropY = (contentViewportInset - displayMetrics.top) / displayMetrics.effectiveScale;
+      const rawCropSize = contentViewportSize / displayMetrics.effectiveScale;
+      const maxCropSize = Math.min(loadedImage.width, loadedImage.height);
+      const cropSize = Math.min(rawCropSize, maxCropSize);
+      const centeredCropX = rawCropX + (rawCropSize - cropSize) / 2;
+      const centeredCropY = rawCropY + (rawCropSize - cropSize) / 2;
+      const cropX = clamp(centeredCropX, 0, loadedImage.width - cropSize);
+      const cropY = clamp(centeredCropY, 0, loadedImage.height - cropSize);
       const base64 = await cropImageSourceToPngBase64(activeImageSrc, {
         x: cropX,
         y: cropY,
-        width: cropWidth,
-        height: cropHeight,
-        outputShape: previewShape,
+        width: cropSize,
+        height: cropSize,
+        outputShape: exportShape,
       });
 
       onConfirm(base64);
@@ -338,7 +385,7 @@ export function ImageCropperModal({
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => updateZoom(zoom - 0.1)}
+                onClick={() => updateZoom(zoom - ZOOM_STEP)}
                 disabled={submitting || processingBackground}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -347,8 +394,8 @@ export function ImageCropperModal({
 
               <input
                 type="range"
-                min={1}
-                max={3}
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
                 step={0.01}
                 value={zoom}
                 disabled={submitting || processingBackground}
@@ -356,9 +403,13 @@ export function ImageCropperModal({
                 className="h-2 w-full cursor-pointer accent-orange-500"
               />
 
+              <span className="min-w-[58px] text-right text-xs font-semibold text-slate-500">
+                {zoomPercent > 0 ? `+${zoomPercent}%` : `${zoomPercent}%`}
+              </span>
+
               <button
                 type="button"
-                onClick={() => updateZoom(zoom + 0.1)}
+                onClick={() => updateZoom(zoom + ZOOM_STEP)}
                 disabled={submitting || processingBackground}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >

@@ -6,6 +6,8 @@ type ConfirmModalProps = {
   message: string;
   loading?: boolean;
   confirmText?: string;
+  confirmVariant?: "primary" | "secondary" | "outline" | "danger" | "ghost";
+  loadingText?: string;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -16,6 +18,8 @@ export function ConfirmModal({
   message,
   loading = false,
   confirmText = "Eliminar",
+  confirmVariant = "danger",
+  loadingText = "Procesando...",
   onCancel,
   onConfirm,
 }: ConfirmModalProps) {
@@ -26,8 +30,8 @@ export function ConfirmModal({
         <Button variant="outline" onClick={onCancel} disabled={loading}>
           Cancelar
         </Button>
-        <Button variant="danger" onClick={onConfirm} disabled={loading}>
-          {loading ? "Procesando..." : confirmText}
+        <Button variant={confirmVariant} onClick={onConfirm} disabled={loading}>
+          {loading ? loadingText : confirmText}
         </Button>
       </div>
     </Modal>

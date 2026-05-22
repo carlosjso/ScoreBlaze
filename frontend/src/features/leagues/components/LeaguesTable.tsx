@@ -36,6 +36,7 @@ type LeaguesTableProps = {
   onEdit: (league: LeagueListItem) => void;
   onManage: (league: LeagueListItem) => void;
   onDelete: (league: LeagueListItem) => void;
+  mode?: "league" | "elimination";
 };
 
 const sortLabels: Record<SortKey, string> = {
@@ -230,11 +231,15 @@ function LeagueCard({
   onEdit,
   onManage,
   onDelete,
+  mode = "league",
 }: Pick<LeaguesTableProps, "deletingLeagueId" | "onOpen" | "onView" | "onEdit" | "onManage" | "onDelete"> & {
   league: LeagueListItem;
+  mode?: LeaguesTableProps["mode"];
 }) {
   const teamCountLabel = `${league.teamCount} ${league.teamCount === 1 ? "equipo" : "equipos"}`;
   const leagueTypeLabel = league.category || "Sin tipo";
+  const entityLabel = mode === "elimination" ? "Eliminatoria" : "Liga";
+  const typeLabel = mode === "elimination" ? "Tipo de eliminatoria" : "Tipo de liga";
 
   return (
     <article
@@ -256,7 +261,7 @@ function LeagueCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 pr-24">
             <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 shadow-sm">
-              Liga #{league.id}
+              {entityLabel} #{league.id}
             </span>
           </div>
 
@@ -307,7 +312,7 @@ function LeagueCard({
 
           <span
             className="inline-flex max-w-full items-center gap-1.5 overflow-hidden rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-700"
-            title={`Tipo de liga: ${leagueTypeLabel}`}
+            title={`${typeLabel}: ${leagueTypeLabel}`}
           >
             <Tag size={12} className="shrink-0" />
             <span className="min-w-0 max-w-[140px] truncate sm:max-w-[180px]">{leagueTypeLabel}</span>
@@ -336,14 +341,18 @@ export function LeaguesTable({
   onEdit,
   onManage,
   onDelete,
+  mode = "league",
 }: LeaguesTableProps) {
+  const entitySingular = mode === "elimination" ? "eliminatoria" : "liga";
+  const entityPlural = mode === "elimination" ? "eliminatorias" : "ligas";
+
   return (
     <div className="space-y-5">
       <section className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Vista de ligas</p>
-            <p className="mt-1 text-sm text-slate-600">Explora las ligas en formato card y ordenalas por nombre, equipos o estatus.</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{`Vista de ${entityPlural}`}</p>
+            <p className="mt-1 text-sm text-slate-600">{`Explora las ${entityPlural} en formato card y ordenalas por nombre, equipos o estatus.`}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -370,11 +379,11 @@ export function LeaguesTable({
         <div className="rounded-[24px] border border-slate-300 bg-white px-4 py-6 shadow-sm">
           <TableEmptyState
             mode={hasActiveFilters ? "filtered" : "empty"}
-            title={hasActiveFilters ? "Sin resultados para esos filtros" : "No hay ligas registradas"}
+            title={hasActiveFilters ? "Sin resultados para esos filtros" : `No hay ${entityPlural} registradas`}
             description={
               hasActiveFilters
-                ? "Prueba otra busqueda o limpia filtros para volver a ver todas las ligas."
-                : "Crea tu primera liga para configurar fechas, categoria y equipos."
+                ? `Prueba otra busqueda o limpia filtros para volver a ver todas las ${entityPlural}.`
+                : `Crea tu primera ${entitySingular} para configurar fechas, categoria y equipos.`
             }
             actionLabel={hasActiveFilters ? "Limpiar filtros" : undefined}
             onAction={hasActiveFilters ? onClearFilters : undefined}
@@ -392,6 +401,7 @@ export function LeaguesTable({
               onEdit={onEdit}
               onManage={onManage}
               onDelete={onDelete}
+              mode={mode}
             />
           ))}
         </div>

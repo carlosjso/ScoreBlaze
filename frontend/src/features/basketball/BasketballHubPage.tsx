@@ -14,8 +14,8 @@ type HubCardItem = {
 
 const topRowItems: HubCardItem[] = [
   {
-    title: "Ligas",
-    description: "Gestionar las ligas del deporte",
+    title: "Competencias",
+    description: "Gestionar fase regular y eliminatorias",
     icon: <Trophy size={16} />,
     to: "/leagues",
   },

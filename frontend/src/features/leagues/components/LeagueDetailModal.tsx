@@ -1,6 +1,19 @@
 import { Button, Input, Modal } from "@/shared/components/ui";
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
-import type { LeagueListItem } from "@/features/leagues/Leagues.types";
+import type { LeagueFinalPhasePresetOption, LeagueListItem } from "@/features/leagues/Leagues.types";
+
+const finalPhasePresetLabels: Record<LeagueFinalPhasePresetOption, string> = {
+  TOP_4_SINGLE_GAME: "Top 4 - Partido unico",
+  TOP_8_SINGLE_GAME: "Top 8 - Partido unico",
+  TOP_8_HOME_AWAY: "Top 8 - Ida y vuelta",
+  TOP_6_SINGLE_GAME_WITH_BYES: "Top 6 - Bye 1ro y 2do",
+  TOP_16_SINGLE_GAME: "Top 16 - Partido unico",
+  TOP_32_SINGLE_GAME: "Top 32 - Partido unico",
+  NBA_PLAY_IN_TOP_10: "NBA - Play-In (10 equipos)",
+  DOUBLE_ELIMINATION_TOP_8: "Doble eliminacion - Top 8",
+  DOUBLE_ELIMINATION_TOP_16: "Doble eliminacion - Top 16",
+  CUSTOM: "Personalizado",
+};
 
 type LeagueDetailModalProps = {
   league: LeagueListItem | null;
@@ -10,8 +23,11 @@ type LeagueDetailModalProps = {
 };
 
 export function LeagueDetailModal({ league, isOpen, teamNameById, onClose }: LeagueDetailModalProps) {
+  const isElimination = league?.competitionType === "ELIMINATION";
+  const entityLabel = isElimination ? "eliminatoria" : "liga";
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalle de liga" maxWidthClassName="max-w-2xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Detalle de ${entityLabel}`} maxWidthClassName="max-w-2xl">
       {league ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Nombre" value={league.name} disabled />
@@ -20,6 +36,7 @@ export function LeagueDetailModal({ league, isOpen, teamNameById, onClose }: Lea
           <Input label="Categoria" value={league.category} disabled />
           <Input label="Fecha de inicio" value={league.startDate} disabled />
           <Input label="Fecha de fin" value={league.endDate} disabled />
+          <Input label="Tipo" value={league.competitionType === "ELIMINATION" ? "Eliminatoria" : "Liga"} disabled />
 
           <div className="space-y-1">
             <p className="text-xs font-semibold text-slate-600">Estatus</p>
@@ -29,6 +46,15 @@ export function LeagueDetailModal({ league, isOpen, teamNameById, onClose }: Lea
           </div>
 
           <Input label="Equipos asignados" value={String(league.teamCount)} disabled />
+          <Input
+            label="Fase final"
+            value={
+              league.finalPhaseEnabled
+                ? `${finalPhasePresetLabels[league.finalPhasePreset]} (Top ${league.finalPhaseQualifiedTeams})`
+                : "Desactivada"
+            }
+            disabled
+          />
 
           <div className="sm:col-span-2">
             <p className="mb-2 text-xs font-semibold text-slate-600">Metricas registradas</p>
