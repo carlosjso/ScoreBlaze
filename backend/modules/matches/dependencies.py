@@ -15,6 +15,7 @@ from modules.statistics.repositories.team_stat_repository import (
 from modules.statistics.repositories.player_stat_repository import (
     PlayerStatRepository,
 )
+from modules.match_events.repositories import MatchEventRepository
 
 from .policy import MatchPolicy
 from .repositories import MatchRepository
@@ -62,6 +63,10 @@ def get_player_stat_repository(
 ) -> PlayerStatRepository:
     return PlayerStatRepository(unit_of_work.db)
 
+def get_match_event_repository(
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> MatchEventRepository:
+    return MatchEventRepository(unit_of_work.db)
 
 def get_match_policy(
     match_repo: MatchRepository = Depends(get_match_repository),
@@ -79,6 +84,7 @@ def get_match_service(
     membership_repo: MembershipRepository = Depends(get_membership_repository),
     team_stat_repo: TeamStatRepository = Depends(get_team_stat_repository),
     player_stat_repo: PlayerStatRepository = Depends(get_player_stat_repository),
+    match_event_repo: MatchEventRepository = Depends(get_match_event_repository),
 ) -> MatchService:
     return MatchService(
         match_repo=match_repo,
@@ -89,4 +95,5 @@ def get_match_service(
         membership_repo=membership_repo,
         team_stat_repo=team_stat_repo,
         player_stat_repo=player_stat_repo,
+        match_event_repo=match_event_repo,
     )

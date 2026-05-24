@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import HTTPException, UploadFile, status
 from openpyxl import load_workbook
 
-from data.orm import Match
+from data.orm import Match, PlayerStat, TeamStat, MatchEvent
 from database.unit_of_work import UnitOfWork
 
 from modules.matches.domain import MatchResult
@@ -20,9 +20,10 @@ from modules.statistics.repositories.team_stat_repository import (
     TeamStatRepository,
 )
 
+from modules.match_events.repositories import MatchEventRepository
+
 from .policy import MatchPolicy
 from .schemas import MatchCreate, MatchPatch, MatchUpdate
-
 
 class MatchService:
     def __init__(
@@ -33,6 +34,7 @@ class MatchService:
         membership_repo: MembershipRepository,
         player_stat_repo: PlayerStatRepository,
         team_stat_repo: TeamStatRepository,
+        match_event_repo: MatchEventRepository,
         unit_of_work: UnitOfWork,
         policy: MatchPolicy,
     ):
@@ -42,8 +44,10 @@ class MatchService:
         self.membership_repo = membership_repo
         self.player_stat_repo = player_stat_repo
         self.team_stat_repo = team_stat_repo
+        self.match_event_repo = match_event_repo
         self.unit_of_work = unit_of_work
         self.policy = policy
+
     @staticmethod
     def _build_match(data: MatchCreate, result: MatchResult) -> Match:
         return Match(
@@ -77,6 +81,7 @@ class MatchService:
 
     def get(self, match_id: int) -> Match:
         return self.policy.get_existing_match(match_id)
+
     @staticmethod
     def _update_from_match(match: Match) -> MatchUpdate:
         return MatchUpdate(
@@ -146,10 +151,11 @@ class MatchService:
 
         with self.unit_of_work.transaction():
             self.match_repo.delete(match)
+
     def import_match_data(self, match_id: int, file: UploadFile):
         match = self.policy.get_existing_match(match_id)
 
-        workbook = load_workbook(file.file)
+        workbook = load_workbook(file.file, data_only=True)
         worksheet = workbook.active
 
         team_a_name = worksheet["C11"].value
@@ -169,12 +175,13 @@ class MatchService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Team not found: {team_b_name}",
             )
+
         team_a_players = []
 
         for row in range(27, 42):
             player_name = worksheet[f"B{row}"].value
             jersey_number = worksheet[f"C{row}"].value
-            points = worksheet[f"K{row}"].value or 0
+            points = int(worksheet[f"K{row}"].value or 0)
 
             if not player_name:
                 continue
@@ -205,15 +212,12 @@ class MatchService:
                 "points": points,
             })
 
-        # =====================
-        # TEAM B PLAYERS
-        # =====================
         team_b_players = []
 
         for row in range(47, 62):
             player_name = worksheet[f"B{row}"].value
             jersey_number = worksheet[f"C{row}"].value
-            points = worksheet[f"K{row}"].value or 0
+            points = int(worksheet[f"K{row}"].value or 0)
 
             if not player_name:
                 continue
@@ -245,8 +249,243 @@ class MatchService:
             })
 
         # =====================
-        # RESPONSE DATA
+        # SAVE STATS
         # =====================
+
+        if self.match_event_repo.exists_for_match(match.id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Match stats already imported",
+            )
+
+        with self.unit_of_work.transaction():
+
+            event_order = 1
+
+            # =====================
+            # TEAM A PLAYERS
+            # =====================
+
+            for player_data in team_a_players:
+
+                player_stat = self.player_stat_repo.get_by_player_id(
+                    player_data["player_id"]
+                )
+
+                if not player_stat:
+
+                    player_stat = PlayerStat(
+                        player_id=player_data["player_id"],
+                        matches_played=1,
+                        total_points=player_data["points"],
+                    )
+
+                    self.player_stat_repo.add(player_stat)
+
+                else:
+
+                    self.player_stat_repo.update(
+                        player_stat,
+                        matches_played=(
+                            player_stat.matches_played + 1
+                        ),
+                        total_points=(
+                            player_stat.total_points
+                            + player_data["points"]
+                        ),
+                    )
+
+                # CREATE MATCH EVENTS
+                for _ in range(player_data["points"]):
+
+                    match_event = MatchEvent(
+                        match_id=match.id,
+                        team_id=team_a.id,
+                        player_id=player_data["player_id"],
+                        event_type="point_1",
+                        period=1,
+                        elapsed_seconds=0,
+                        event_order=event_order,
+                        status="active",
+                    )
+
+                    self.match_event_repo.add(match_event)
+
+                    event_order += 1
+
+            # =====================
+            # TEAM B PLAYERS
+            # =====================
+
+            for player_data in team_b_players:
+
+                player_stat = self.player_stat_repo.get_by_player_id(
+                    player_data["player_id"]
+                )
+
+                if not player_stat:
+
+                    player_stat = PlayerStat(
+                        player_id=player_data["player_id"],
+                        matches_played=1,
+                        total_points=player_data["points"],
+                    )
+
+                    self.player_stat_repo.add(player_stat)
+
+                else:
+
+                    self.player_stat_repo.update(
+                        player_stat,
+                        matches_played=(
+                            player_stat.matches_played + 1
+                        ),
+                        total_points=(
+                            player_stat.total_points
+                            + player_data["points"]
+                        ),
+                    )
+
+                # CREATE MATCH EVENTS
+                for _ in range(player_data["points"]):
+
+                    match_event = MatchEvent(
+                        match_id=match.id,
+                        team_id=team_b.id,
+                        player_id=player_data["player_id"],
+                        event_type="point_1",
+                        period=1,
+                        elapsed_seconds=0,
+                        event_order=event_order,
+                        status="active",
+                    )
+
+                    self.match_event_repo.add(match_event)
+
+                    event_order += 1
+
+            # =====================
+            # TEAM A STATS
+            # =====================
+
+            team_a_stat = self.team_stat_repo.get(team_a.id)
+
+            team_a_score = int(worksheet["B64"].value or 0)
+            team_b_score = int(worksheet["E64"].value or 0)
+
+            team_a_wins = 1 if team_a_score > team_b_score else 0
+            team_a_losses = 1 if team_a_score < team_b_score else 0
+            team_a_draws = 1 if team_a_score == team_b_score else 0
+
+            if not team_a_stat:
+
+                team_a_stat = TeamStat(
+                    team_id=team_a.id,
+                    matches_played=1,
+                    wins=team_a_wins,
+                    losses=team_a_losses,
+                    draws=team_a_draws,
+                    points_for=team_a_score,
+                    points_against=team_b_score,
+                    points_difference=team_a_score - team_b_score,
+                    standings_points=(
+                        (team_a_wins * 3)
+                        + team_a_draws
+                    ),
+                )
+
+                self.team_stat_repo.add(team_a_stat)
+
+            else:
+
+                self.team_stat_repo.update(
+                    team_a_stat,
+                    matches_played=(
+                        team_a_stat.matches_played + 1
+                    ),
+                    wins=team_a_stat.wins + team_a_wins,
+                    losses=(
+                        team_a_stat.losses + team_a_losses
+                    ),
+                    draws=team_a_stat.draws + team_a_draws,
+                    points_for=(
+                        team_a_stat.points_for + team_a_score
+                    ),
+                    points_against=(
+                        team_a_stat.points_against
+                        + team_b_score
+                    ),
+                    points_difference=(
+                        team_a_stat.points_difference
+                        + (team_a_score - team_b_score)
+                    ),
+                    standings_points=(
+                        team_a_stat.standings_points
+                        + (team_a_wins * 3)
+                        + team_a_draws
+                    ),
+                )
+
+            # =====================
+            # TEAM B STATS
+            # =====================
+
+            team_b_stat = self.team_stat_repo.get(team_b.id)
+
+            team_b_wins = 1 if team_b_score > team_a_score else 0
+            team_b_losses = 1 if team_b_score < team_a_score else 0
+            team_b_draws = 1 if team_b_score == team_a_score else 0
+
+            if not team_b_stat:
+
+                team_b_stat = TeamStat(
+                    team_id=team_b.id,
+                    matches_played=1,
+                    wins=team_b_wins,
+                    losses=team_b_losses,
+                    draws=team_b_draws,
+                    points_for=team_b_score,
+                    points_against=team_a_score,
+                    points_difference=(
+                        team_b_score - team_a_score
+                    ),
+                    standings_points=(
+                        (team_b_wins * 3)
+                        + team_b_draws
+                    ),
+                )
+
+                self.team_stat_repo.add(team_b_stat)
+
+            else:
+
+                self.team_stat_repo.update(
+                    team_b_stat,
+                    matches_played=(
+                        team_b_stat.matches_played + 1
+                    ),
+                    wins=team_b_stat.wins + team_b_wins,
+                    losses=(
+                        team_b_stat.losses + team_b_losses
+                    ),
+                    draws=team_b_stat.draws + team_b_draws,
+                    points_for=(
+                        team_b_stat.points_for + team_b_score
+                    ),
+                    points_against=(
+                        team_b_stat.points_against
+                        + team_a_score
+                    ),
+                    points_difference=(
+                        team_b_stat.points_difference
+                        + (team_b_score - team_a_score)
+                    ),
+                    standings_points=(
+                        team_b_stat.standings_points
+                        + (team_b_wins * 3)
+                        + team_b_draws
+                    ),
+                )
         data = {
             "match_id": match.id,
             "competition": worksheet["C5"].value,

@@ -38,3 +38,10 @@ class PlayerStatRepository:
             return set()
         statement = select(Player.id).where(Player.id.in_(player_ids))
         return set(self.db.scalars(statement).all())
+    
+    def get_by_player_id(self, player_id: int) -> PlayerStat | None:
+        return (
+            self.db.query(PlayerStat)
+            .filter(PlayerStat.player_id == player_id)
+            .first()
+        )

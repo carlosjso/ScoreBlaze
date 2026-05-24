@@ -9,6 +9,7 @@ from data.orm import Match, MatchEvent, Player, Team
 from modules.match_events.domain import MatchEventStatus
 
 
+
 class MatchEventRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -98,3 +99,10 @@ class MatchEventRepository:
             return set()
         statement = select(Player.id).where(Player.id.in_(player_ids))
         return set(self.db.scalars(statement).all())
+    def exists_for_match(self, match_id: int) -> bool:
+        statement = (
+            select(MatchEvent.id)
+            .where(MatchEvent.match_id == match_id)
+        )
+
+        return self.db.scalar(statement) is not None
