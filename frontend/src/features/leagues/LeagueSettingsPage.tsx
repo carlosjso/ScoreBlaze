@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, LayoutGrid, Mail, Pencil, UsersRound } from "lucide-react";
+import { CalendarDays, LayoutGrid, Mail, Pencil, Trophy, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -11,6 +11,19 @@ import { StatusBadge } from "@/shared/components/badges/StatusBadge";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
 import { Button, PageHeader, Panel } from "@/shared/components/ui";
+
+const finalPhasePresetLabels = {
+  TOP_4_SINGLE_GAME: "Top 4 - Partido unico",
+  TOP_8_SINGLE_GAME: "Top 8 - Partido unico",
+  TOP_8_HOME_AWAY: "Top 8 - Ida y vuelta",
+  TOP_6_SINGLE_GAME_WITH_BYES: "Top 6 - Bye 1ro y 2do",
+  TOP_16_SINGLE_GAME: "Top 16 - Partido unico",
+  TOP_32_SINGLE_GAME: "Top 32 - Partido unico",
+  NBA_PLAY_IN_TOP_10: "NBA - Play-In (10 equipos)",
+  DOUBLE_ELIMINATION_TOP_8: "Doble eliminacion - Top 8",
+  DOUBLE_ELIMINATION_TOP_16: "Doble eliminacion - Top 16",
+  CUSTOM: "Personalizado",
+} as const;
 
 export default function LeagueSettingsPage() {
   const navigate = useNavigate();
@@ -47,7 +60,7 @@ export default function LeagueSettingsPage() {
       return;
     }
 
-    await saveLeague({
+    const savedLeague = await saveLeague({
       mode: "edit",
       leagueId: league.id,
       values,
@@ -55,6 +68,7 @@ export default function LeagueSettingsPage() {
 
     clearMutationError();
     setFormOpen(false);
+    return savedLeague;
   };
 
   return (
@@ -63,7 +77,7 @@ export default function LeagueSettingsPage() {
         <PageHeader
           title="Ajustes de liga"
           subtitle="Edita la configuracion principal de esta liga sin regresar al listado."
-          actions={<LeagueSectionNav leagueId={league?.id} />}
+          actions={<LeagueSectionNav league={league} />}
         />
 
         <Panel>
@@ -106,7 +120,9 @@ export default function LeagueSettingsPage() {
                       <StatusBadge status={league.status} />
                     </div>
 
-                    <h2 className="mt-3 text-[30px] leading-none text-slate-950 sm:text-[34px]">{league.name}</h2>
+                    <h2 className="mt-3 max-w-full truncate text-[30px] leading-none text-slate-950 sm:text-[34px]" title={league.name}>
+                      {league.name}
+                    </h2>
                     <p className="mt-2 text-sm text-slate-500">
                       Ajusta los datos administrativos, calendario base y metricas que se monitorean en esta liga.
                     </p>
@@ -131,7 +147,7 @@ export default function LeagueSettingsPage() {
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Categoria</p>
-                      <p className="mt-2 font-semibold text-slate-900">{league.category}</p>
+                      <p className="mt-2 font-semibold text-slate-900 [overflow-wrap:anywhere]">{league.category}</p>
                     </div>
                     <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Equipos</p>
@@ -149,6 +165,15 @@ export default function LeagueSettingsPage() {
                       <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                         <Mail size={14} />
                         {league.responsibleEmail}
+                      </p>
+                    </div>
+                    <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 sm:col-span-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Fase final</p>
+                      <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                        <Trophy size={14} />
+                        {league.finalPhaseEnabled
+                          ? `${finalPhasePresetLabels[league.finalPhasePreset]} - Top ${league.finalPhaseQualifiedTeams}`
+                          : "Desactivada"}
                       </p>
                     </div>
                   </div>
@@ -181,10 +206,12 @@ export default function LeagueSettingsPage() {
       <LeagueFormModal
         isOpen={formOpen}
         mode="edit"
+        competitionType={league?.competitionType ?? "LEAGUE"}
         initialLeague={league}
         teams={teamsQuery.data ?? []}
         loading={submitting}
         apiError={mutationError}
+        advancedSettingsHref={league ? `/leagues/${league.id}/final-phase/settings` : undefined}
         onClose={() => {
           clearMutationError();
           setFormOpen(false);
@@ -194,3 +221,4 @@ export default function LeagueSettingsPage() {
     </div>
   );
 }
+

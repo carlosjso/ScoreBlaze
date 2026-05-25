@@ -3,6 +3,8 @@ from __future__ import annotations
 from fastapi import HTTPException, UploadFile, status
 from openpyxl import load_workbook
 
+from core.exceptions import NotFoundException
+
 from data.orm import Match, PlayerStat, TeamStat, MatchEvent
 from database.unit_of_work import UnitOfWork
 
@@ -24,6 +26,7 @@ from modules.match_events.repositories import MatchEventRepository
 from modules.match_events.event_builder import EventBuilder
 from .policy import MatchPolicy
 from .schemas import MatchCreate, MatchPatch, MatchUpdate
+from .tracked_stats import normalize_match_tracked_stats
 
 from modules.match_events.domain import MatchEventStatus, MatchEventType
 
@@ -51,7 +54,7 @@ class MatchService:
         self.policy = policy
 
     @staticmethod
-    def _build_match(data: MatchCreate, result: MatchResult) -> Match:
+    def _build_match(data: MatchCreate, result: MatchResult, tracked_stats: list[str]) -> Match:
         return Match(
             match_date=data.match_date,
             start_time=data.start_time,
@@ -65,13 +68,25 @@ class MatchService:
             is_draw=result.is_draw,
             court=data.court,
             tournament=data.tournament,
+            tracked_stats=tracked_stats,
             status=data.status.value,
         )
 
+    def _resolve_tracked_stats(self, league_id: int | None, tracked_stats: list[str] | None) -> list[str]:
+        if league_id is None:
+            return normalize_match_tracked_stats(tracked_stats)
+
+        league = self.policy.league_repo.get(league_id)
+        if not league:
+            raise NotFoundException("Liga no encontrada para este partido.")
+
+        return normalize_match_tracked_stats(list(league.tracked_stats or []))
+
     def create(self, data: MatchCreate) -> Match:
         result = self.policy.resolve_create_result(data)
-        match = self._build_match(data, result)
+        tracked_stats = self._resolve_tracked_stats(data.league_id, data.tracked_stats)
 
+        match = self._build_match(data, result, tracked_stats)
         with self.unit_of_work.transaction():
             self.match_repo.add(match)
 
@@ -141,6 +156,7 @@ class MatchService:
             is_draw=match.is_draw,
             court=match.court,
             tournament=match.tournament,
+            tracked_stats=normalize_match_tracked_stats(list(match.tracked_stats or [])),
             status=match.status,
         )
 
@@ -156,6 +172,7 @@ class MatchService:
 
     def _apply_update(self, match: Match, data: MatchUpdate) -> Match:
         result = self.policy.resolve_update_result(data)
+        tracked_stats = self._resolve_tracked_stats(data.league_id, data.tracked_stats)
 
         with self.unit_of_work.transaction():
             self.match_repo.update(
@@ -172,6 +189,7 @@ class MatchService:
                 is_draw=result.is_draw,
                 court=data.court,
                 tournament=data.tournament,
+                tracked_stats=tracked_stats,
                 status=data.status.value,
             )
 

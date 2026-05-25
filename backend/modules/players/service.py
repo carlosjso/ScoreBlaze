@@ -46,6 +46,11 @@ class PlayerService:
             name=data.name,
             email=data.email,
             phone=data.phone,
+            age=data.age,
+            height_cm=data.height_cm,
+            weight_kg=data.weight_kg,
+            nationality=data.nationality,
+            favorite_position=data.favorite_position,
             photo=self._decode_photo(data.photo_base64),
         )
 
@@ -95,6 +100,11 @@ class PlayerService:
                     name=player.name,
                     email=player.email,
                     phone="" if player.phone is None else str(player.phone),
+                    age=player.age,
+                    height_cm=player.height_cm,
+                    weight_kg=player.weight_kg,
+                    nationality=player.nationality,
+                    favorite_position=player.favorite_position,
                     photo_base64=player.photo_base64,
                     team_ids=team_ids,
                     team_names=team_names,
@@ -168,6 +178,11 @@ class PlayerService:
                 name=data.name,
                 email=data.email,
                 phone=data.phone,
+                age=data.age,
+                height_cm=data.height_cm,
+                weight_kg=data.weight_kg,
+                nationality=data.nationality,
+                favorite_position=data.favorite_position,
                 photo=self._decode_photo(data.photo_base64),
             )
 

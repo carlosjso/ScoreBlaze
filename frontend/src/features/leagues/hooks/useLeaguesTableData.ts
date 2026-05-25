@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { leaguesQueryKeys, leaguesService } from "@/features/leagues/Leagues.service";
-import type { SortDir, SortKey } from "@/features/leagues/Leagues.types";
+import type { CompetitionType, SortDir, SortKey } from "@/features/leagues/Leagues.types";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 type UseLeaguesTableDataParams = {
@@ -9,6 +9,7 @@ type UseLeaguesTableDataParams = {
   search: string;
   sortKey: SortKey;
   sortDir: SortDir;
+  competitionType?: CompetitionType;
 };
 
 export function useLeaguesTableData({
@@ -16,6 +17,7 @@ export function useLeaguesTableData({
   search,
   sortKey,
   sortDir,
+  competitionType,
 }: UseLeaguesTableDataParams) {
   const leaguesQuery = useQuery({
     queryKey: leaguesQueryKeys.table({
@@ -24,6 +26,7 @@ export function useLeaguesTableData({
       search,
       sortKey,
       sortDir,
+      competitionType,
     }),
     queryFn: ({ signal }) =>
       leaguesService.getTablePage(
@@ -33,6 +36,7 @@ export function useLeaguesTableData({
           search,
           sortKey,
           sortDir,
+          competitionType,
         },
         signal,
       ),

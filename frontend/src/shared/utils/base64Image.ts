@@ -27,6 +27,13 @@ export function loadImageElement(source: string): Promise<HTMLImageElement> {
 }
 
 export type ImageOutputShape = "circle" | "square";
+export type AlphaBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  coverage: number;
+};
 type RgbaSample = { r: number; g: number; b: number; a: number };
 type BackgroundBucket = {
   count: number;
@@ -272,6 +279,75 @@ export async function cropImageSourceToPngBase64(
 
   const pngDataUrl = canvas.toDataURL("image/png");
   return pngDataUrl.replace("data:image/png;base64,", "");
+}
+
+export async function getImageAlphaBoundsFromSource(
+  source: string,
+  options?: {
+    alphaThreshold?: number;
+    maxSampleSize?: number;
+  },
+): Promise<AlphaBounds | null> {
+  const image = await loadImageElement(source);
+  const naturalWidth = image.naturalWidth || image.width;
+  const naturalHeight = image.naturalHeight || image.height;
+  const maxSampleSize = options?.maxSampleSize ?? 1024;
+  const scaled = getScaledDimensions(naturalWidth, naturalHeight, maxSampleSize);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = scaled.width;
+  canvas.height = scaled.height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return null;
+  }
+
+  context.clearRect(0, 0, scaled.width, scaled.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, 0, 0, naturalWidth, naturalHeight, 0, 0, scaled.width, scaled.height);
+  const { data } = context.getImageData(0, 0, scaled.width, scaled.height);
+  const alphaThreshold = options?.alphaThreshold ?? 20;
+
+  let minX = scaled.width;
+  let minY = scaled.height;
+  let maxX = -1;
+  let maxY = -1;
+  let opaqueCount = 0;
+
+  for (let y = 0; y < scaled.height; y += 1) {
+    for (let x = 0; x < scaled.width; x += 1) {
+      const alpha = data[(y * scaled.width + x) * 4 + 3];
+      if (alpha <= alphaThreshold) {
+        continue;
+      }
+
+      opaqueCount += 1;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+
+  if (opaqueCount === 0 || maxX < minX || maxY < minY) {
+    return null;
+  }
+
+  const scaleX = naturalWidth / scaled.width;
+  const scaleY = naturalHeight / scaled.height;
+  const width = Math.max(1, (maxX - minX + 1) * scaleX);
+  const height = Math.max(1, (maxY - minY + 1) * scaleY);
+  const x = minX * scaleX;
+  const y = minY * scaleY;
+
+  return {
+    x,
+    y,
+    width,
+    height,
+    coverage: opaqueCount / (scaled.width * scaled.height),
+  };
 }
 
 export async function removeImageBackgroundFromSource(

@@ -173,6 +173,7 @@ export function TeamFormModal({
                     name={teamName || "Logo"}
                     logoBase64={logoBase64}
                     className="h-24 w-24 rounded-full text-sm"
+                    imageClassName="p-2"
                     emptyClassName="border-slate-200 bg-slate-200 text-slate-700"
                   />
                   <input
@@ -349,6 +350,7 @@ export function TeamFormModal({
         isOpen={pendingLogoSource !== null}
         imageSrc={pendingLogoSource}
         title="Ajustar logo"
+        exportShape="circle"
         onClose={() => setPendingLogoSource(null)}
         onConfirm={(nextLogoBase64) => {
           setValue("logoBase64", nextLogoBase64, {

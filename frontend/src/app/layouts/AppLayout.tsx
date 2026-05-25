@@ -25,6 +25,8 @@ function isBasketballPath(pathname: string) {
     pathname.startsWith("/quick-match/") ||
     pathname === "/leagues" ||
     pathname.startsWith("/leagues/") ||
+    pathname === "/eliminations" ||
+    pathname.startsWith("/eliminations/") ||
     pathname === "/scoreboard" ||
     pathname.startsWith("/scoreboard/")
   );
@@ -58,6 +60,7 @@ const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
     { label: "Partido rapido" },
   ],
   "/leagues": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Ligas" }],
+  "/eliminations": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Eliminatorias" }],
   "/football": [{ label: "Inicio", to: "/dashboard" }, { label: "Futbol" }],
   "/tennis": [{ label: "Inicio", to: "/dashboard" }, { label: "Tennis" }],
   "/padel": [{ label: "Inicio", to: "/dashboard" }, { label: "Padel" }],
@@ -107,6 +110,20 @@ export default function AppLayout() {
           { label: "Basquet", to: "/basketball" },
           { label: "Ligas", to: "/leagues" },
           { label: "Equipos" },
+        ]
+      : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/records")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Ligas", to: "/leagues" },
+          { label: "Lideres y records" },
+        ]
+      : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/final-phase/settings")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Ligas", to: "/leagues" },
+          { label: "Ajustes avanzados" },
         ]
       : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster")
       ? [

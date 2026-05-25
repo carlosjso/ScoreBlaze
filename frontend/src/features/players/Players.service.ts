@@ -3,10 +3,11 @@ import type { ZodType } from "zod";
 import { apiClient, toApiRequestError } from "@/shared/api/client";
 import type { PaginatedResponse } from "@/shared/api/pagination";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
-import type { PlayerMutationPayload, PlayersSnapshot } from "@/features/players/Players.types";
+import type { ApiPlayerStat, PlayerMutationPayload, PlayersSnapshot } from "@/features/players/Players.types";
 import {
   apiPaginatedPlayersTableSchema,
   apiPlayerSchema,
+  apiPlayerStatSchema,
   apiPlayersSchema,
   apiTeamMembershipsSchema,
   apiTeamsSchema,
@@ -16,6 +17,7 @@ import type { PlayerListItem, SortDir, SortKey } from "@/features/players/Player
 export const playersQueryKeys = {
   all: ["players"] as const,
   snapshot: () => [...playersQueryKeys.all, "snapshot"] as const,
+  stats: (playerId: number) => [...playersQueryKeys.all, "stats", playerId] as const,
   table: (params: {
     page: number;
     pageSize?: number;
@@ -101,6 +103,22 @@ export const playersService = {
       apiPlayerSchema,
       "La respuesta del jugador es invalida."
     );
+  },
+
+  async getPlayerStats(playerId: number, signal?: AbortSignal): Promise<ApiPlayerStat | null> {
+    try {
+      return await requestJson(
+        apiClient.get(`/player-stats/${playerId}`, { signal }),
+        apiPlayerStatSchema,
+        "Las estadisticas del jugador son invalidas.",
+      );
+    } catch (error) {
+      const normalizedError = toApiRequestError(error, "Las estadisticas del jugador son invalidas.");
+      if (normalizedError.status === 404) {
+        return null;
+      }
+      throw normalizedError;
+    }
   },
 
   deletePlayer(playerId: number, signal?: AbortSignal) {

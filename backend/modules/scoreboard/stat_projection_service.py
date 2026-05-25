@@ -4,6 +4,7 @@ from data.orm import MatchEvent, PlayerStat, TeamStat
 from database.unit_of_work import UnitOfWork
 from modules.match_events.domain import MatchEventType
 from modules.scoreboard.domain import BasketballScoreboardRules
+from modules.matches.tracked_stats import is_event_type_tracked
 from modules.statistics.repositories import PlayerStatRepository, TeamStatRepository
 
 from .policy import ScoreboardPolicy
@@ -26,6 +27,7 @@ class ScoreboardStatProjectionService:
         self.policy = policy
 
     def apply_event(self, event: MatchEvent, direction: int) -> None:
+        event_type = MatchEventType(event.event_type)
         points = self.rules.points_for_event(event.event_type)
 
         if points:
@@ -38,6 +40,7 @@ class ScoreboardStatProjectionService:
             )
 
         match = self.policy.get_existing_match(event.match_id)
+        metric_enabled = is_event_type_tracked(event_type, getattr(match, "tracked_stats", None))
 
         opponent_team_id = match.team_b_id if event.team_id == match.team_a_id else match.team_a_id
         if points:
@@ -49,16 +52,14 @@ class ScoreboardStatProjectionService:
                 points_difference=opponent_team_stat.points_for - points_against,
             )
 
-        event_type = MatchEventType(event.event_type)
-
-        if applies_team_foul(event_type):
+        if metric_enabled and applies_team_foul(event_type):
             team_stat = self._get_or_create_team_stat(event.team_id)
             self.team_stat_repo.update(
                 team_stat,
                 total_team_fouls=self.rules.increment_non_negative(team_stat.total_team_fouls, direction),
             )
 
-        if event.player_id is not None:
+        if event.player_id is not None and (points or metric_enabled):
             self._apply_player_stat(event, direction, points)
 
     def _get_or_create_team_stat(self, team_id: int) -> TeamStat:

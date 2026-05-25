@@ -1,9 +1,10 @@
 from datetime import date, time
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .domain import MatchStatus
+from .tracked_stats import normalize_match_tracked_stats
 
 MAX_MATCH_SCORE = 999
 MATCH_COURT_MAX_LENGTH = 80
@@ -19,7 +20,13 @@ class MatchBase(BaseModel):
     league_id: Optional[int] = None
     court: Optional[str] = Field(default=None, max_length=MATCH_COURT_MAX_LENGTH)
     tournament: Optional[str] = Field(default=None, max_length=MATCH_TOURNAMENT_MAX_LENGTH)
+    tracked_stats: list[str] = Field(default_factory=list)
     status: MatchStatus = MatchStatus.SCHEDULED
+
+    @field_validator("tracked_stats", mode="before")
+    @classmethod
+    def _normalize_tracked_stats(cls, value: list[str] | None):
+        return normalize_match_tracked_stats(value)
 
 
 class MatchCreate(MatchBase):
@@ -42,7 +49,13 @@ class MatchUpdate(BaseModel):
     is_draw: bool
     court: Optional[str] = Field(..., max_length=MATCH_COURT_MAX_LENGTH)
     tournament: Optional[str] = Field(..., max_length=MATCH_TOURNAMENT_MAX_LENGTH)
+    tracked_stats: list[str] = Field(default_factory=list)
     status: MatchStatus
+
+    @field_validator("tracked_stats", mode="before")
+    @classmethod
+    def _normalize_update_tracked_stats(cls, value: list[str] | None):
+        return normalize_match_tracked_stats(value)
 
 
 class MatchPatch(BaseModel):
@@ -58,6 +71,7 @@ class MatchPatch(BaseModel):
     is_draw: Optional[bool] = None
     court: Optional[str] = Field(default=None, max_length=MATCH_COURT_MAX_LENGTH)
     tournament: Optional[str] = Field(default=None, max_length=MATCH_TOURNAMENT_MAX_LENGTH)
+    tracked_stats: Optional[list[str]] = None
     status: Optional[MatchStatus] = None
 
 

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 
+import { leagueTrackedStatOptions } from "@/features/leagues/Leagues.types";
 import { quickMatchesQueryKeys, quickMatchesService } from "@/features/quick-matches/QuickMatches.service";
 import type {
   MatchMutationPayload,
@@ -28,6 +29,11 @@ export default function Scoreboard() {
     queryFn: ({ signal }) => quickMatchesService.getMatch(numericMatchId!, signal),
   });
   const currentMatch = matchQuery.data ?? null;
+  const trackedStats = currentMatch?.tracked_stats ?? [...leagueTrackedStatOptions];
+  const canTrackMiss = trackedStats.includes("Fallo");
+  const canTrackFoul = trackedStats.includes("Faltas");
+  const canTrackAssist = trackedStats.includes("Asistencias");
+  const canTrackRebound = trackedStats.includes("Rebotes");
 
   const {
     state,
@@ -87,6 +93,7 @@ export default function Scoreboard() {
         is_draw: scoreTeamA === scoreTeamB,
         court: currentMatch.court,
         tournament: currentMatch.tournament,
+        tracked_stats: currentMatch.tracked_stats,
         status: nextStatus,
       } satisfies MatchMutationPayload;
 
@@ -149,14 +156,38 @@ export default function Scoreboard() {
     .filter((event) => event.team === "B")
     .slice()
     .reverse();
+  const handleMiss = (team: "A" | "B") => {
+    if (!canTrackMiss) {
+      return;
+    }
+    miss(team);
+  };
+  const handleFoul = (team: "A" | "B") => {
+    if (!canTrackFoul) {
+      return;
+    }
+    foul(team);
+  };
+  const handleRebound = (team: "A" | "B") => {
+    if (!canTrackRebound) {
+      return;
+    }
+    rebound(team);
+  };
+  const handleAssist = (team: "A" | "B") => {
+    if (!canTrackAssist) {
+      return;
+    }
+    assist(team);
+  };
 
   useScoreboardKeyboard({
     enabled: !loadingScoreboard && state.controlMode === "keyboard",
     onAddPoints: addPoints,
-    onMiss: miss,
-    onFoul: foul,
-    onRebound: rebound,
-    onAssist: assist,
+    onMiss: handleMiss,
+    onFoul: handleFoul,
+    onRebound: handleRebound,
+    onAssist: handleAssist,
     onToggleClock: toggleClock,
     onResetClock: resetClock,
     onResetShotClock24: resetShotClock24,
@@ -265,15 +296,16 @@ export default function Scoreboard() {
       <div className="grid gap-5 xl:grid-cols-[1fr_360px_1fr]">
         <TeamControlPanel
           team={state.teamA}
+          trackedStats={trackedStats}
           controlMode={state.controlMode}
           history={historyA}
           disabled={controlsDisabled}
           onSelectPlayer={selectPlayer}
           onAddPoints={addPoints}
-          onMiss={miss}
-          onFoul={foul}
-          onRebound={rebound}
-          onAssist={assist}
+          onMiss={handleMiss}
+          onFoul={handleFoul}
+          onRebound={handleRebound}
+          onAssist={handleAssist}
         />
 
         <GeneralControls
@@ -307,15 +339,16 @@ export default function Scoreboard() {
 
         <TeamControlPanel
           team={state.teamB}
+          trackedStats={trackedStats}
           controlMode={state.controlMode}
           history={historyB}
           disabled={controlsDisabled}
           onSelectPlayer={selectPlayer}
           onAddPoints={addPoints}
-          onMiss={miss}
-          onFoul={foul}
-          onRebound={rebound}
-          onAssist={assist}
+          onMiss={handleMiss}
+          onFoul={handleFoul}
+          onRebound={handleRebound}
+          onAssist={handleAssist}
         />
       </div>
 

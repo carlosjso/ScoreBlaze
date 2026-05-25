@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from .domain import LeagueStatus
+from .domain import LeagueCompetitionType, LeagueFinalPhaseFormat, LeagueFinalPhasePreset, LeagueStatus
 
 LEAGUE_NAME_MAX_LENGTH = 80
 LEAGUE_CATEGORY_MAX_LENGTH = 80
 LEAGUE_RESPONSIBLE_NAME_MAX_LENGTH = 100
 LEAGUE_RESPONSIBLE_EMAIL_MAX_LENGTH = 120
-LEAGUE_TRACKED_STAT_MAX_LENGTH = 40
+LEAGUE_FINAL_PHASE_QUALIFIED_TEAMS_MIN = 2
+LEAGUE_FINAL_PHASE_QUALIFIED_TEAMS_MAX = 32
 
 
 class LeagueBase(BaseModel):
@@ -20,9 +21,27 @@ class LeagueBase(BaseModel):
     responsible_email: EmailStr
     category: str = Field(..., min_length=1, max_length=LEAGUE_CATEGORY_MAX_LENGTH)
     status: LeagueStatus = LeagueStatus.PENDING
+    competition_type: LeagueCompetitionType = LeagueCompetitionType.LEAGUE
     start_date: date
     end_date: date
     tracked_stats: list[str] = Field(default_factory=list, max_length=12)
+    final_phase_enabled: bool = False
+    final_phase_preset: LeagueFinalPhasePreset = LeagueFinalPhasePreset.TOP_8_SINGLE_GAME
+    final_phase_qualified_teams: int = Field(
+        default=8,
+        ge=LEAGUE_FINAL_PHASE_QUALIFIED_TEAMS_MIN,
+        le=LEAGUE_FINAL_PHASE_QUALIFIED_TEAMS_MAX,
+    )
+    final_phase_byes: int = Field(default=0, ge=0)
+    final_phase_format: LeagueFinalPhaseFormat = LeagueFinalPhaseFormat.SINGLE_ELIMINATION
+    final_phase_two_legs: bool = False
+    final_phase_third_place_match: bool = False
+    final_phase_seeded_home_advantage: bool = True
+    final_phase_play_in_slots: int = Field(default=0, ge=0)
+    final_phase_round_best_of: int = Field(default=1, ge=1, le=7)
+    final_phase_final_best_of: int = Field(default=1, ge=1, le=7)
+    final_phase_reseed_each_round: bool = False
+    final_phase_grand_final_reset: bool = False
 
 
 class LeagueCreate(LeagueBase):
@@ -67,12 +86,26 @@ class LeagueTableRowOut(BaseModel):
     name: str
     category: str
     status: LeagueStatus
+    competition_type: LeagueCompetitionType
     responsible_name: str
     responsible_email: str
     start_date: date
     end_date: date
     logo_base64: Optional[str] = None
     tracked_stats: list[str]
+    final_phase_enabled: bool
+    final_phase_preset: LeagueFinalPhasePreset
+    final_phase_qualified_teams: int
+    final_phase_byes: int
+    final_phase_format: LeagueFinalPhaseFormat
+    final_phase_two_legs: bool
+    final_phase_third_place_match: bool
+    final_phase_seeded_home_advantage: bool
+    final_phase_play_in_slots: int
+    final_phase_round_best_of: int
+    final_phase_final_best_of: int
+    final_phase_reseed_each_round: bool
+    final_phase_grand_final_reset: bool
     team_ids: list[int]
     team_count: int
 

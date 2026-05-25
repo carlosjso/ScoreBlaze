@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useLeagueMatchesData } from "@/features/leagues/hooks/useLeagueMatchesData";
 import { useLeagueMatchesMutations } from "@/features/leagues/hooks/useLeagueMatchesMutations";
+import { getCompetitionCapabilities } from "@/features/leagues/competitionCapabilities";
 import { QuickMatchDetailModal } from "@/features/quick-matches/components/QuickMatchDetailModal";
 import { QuickMatchFormModal } from "@/features/quick-matches/components/QuickMatchFormModal";
 import { useQuickMatchesModals } from "@/features/quick-matches/hooks/useQuickMatchesModals";
@@ -46,7 +47,6 @@ const dayFormatter = new Intl.DateTimeFormat("es-MX", { day: "numeric" });
 const fullDateFormatter = new Intl.DateTimeFormat("es-MX", { dateStyle: "full" });
 const monthFormatter = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" });
 const shortDateFormatter = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" });
-const hourFormatter = new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" });
 
 const viewLabels: Record<CalendarViewMode, string> = {
   day: "Dia",
@@ -615,6 +615,7 @@ export default function LeagueCalendarPage() {
   const hasValidLeagueId = Number.isInteger(selectedLeagueId) && selectedLeagueId > 0;
 
   const { league, matches, teams, loading, error } = useLeagueMatchesData(hasValidLeagueId ? selectedLeagueId : null);
+  const capabilities = league ? getCompetitionCapabilities(league) : null;
   const modals = useQuickMatchesModals();
   const {
     submitting,
@@ -730,7 +731,7 @@ export default function LeagueCalendarPage() {
         <PageHeader
           title="Calendario de jornadas"
           subtitle="Visualiza los partidos de esta liga en formato calendario y filtra rapidamente por equipo."
-          actions={<LeagueSectionNav leagueId={league?.id} />}
+          actions={<LeagueSectionNav league={league} />}
         />
 
         <Panel>
@@ -760,13 +761,25 @@ export default function LeagueCalendarPage() {
             />
           ) : null}
 
-          {league ? (
+          {league && capabilities && !capabilities.showLeagueCalendar ? (
+            <TableEmptyState
+              mode="filtered"
+              title="Esta competencia no usa calendario de liga"
+              description={`${capabilities.label} se administra desde partidos y llaves; no necesita jornadas de fase regular.`}
+              actionLabel="Abrir partidos"
+              onAction={() => navigate(`/leagues/${league.id}/matches`)}
+            />
+          ) : null}
+
+          {league && capabilities?.showLeagueCalendar ? (
             <>
               <section className="rounded-[28px] border border-slate-300 bg-[linear-gradient(135deg,#fff9f3_0%,#ffffff_68%,#f8fafc_100%)] p-5 shadow-sm">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-500">Vista rapida de calendario</p>
-                    <h2 className="mt-2 text-[30px] leading-none text-slate-950 sm:text-[34px]">{league.name}</h2>
+                    <h2 className="mt-2 max-w-full truncate text-[30px] leading-none text-slate-950 sm:text-[34px]" title={league.name}>
+                      {league.name}
+                    </h2>
                     <p className="mt-2 max-w-2xl text-sm text-slate-500">
                       Consulta la programacion semanal, filtra por equipo y abre cada partido sin salir del entorno de la liga.
                     </p>
@@ -781,9 +794,12 @@ export default function LeagueCalendarPage() {
                       <CalendarDays size={14} />
                       {matches.length} {matches.length === 1 ? "partido" : "partidos"}
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                      <Shield size={14} />
-                      {league.category}
+                    <span
+                      className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                      title={league.category}
+                    >
+                      <Shield size={14} className="shrink-0" />
+                      <span className="min-w-0 truncate">{league.category}</span>
                     </span>
                     <StatusBadge status={league.status} />
                   </div>

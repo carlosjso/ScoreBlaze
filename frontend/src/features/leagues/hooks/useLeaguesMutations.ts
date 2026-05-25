@@ -64,7 +64,7 @@ export function useLeaguesMutations() {
 
   const saveLeague = async ({ mode, leagueId, values }: SaveLeagueArgs) => {
     clearMutationError();
-    await saveMutation.mutateAsync({
+    return saveMutation.mutateAsync({
       mode,
       leagueId,
       payload: toLeagueMutationPayload(values),

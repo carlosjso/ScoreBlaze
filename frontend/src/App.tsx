@@ -13,8 +13,11 @@ import AuthPage from "@/features/auth/AuthPage";
 import { GuestRoute, ProtectedRoute } from "@/features/auth/AuthRouteGuards";
 import BasketballHubPage from "@/features/basketball/BasketballHubPage";
 import LeagueCalendarPage from "@/features/leagues/LeagueCalendarPage";
+import LeagueBracketPage from "@/features/leagues/LeagueBracketPage";
 import LeagueDashboardPage from "@/features/leagues/LeagueDashboardPage";
+import LeagueFinalPhaseSettingsPage from "@/features/leagues/LeagueFinalPhaseSettingsPage";
 import LeagueMatchesPage from "@/features/leagues/LeagueMatchesPage";
+import LeagueRecordsPage from "@/features/leagues/LeagueRecordsPage";
 import LeagueSettingsPage from "@/features/leagues/LeagueSettingsPage";
 import LeagueStandingsPage from "@/features/leagues/LeagueStandingsPage";
 import LeaguesPage from "@/features/leagues/LeaguesPage";
@@ -71,12 +74,16 @@ export default function App() {
                 <Route path="/settings/roles" element={<Roles />} />
                 <Route path="/settings/users" element={<Users />} />
                 <Route path="/leagues" element={<LeaguesPage />} />
+                <Route path="/eliminations" element={<Navigate to="/leagues?type=ELIMINATION" replace />} />
                 <Route path="/leagues/:leagueId" element={<LeagueDashboardPage />} />
+                <Route path="/leagues/:leagueId/bracket" element={<LeagueBracketPage />} />
                 <Route path="/leagues/:leagueId/calendar" element={<LeagueCalendarPage />} />
+                <Route path="/leagues/:leagueId/records" element={<LeagueRecordsPage />} />
                 <Route path="/leagues/:leagueId/teams" element={<LeagueTeamsPage />} />
                 <Route path="/leagues/:leagueId/teams/manage" element={<LeagueTeamsManagePage />} />
                 <Route path="/leagues/:leagueId/matches" element={<LeagueMatchesPage />} />
                 <Route path="/leagues/:leagueId/standings" element={<LeagueStandingsPage />} />
+                <Route path="/leagues/:leagueId/final-phase/settings" element={<LeagueFinalPhaseSettingsPage />} />
                 <Route path="/leagues/:leagueId/settings" element={<LeagueSettingsPage />} />
                 <Route path="/leagues/:leagueId/matches/:matchId/stats" element={<QuickMatchStatsPage />} />
                 <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />

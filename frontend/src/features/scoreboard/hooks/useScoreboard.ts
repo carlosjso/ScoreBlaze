@@ -498,6 +498,7 @@ export function useScoreboard({
     }
 
     let cancelled = false;
+    let connectTimeoutId: number | null = null;
     setRealtimeStatus("connecting");
 
     const connect = () => {
@@ -539,8 +540,11 @@ export function useScoreboard({
       };
 
       socket.onerror = () => {
+        if (cancelled || realtimeSocketRef.current !== socket) {
+          return;
+        }
+
         setRealtimeStatus("reconnecting");
-        console.error("Fallo la conexion realtime del marcador.");
       };
 
       socket.onclose = () => {
@@ -563,14 +567,26 @@ export function useScoreboard({
       };
     };
 
-    connect();
+    connectTimeoutId = window.setTimeout(() => {
+      connectTimeoutId = null;
+      connect();
+    }, 0);
 
     return () => {
       cancelled = true;
       clearReconnectTimeout();
       clearRealtimeBootstrapTimeout();
 
+      if (connectTimeoutId !== null) {
+        window.clearTimeout(connectTimeoutId);
+        connectTimeoutId = null;
+      }
+
       if (realtimeSocketRef.current) {
+        realtimeSocketRef.current.onopen = null;
+        realtimeSocketRef.current.onmessage = null;
+        realtimeSocketRef.current.onerror = null;
+        realtimeSocketRef.current.onclose = null;
         realtimeSocketRef.current.close();
         realtimeSocketRef.current = null;
       }

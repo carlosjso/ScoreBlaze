@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleUserRound, Mail, Pencil, Phone, Shield, Trash2, Upload } from "lucide-react";
+import { CircleUserRound, Hash, Mail, Pencil, Phone, Shield, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
@@ -158,12 +158,12 @@ export function PlayerFormModal({
         isOpen={isOpen}
         onClose={loading ? () => undefined : onClose}
         title={mode === "create" ? "Crear jugador" : "Editar jugador"}
-        maxWidthClassName="max-w-xl"
+        maxWidthClassName="max-w-2xl"
         hideCloseButton
       >
         <form className="space-y-5" onSubmit={handleSubmit(submitForm)}>
-          <div className="mx-auto max-w-[440px] rounded-[28px] bg-white px-5 py-7 shadow-[0_18px_45px_rgba(15,23,42,0.10)] sm:px-8">
-            <div className="mx-auto max-w-[360px]">
+          <div className="mx-auto max-w-[760px] rounded-[28px] bg-white px-5 py-7 shadow-[0_18px_45px_rgba(15,23,42,0.10)] sm:px-8">
+            <div className="mx-auto w-full max-w-[680px]">
               <div className="flex flex-col items-center">
                 <label
                   className={cn(
@@ -242,81 +242,205 @@ export function PlayerFormModal({
               </div>
 
               <div className="mt-6 space-y-4">
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Input
-                      label="Nombre del jugador"
-                      value={field.value}
-                      onChange={(event) => {
-                        dismissApiFieldError("name");
-                        field.onChange(event);
-                      }}
-                      onBlur={field.onBlur}
-                      leftIcon={<CircleUserRound size={14} />}
-                      placeholder="Ivan Perez"
-                      maxLength={PLAYER_FORM_LIMITS.name}
-                      error={fieldState.error?.message ?? getApiFieldError("name")}
-                      disabled={loading}
-                      className="bg-slate-100"
-                    />
-                  )}
-                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Controller
+                    name="name"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        label="Nombre del jugador"
+                        value={field.value}
+                        onChange={(event) => {
+                          dismissApiFieldError("name");
+                          field.onChange(event);
+                        }}
+                        onBlur={field.onBlur}
+                        leftIcon={<CircleUserRound size={14} />}
+                        placeholder="Ivan Perez"
+                        maxLength={PLAYER_FORM_LIMITS.name}
+                        error={fieldState.error?.message ?? getApiFieldError("name")}
+                        disabled={loading}
+                        className="bg-slate-100"
+                      />
+                    )}
+                  />
 
-                <Controller
-                  name="phone"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Input
-                      label="Telefono del jugador"
-                      value={field.value}
-                      onChange={(event) => {
-                        dismissApiFieldError("phone");
-                        field.onChange(event.target.value.replace(/\D/g, "").slice(0, PLAYER_FORM_LIMITS.phone));
-                      }}
-                      onBlur={field.onBlur}
-                      leftIcon={<Phone size={14} />}
-                      placeholder="7717777344"
-                      maxLength={PLAYER_FORM_LIMITS.phone}
-                      inputMode="numeric"
-                      error={fieldState.error?.message ?? getApiFieldError("phone")}
-                      disabled={loading}
-                      className="bg-slate-100"
-                    />
-                  )}
-                />
+                  <Controller
+                    name="phone"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        label="Telefono del jugador"
+                        value={field.value}
+                        onChange={(event) => {
+                          dismissApiFieldError("phone");
+                          field.onChange(event.target.value.replace(/\D/g, "").slice(0, PLAYER_FORM_LIMITS.phone));
+                        }}
+                        onBlur={field.onBlur}
+                        leftIcon={<Phone size={14} />}
+                        placeholder="7717777344"
+                        maxLength={PLAYER_FORM_LIMITS.phone}
+                        inputMode="numeric"
+                        error={fieldState.error?.message ?? getApiFieldError("phone")}
+                        disabled={loading}
+                        className="bg-slate-100"
+                      />
+                    )}
+                  />
 
-                <Controller
-                  name="email"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Input
-                      label="Correo del jugador"
-                      type="email"
-                      value={field.value}
-                      onChange={(event) => {
-                        dismissApiFieldError("email");
-                        field.onChange(event);
-                      }}
-                      onBlur={field.onBlur}
-                      leftIcon={<Mail size={14} />}
-                      placeholder="ivan@email.com"
-                      maxLength={PLAYER_FORM_LIMITS.email}
-                      error={fieldState.error?.message ?? getApiFieldError("email")}
-                      disabled={loading}
-                      className="bg-slate-100"
-                    />
-                  )}
-                />
+                  <Controller
+                    name="email"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        label="Correo del jugador"
+                        type="email"
+                        value={field.value}
+                        onChange={(event) => {
+                          dismissApiFieldError("email");
+                          field.onChange(event);
+                        }}
+                        onBlur={field.onBlur}
+                        leftIcon={<Mail size={14} />}
+                        placeholder="ivan@email.com"
+                        maxLength={PLAYER_FORM_LIMITS.email}
+                        error={fieldState.error?.message ?? getApiFieldError("email")}
+                        disabled={loading}
+                        className="bg-slate-100"
+                      />
+                    )}
+                  />
 
-                <Input
-                  label="Estatus"
-                  value={status}
-                  disabled
-                  leftIcon={<Shield size={14} />}
-                  className="bg-slate-100"
-                />
+                  <Input
+                    label="Estatus"
+                    value={status}
+                    disabled
+                    leftIcon={<Shield size={14} />}
+                    className="bg-slate-100"
+                  />
+                </div>
+
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-slate-900">Perfil deportivo</p>
+                    <p className="text-xs text-slate-500">Todos estos datos son opcionales y solo se mostraran si existen.</p>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Controller
+                      name="favoritePosition"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Input
+                          label="Posicion favorita"
+                          value={field.value}
+                          onChange={(event) => {
+                            dismissApiFieldError("favoritePosition");
+                            field.onChange(event);
+                          }}
+                          onBlur={field.onBlur}
+                          leftIcon={<CircleUserRound size={14} />}
+                          placeholder="Base"
+                          maxLength={PLAYER_FORM_LIMITS.favoritePosition}
+                          error={fieldState.error?.message ?? getApiFieldError("favoritePosition")}
+                          disabled={loading}
+                          className="bg-white"
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="nationality"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Input
+                          label="Nacionalidad"
+                          value={field.value}
+                          onChange={(event) => {
+                            dismissApiFieldError("nationality");
+                            field.onChange(event);
+                          }}
+                          onBlur={field.onBlur}
+                          leftIcon={<CircleUserRound size={14} />}
+                          placeholder="Mexico"
+                          maxLength={PLAYER_FORM_LIMITS.nationality}
+                          error={fieldState.error?.message ?? getApiFieldError("nationality")}
+                          disabled={loading}
+                          className="bg-white"
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="age"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Input
+                          label="Edad"
+                          value={field.value}
+                          onChange={(event) => {
+                            dismissApiFieldError("age");
+                            field.onChange(event.target.value.replace(/\D/g, "").slice(0, PLAYER_FORM_LIMITS.age));
+                          }}
+                          onBlur={field.onBlur}
+                          leftIcon={<Hash size={14} />}
+                          placeholder="18"
+                          maxLength={PLAYER_FORM_LIMITS.age}
+                          inputMode="numeric"
+                          error={fieldState.error?.message ?? getApiFieldError("age")}
+                          disabled={loading}
+                          className="bg-white"
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="heightCm"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Input
+                          label="Estatura (cm)"
+                          value={field.value}
+                          onChange={(event) => {
+                            dismissApiFieldError("heightCm");
+                            field.onChange(event.target.value.replace(/\D/g, "").slice(0, PLAYER_FORM_LIMITS.heightCm));
+                          }}
+                          onBlur={field.onBlur}
+                          leftIcon={<Hash size={14} />}
+                          placeholder="178"
+                          maxLength={PLAYER_FORM_LIMITS.heightCm}
+                          inputMode="numeric"
+                          error={fieldState.error?.message ?? getApiFieldError("heightCm")}
+                          disabled={loading}
+                          className="bg-white"
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="weightKg"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Input
+                          label="Peso (kg)"
+                          value={field.value}
+                          onChange={(event) => {
+                            dismissApiFieldError("weightKg");
+                            field.onChange(event.target.value.replace(/\D/g, "").slice(0, PLAYER_FORM_LIMITS.weightKg));
+                          }}
+                          onBlur={field.onBlur}
+                          leftIcon={<Hash size={14} />}
+                          placeholder="74"
+                          maxLength={PLAYER_FORM_LIMITS.weightKg}
+                          inputMode="numeric"
+                          error={fieldState.error?.message ?? getApiFieldError("weightKg")}
+                          disabled={loading}
+                          className="bg-white sm:col-span-2"
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

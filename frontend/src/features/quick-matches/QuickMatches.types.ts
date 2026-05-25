@@ -25,6 +25,7 @@ export type ApiMatch = {
   is_draw: boolean;
   court: string | null;
   tournament: string | null;
+  tracked_stats: string[];
   status: MatchStatus;
 };
 
@@ -57,6 +58,7 @@ export type QuickMatchListItem = {
   resultLabel: string;
   court: string;
   tournament: string;
+  trackedStats: string[];
   venueLabel: string;
   status: MatchStatus;
   statusLabel: string;
@@ -88,6 +90,7 @@ export type MatchMutationPayload = {
   is_draw: boolean;
   court: string | null;
   tournament: string | null;
+  tracked_stats: string[];
   status: MatchStatus;
 };
 

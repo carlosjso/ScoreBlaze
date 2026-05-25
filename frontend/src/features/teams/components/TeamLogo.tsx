@@ -47,7 +47,7 @@ export function TeamLogo({
       )}
     >
       {logoSrc ? (
-        <img src={logoSrc} alt={`Logo de ${name}`} className={cn("h-full w-full object-contain", imageClassName)} />
+        <img src={logoSrc} alt={`Logo de ${name}`} className={cn("h-full w-full object-cover", imageClassName)} />
       ) : (
         getInitials(name)
       )}

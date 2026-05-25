@@ -14,7 +14,6 @@ import { authQueryKeys, authService } from "@/features/auth/Auth.service";
 import type { AuthSession, LoginFormValues, RegisterFormValues } from "@/features/auth/Auth.types";
 
 const AUTH_ACTIVITY_INTERVAL_MS = 45_000;
-const AUTH_SESSION_HINT_KEY = "scoreblaze.has_session";
 
 type AuthContextValue = {
   session: AuthSession | null;
@@ -26,27 +25,6 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-function readSessionHint() {
-  try {
-    return window.localStorage.getItem(AUTH_SESSION_HINT_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function writeSessionHint(hasSession: boolean) {
-  try {
-    if (hasSession) {
-      window.localStorage.setItem(AUTH_SESSION_HINT_KEY, "1");
-      return;
-    }
-
-    window.localStorage.removeItem(AUTH_SESSION_HINT_KEY);
-  } catch {
-    // Ignore storage errors in private/incognito contexts.
-  }
-}
 
 function useAuthActivityHeartbeat(session: AuthSession | null) {
   const queryClient = useQueryClient();
@@ -97,8 +75,8 @@ function useAuthActivityHeartbeat(session: AuthSession | null) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const queryClient = useQueryClient();
-  const isGuestRoute = location.pathname === "/login" || location.pathname === "/register";
-  const shouldCheckSession = !isGuestRoute || readSessionHint();
+  void location;
+  const shouldCheckSession = true;
 
   const sessionQuery = useQuery({
     queryKey: authQueryKeys.session(),
@@ -107,17 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     retry: false,
   });
 
-  useEffect(() => {
-    if (sessionQuery.data) {
-      writeSessionHint(true);
-      return;
-    }
-
-    if (sessionQuery.status === "success") {
-      writeSessionHint(false);
-    }
-  }, [sessionQuery.data, sessionQuery.status]);
-
   const loginMutation = useMutation({
     mutationFn: (values: LoginFormValues) =>
       authService.login({
@@ -125,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: values.password,
       }),
     onSuccess: (session) => {
-      writeSessionHint(true);
       queryClient.setQueryData(authQueryKeys.session(), session);
     },
   });
@@ -138,7 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: values.password,
       }),
     onSuccess: (session) => {
-      writeSessionHint(true);
       queryClient.setQueryData(authQueryKeys.session(), session);
     },
   });
@@ -146,7 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logoutMutation = useMutation({
     mutationFn: () => authService.logout(),
     onSettled: () => {
-      writeSessionHint(false);
       queryClient.setQueryData(authQueryKeys.session(), null);
       queryClient.removeQueries({
         predicate: (query) => query.queryKey[0] !== "auth",
