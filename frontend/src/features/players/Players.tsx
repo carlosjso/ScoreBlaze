@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasPermission } from "@/features/auth/permissions";
 import { PlayerDetailModal } from "@/features/players/components/PlayerDetailModal";
 import { PlayerFormModal } from "@/features/players/components/PlayerFormModal";
 import { PlayersTable } from "@/features/players/components/PlayersTable";
@@ -15,6 +17,7 @@ import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export default function Players() {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -38,6 +41,9 @@ export default function Players() {
   } = usePlayersMutations();
 
   const hasActiveFilters = Boolean(search.trim());
+  const canEdit = hasPermission(session, "players.edit");
+  const canAssignTeam = hasPermission(session, "players.assign_team");
+  const canDelete = hasPermission(session, "players.delete");
 
   useEffect(() => {
     if (page !== currentPage) {
@@ -93,7 +99,7 @@ export default function Players() {
   return (
     <div className="sb-page">
       <div className="sb-page-shell">
-        <PageHeader title="Jugadores" subtitle="Gestiona jugadores y consulta a qué equipos pertenecen." />
+        <PageHeader title="Jugadores" subtitle="Directorio de perfiles. Las altas operativas se hacen desde la plantilla de cada equipo." />
 
         <Panel>
           {panelError ? (
@@ -109,6 +115,7 @@ export default function Players() {
               setCurrentPage(1);
             }}
             onCreate={openCreate}
+            canCreate={false}
           />
 
           <div className="mt-4">
@@ -135,6 +142,9 @@ export default function Players() {
                 clearMutationError();
                 modals.requestDelete(player);
               }}
+              canEdit={canEdit}
+              canAssignTeam={canAssignTeam}
+              canDelete={canDelete}
             />
           </div>
         </Panel>

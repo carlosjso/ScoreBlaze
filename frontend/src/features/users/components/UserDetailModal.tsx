@@ -19,6 +19,10 @@ function formatCreatedAtLabel(value: string): string {
   return Number.isNaN(parsedDate.getTime()) ? value : createdAtFormatter.format(parsedDate);
 }
 
+function getAccountStatusLabel(status: string) {
+  return status === "pending" ? "Pendiente de confirmar" : "Activa";
+}
+
 export function UserDetailModal({ user, isOpen, onClose }: UserDetailModalProps) {
   if (!user) {
     return null;
@@ -46,6 +50,14 @@ export function UserDetailModal({ user, isOpen, onClose }: UserDetailModalProps)
               <p className="mt-2 inline-flex items-center gap-2 text-base font-semibold text-slate-900">
                 <Mail size={15} />
                 {user.email}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Estado
+              </p>
+              <p className="mt-2 text-base font-semibold text-slate-900">
+                {getAccountStatusLabel(user.accountStatus)}
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">

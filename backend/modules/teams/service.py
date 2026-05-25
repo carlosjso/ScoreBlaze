@@ -1,36 +1,116 @@
 from __future__ import annotations
 
+import logging
+from html import escape
+
+import config
+from core.email import EmailMessage, EmailSender
 from core.pagination import paginate_sequence
-from data.orm import Team
+from data.orm import Team, User
 from database.unit_of_work import UnitOfWork
+from modules.account_invitations.tokens import build_account_invitation_url, create_account_invitation_token
 from modules.memberships.repositories import MembershipRepository
 from modules.players.repositories import PlayerRepository
 from modules.teams.repositories import TeamRepository
 from modules.players.schemas import PlayerOut
+from modules.users.repositories import RoleRepository, UserRepository
 from utils.media import decode_base64_payload
 
 from .policy import TeamPolicy
 from .schemas import PaginatedTeamsTableOut, TeamCreate, TeamTablePlayerOut, TeamTableRowOut, TeamUpdate
 
+logger = logging.getLogger(__name__)
+
 
 class TeamService:
+    RESPONSIBLE_ROLE_NAME = "coach"
+
     def __init__(
         self,
         team_repo: TeamRepository,
         player_repo: PlayerRepository,
         membership_repo: MembershipRepository,
+        user_repo: UserRepository,
+        role_repo: RoleRepository,
+        email_sender: EmailSender,
         unit_of_work: UnitOfWork,
         policy: TeamPolicy,
     ):
         self.team_repo = team_repo
         self.player_repo = player_repo
         self.membership_repo = membership_repo
+        self.user_repo = user_repo
+        self.role_repo = role_repo
+        self.email_sender = email_sender
         self.unit_of_work = unit_of_work
         self.policy = policy
 
     @staticmethod
     def _decode_logo(logo_base64: str | None) -> bytes | None:
         return decode_base64_payload(logo_base64, "Invalid logo. Could not decode Base64")
+
+    def _ensure_responsible_coach_account(self, data: TeamCreate) -> tuple[User, bool]:
+        normalized_email = str(data.responsible_email).strip().lower()
+        role = self.role_repo.get_or_create(self.RESPONSIBLE_ROLE_NAME)
+        user = self.user_repo.get_by_email(normalized_email, include_deleted=True)
+
+        if user is None:
+            user = User(
+                name=data.responsible_name.strip(),
+                email=normalized_email,
+                password_hash=None,
+                account_status="pending",
+            )
+            user.roles = [role]
+            self.user_repo.add(user)
+            return user, True
+
+        user.deleted_at = None
+        should_invite = False
+        if not user.password_hash:
+            user.account_status = "pending"
+            user.name = data.responsible_name.strip()
+            should_invite = True
+
+        if role not in user.roles:
+            user.roles = [*user.roles, role]
+
+        return user, should_invite
+
+    def _send_responsible_invitation(self, *, user: User, team: Team) -> None:
+        token = create_account_invitation_token(
+            user_id=user.id,
+            email=user.email,
+            role=self.RESPONSIBLE_ROLE_NAME,
+            team_id=team.id,
+        )
+        invite_url = build_account_invitation_url(token)
+        escaped_name = escape(user.name)
+        escaped_team_name = escape(team.name)
+        escaped_invite_url = escape(invite_url, quote=True)
+        text_body = (
+            f"Hola {user.name},\n\n"
+            f"Se preparo una cuenta de ScoreBlaze para administrar el equipo {team.name} como coach.\n"
+            "Completa la invitacion para validar tu cuenta y crear tu contrasena.\n\n"
+            f"{invite_url}\n\n"
+            f"Este enlace vence en {config.ACCOUNT_INVITATION_TOKEN_EXPIRES_HOURS} horas.\n"
+        )
+        html_body = f"""
+        <p>Hola {escaped_name},</p>
+        <p>Se preparo una cuenta de <strong>ScoreBlaze</strong> para administrar el equipo <strong>{escaped_team_name}</strong> como coach.</p>
+        <p>Completa la invitacion para validar tu cuenta y crear tu contrasena.</p>
+        <p><a href="{escaped_invite_url}">Completar invitacion</a></p>
+        <p>Este enlace vence en {config.ACCOUNT_INVITATION_TOKEN_EXPIRES_HOURS} horas.</p>
+        """
+
+        self.email_sender.send(
+            EmailMessage(
+                to_email=user.email,
+                subject=f"Invitacion a ScoreBlaze - {team.name}",
+                text_body=text_body,
+                html_body=html_body,
+            )
+        )
 
     def create(self, data: TeamCreate) -> Team:
         self.policy.ensure_name_available(data.name)
@@ -44,13 +124,24 @@ class TeamService:
             logo=self._decode_logo(data.logo_base64),
         )
 
+        responsible_user: User | None = None
+        should_invite_responsible = False
+
         with self.unit_of_work.transaction():
             self.team_repo.add(team)
+            responsible_user, should_invite_responsible = self._ensure_responsible_coach_account(data)
             self.unit_of_work.flush()
 
             if validated_player_ids:
                 self.membership_repo.replace_player_ids_for_team(team.id, validated_player_ids)
         self.unit_of_work.refresh(team)
+
+        if responsible_user is not None and should_invite_responsible:
+            try:
+                self._send_responsible_invitation(user=responsible_user, team=team)
+            except Exception:
+                logger.exception("Could not send responsible invitation email for team_id=%s", team.id)
+
         return team
 
     def list(self) -> list[Team]:

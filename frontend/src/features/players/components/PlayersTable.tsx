@@ -26,6 +26,9 @@ type PlayersTableProps = {
   onEdit: (player: PlayerListItem) => void;
   onManage: (player: PlayerListItem) => void;
   onDelete: (player: PlayerListItem) => void;
+  canEdit?: boolean;
+  canAssignTeam?: boolean;
+  canDelete?: boolean;
 };
 
 const statusClass: Record<"Con equipo" | "Sin equipo", string> = {
@@ -50,6 +53,9 @@ export function PlayersTable({
   onEdit,
   onManage,
   onDelete,
+  canEdit = true,
+  canAssignTeam = true,
+  canDelete = true,
 }: PlayersTableProps) {
   const emptyRowsCount = Math.max(0, pageSize - players.length);
 
@@ -161,6 +167,9 @@ export function PlayersTable({
                     manageIcon={<Shield size={14} />}
                     onDelete={onDelete}
                     disabled={deletingPlayerId === player.id}
+                    canEdit={canEdit}
+                    canManage={canAssignTeam}
+                    canDelete={canDelete}
                   />
                 </td>
               </tr>

@@ -15,6 +15,7 @@ type SidebarProps = {
   routes: SidebarRoute[];
   open: boolean;
   collapsed: boolean;
+  showSettings?: boolean;
   onClose: () => void;
   onToggleCollapse: () => void;
 };
@@ -37,7 +38,7 @@ function SidebarAccentBar({ active }: { active: boolean }) {
   );
 }
 
-export default function Sidebar({ routes, open, collapsed, onClose, onToggleCollapse }: SidebarProps) {
+export default function Sidebar({ routes, open, collapsed, showSettings = true, onClose, onToggleCollapse }: SidebarProps) {
   const { logout, session } = useAuth();
 
   return (
@@ -138,35 +139,42 @@ export default function Sidebar({ routes, open, collapsed, onClose, onToggleColl
               </NavLink>
             ))}
           </nav>
-        ) : null}
+        ) : (
+          <div className={cn("rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-amber-800", collapsed ? "lg:hidden" : "")}>
+            <p className="text-xs font-semibold">Sin modulos asignados</p>
+            <p className="mt-1 text-[11px] leading-4 text-amber-700">Tu rol no tiene permisos de navegacion activos.</p>
+          </div>
+        )}
 
         <div className={cn("mt-auto space-y-1 pt-6", collapsed ? "lg:flex lg:flex-col lg:items-center" : "")}>
-          <NavLink
-            to="/settings"
-            onClick={onClose}
-            title="Configuracion"
-            className={({ isActive }) =>
-              cn(
-                "group relative",
-                linkBase,
-                isActive ? linkActive : linkIdle,
-                collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <SidebarAccentBar active={isActive} />
-                <Settings size={16} />
-                <span className={cn(collapsed ? "lg:hidden" : "")}>Configuracion</span>
-                {collapsed ? (
-                  <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
-                    Configuracion
-                  </span>
-                ) : null}
-              </>
-            )}
-          </NavLink>
+          {showSettings ? (
+            <NavLink
+              to="/settings"
+              onClick={onClose}
+              title="Configuracion"
+              className={({ isActive }) =>
+                cn(
+                  "group relative",
+                  linkBase,
+                  isActive ? linkActive : linkIdle,
+                  collapsed ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0" : "w-full justify-start pl-4",
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <SidebarAccentBar active={isActive} />
+                  <Settings size={16} />
+                  <span className={cn(collapsed ? "lg:hidden" : "")}>Configuracion</span>
+                  {collapsed ? (
+                    <span className={cn(collapsedTooltipClass, "lg:block lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100")}>
+                      Configuracion
+                    </span>
+                  ) : null}
+                </>
+              )}
+            </NavLink>
+          ) : null}
 
           <button
             type="button"

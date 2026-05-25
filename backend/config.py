@@ -46,6 +46,22 @@ SESSION_IDLE_MINUTES = int(os.getenv("SESSION_IDLE_MINUTES", 30))
 SESSION_ABSOLUTE_MINUTES = int(os.getenv("SESSION_ABSOLUTE_MINUTES", 480))
 SESSION_ACTIVITY_GRACE_SECONDS = int(os.getenv("SESSION_ACTIVITY_GRACE_SECONDS", 45))
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# ==============================================================================
+# EMAIL
+# ==============================================================================
+MAIL_PROVIDER = os.getenv("MAIL_PROVIDER", "mailtrap").strip().lower()
+MAIL_FROM_EMAIL = os.getenv("MAIL_FROM_EMAIL", "no-reply@scoreblaze.local").strip()
+MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "ScoreBlaze").strip()
+MAILTRAP_HOST = os.getenv("MAILTRAP_HOST", "sandbox.smtp.mailtrap.io").strip()
+MAILTRAP_PORT = int(os.getenv("MAILTRAP_PORT", "2525"))
+MAILTRAP_USER = os.getenv("MAILTRAP_USER", "").strip()
+MAILTRAP_PASSWORD = os.getenv("MAILTRAP_PASSWORD", "").strip()
+ACCOUNT_INVITATION_TOKEN_EXPIRES_HOURS = int(
+    os.getenv("ACCOUNT_INVITATION_TOKEN_EXPIRES_HOURS")
+    or os.getenv("MAIL_PLAYER_PROFILE_TOKEN_EXPIRES_HOURS", "168")
+)
+
 AUTH_DEFAULT_ROLE = os.getenv("AUTH_DEFAULT_ROLE", "coach").strip().lower() or "coach"
 AUTH_BOOTSTRAP_ADMIN_EMAILS = {
     email.strip().lower()

@@ -53,6 +53,7 @@ class UserService:
             email=user.email,
             created_at=user.created_at,
             roles=role_names,
+            account_status=getattr(user, "account_status", "active"),
         )
 
     def create(self, data: UserCreate) -> User:
@@ -63,6 +64,7 @@ class UserService:
             name=self._normalize_name(data.name),
             email=normalized_email,
             password_hash=hash_password(data.password),
+            account_status="active",
         )
         explicit_role_name = self._normalize_role_name(data.role_name)
         with self.unit_of_work.transaction():
@@ -130,6 +132,7 @@ class UserService:
         }
         if password_hash is not None:
             fields["password_hash"] = password_hash
+            fields["account_status"] = "active"
         explicit_role_name = self._normalize_role_name(data.role_name)
 
         with self.unit_of_work.transaction():

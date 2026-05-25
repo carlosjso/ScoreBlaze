@@ -30,6 +30,8 @@ type PermissionsTableProps = {
   onView: (permission: PermissionListItem) => void;
   onEdit: (permission: PermissionListItem) => void;
   onDelete: (permission: PermissionListItem) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 function SkeletonCell({ className }: { className?: string }) {
@@ -81,6 +83,8 @@ export function PermissionsTable({
   onView,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }: PermissionsTableProps) {
   const emptyRowsCount = Math.max(0, pageSize - permissions.length);
 
@@ -178,14 +182,14 @@ export function PermissionsTable({
                         icon={<Search size={14} />}
                         onClick={() => onView(permission)}
                         className="border border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        disabled={actionsDisabled}
+                        disabled={actionsDisabled || !canEdit}
                       />
                       <PermissionActionButton
                         title="Editar"
                         icon={<Pencil size={14} />}
                         onClick={() => onEdit(permission)}
                         className="border border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
-                        disabled={actionsDisabled}
+                        disabled={actionsDisabled || !canDelete}
                       />
                       <PermissionActionButton
                         title="Eliminar"

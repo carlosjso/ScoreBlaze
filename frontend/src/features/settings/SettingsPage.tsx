@@ -7,12 +7,16 @@ import {
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasAllPermissions } from "@/features/auth/permissions";
+
 type ShortcutItem = {
   title: string;
   description: string;
   icon: ReactNode;
   accentClassName: string;
   to?: string;
+  permissions: readonly string[];
 };
 
 const shortcutItems: ShortcutItem[] = [
@@ -22,6 +26,7 @@ const shortcutItems: ShortcutItem[] = [
     icon: <ShieldCheck size={18} />,
     accentClassName: "from-orange-100 via-white to-orange-50 text-orange-700 border-orange-200",
     to: "/settings/roles",
+    permissions: ["roles.view"],
   },
   {
     title: "Permisos",
@@ -29,13 +34,15 @@ const shortcutItems: ShortcutItem[] = [
     icon: <KeyRound size={18} />,
     accentClassName: "from-sky-100 via-white to-sky-50 text-sky-700 border-sky-200",
     to: "/settings/permissions",
+    permissions: ["permissions.view"],
   },
   {
-    title: "Roles por permiso",
-    description: "Relacion visual entre roles y acciones.",
+    title: "Permisos por rol",
+    description: "Define que acciones puede realizar cada rol.",
     icon: <UserRoundCog size={18} />,
     accentClassName: "from-emerald-100 via-white to-emerald-50 text-emerald-700 border-emerald-200",
     to: "/settings/role-permissions",
+    permissions: ["roles.view"],
   },
   {
     title: "Usuarios",
@@ -43,6 +50,7 @@ const shortcutItems: ShortcutItem[] = [
     icon: <UsersRound size={18} />,
     accentClassName: "from-violet-100 via-white to-violet-50 text-violet-700 border-violet-200",
     to: "/settings/users",
+    permissions: ["users.view"],
   },
 ];
 
@@ -83,14 +91,24 @@ function ShortcutCard({ item }: { item: ShortcutItem }) {
 }
 
 export default function SettingsPage() {
+  const { session } = useAuth();
+  const visibleShortcuts = shortcutItems.filter((item) => hasAllPermissions(session, item.permissions));
+
   return (
     <div className="sb-page">
       <div className="sb-page-shell max-w-[1380px]">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {shortcutItems.map((item) => (
+        {visibleShortcuts.length > 0 ? (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {visibleShortcuts.map((item) => (
             <ShortcutCard key={item.title} item={item} />
-          ))}
-        </section>
+            ))}
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-800 shadow-sm">
+            <p className="text-sm font-semibold">No tienes accesos de configuracion disponibles.</p>
+            <p className="mt-1 text-sm text-red-700">Pide a un administrador que revise los permisos de tu rol.</p>
+          </section>
+        )}
       </div>
     </div>
   );

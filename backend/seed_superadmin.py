@@ -63,6 +63,7 @@ def run() -> None:
                 name=config.SEED_SUPERADMIN_NAME,
                 email=config.SEED_SUPERADMIN_EMAIL,
                 password_hash=password_hash,
+                account_status="active",
             )
             db.add(user)
         else:
@@ -70,6 +71,7 @@ def run() -> None:
             user.name = config.SEED_SUPERADMIN_NAME
             user.email = config.SEED_SUPERADMIN_EMAIL
             user.password_hash = password_hash
+            user.account_status = "active"
             user.deleted_at = None
 
         user.roles = roles

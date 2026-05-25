@@ -4,6 +4,8 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 
 import Sidebar from "@/app/layouts/Sidebar";
 import { sidebarRoutes } from "@/app/navigation/sidebarRoutes";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasAllPermissions, hasAnyPermission } from "@/features/auth/permissions";
 import { IconButton } from "@/shared/components/ui";
 import { cn } from "@/shared/utils/cn";
 
@@ -44,23 +46,21 @@ const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
   "/settings/role-permissions": [
     { label: "Inicio", to: "/dashboard" },
     { label: "Configuracion", to: "/settings" },
-    { label: "Roles por permiso" },
+    { label: "Permisos por rol" },
   ],
   "/settings/roles": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Roles" }],
   "/settings/users": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion", to: "/settings" }, { label: "Usuarios" }],
-  "/teams": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Equipos" }],
+  "/teams": [{ label: "Inicio", to: "/dashboard" }, { label: "Equipos" }],
   "/players": [
     { label: "Inicio", to: "/dashboard" },
-    { label: "Basquet", to: "/basketball" },
     { label: "Jugadores" },
   ],
   "/quick-match": [
     { label: "Inicio", to: "/dashboard" },
-    { label: "Basquet", to: "/basketball" },
     { label: "Partido rapido" },
   ],
-  "/leagues": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Ligas" }],
-  "/eliminations": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet", to: "/basketball" }, { label: "Eliminatorias" }],
+  "/leagues": [{ label: "Inicio", to: "/dashboard" }, { label: "Ligas" }],
+  "/eliminations": [{ label: "Inicio", to: "/dashboard" }, { label: "Eliminatorias" }],
   "/football": [{ label: "Inicio", to: "/dashboard" }, { label: "Futbol" }],
   "/tennis": [{ label: "Inicio", to: "/dashboard" }, { label: "Tennis" }],
   "/padel": [{ label: "Inicio", to: "/dashboard" }, { label: "Padel" }],
@@ -70,28 +70,31 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const { session } = useAuth();
 
   const menuRoutes = useMemo(
     () =>
       sidebarRoutes.filter((route) => {
         if (isBasketballPath(location.pathname)) return route.sidebarContext === "basketball";
         return route.sidebarContext === "home";
+      }).filter((route) => {
+        if (!route.permissions?.length) return true;
+        return hasAllPermissions(session, route.permissions);
       }),
-    [location.pathname]
+    [location.pathname, session]
   );
+  const showSettings = hasAnyPermission(session, ["roles.view", "permissions.view", "users.view"]);
 
   const breadcrumbs =
     location.pathname.startsWith("/players/") && location.pathname.endsWith("/teams")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Jugadores", to: "/players" },
           { label: "Asignar equipo" },
         ]
       : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster/manage")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Equipos", to: "/teams" },
           { label: "Plantilla", to: location.pathname.replace(/\/manage$/, "") },
           { label: "Asignar jugadores" },
@@ -99,7 +102,6 @@ export default function AppLayout() {
       : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/teams/manage")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Ligas", to: "/leagues" },
           { label: "Equipos", to: location.pathname.replace(/\/manage$/, "") },
           { label: "Asignar equipos" },
@@ -107,35 +109,30 @@ export default function AppLayout() {
       : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/teams")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Ligas", to: "/leagues" },
           { label: "Equipos" },
         ]
       : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/records")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Ligas", to: "/leagues" },
           { label: "Lideres y records" },
         ]
       : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/final-phase/settings")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Ligas", to: "/leagues" },
           { label: "Ajustes avanzados" },
         ]
       : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Equipos", to: "/teams" },
           { label: "Plantilla" },
         ]
       : location.pathname.startsWith("/quick-match/") && location.pathname.endsWith("/stats")
       ? [
           { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
           { label: "Partido rapido", to: "/quick-match" },
           { label: "Consultar estadisticas" },
         ]
@@ -148,6 +145,7 @@ export default function AppLayout() {
         routes={menuRoutes}
         open={sidebarOpen}
         collapsed={sidebarCollapsed}
+        showSettings={showSettings}
         onClose={() => setSidebarOpen(false)}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />

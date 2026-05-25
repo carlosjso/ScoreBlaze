@@ -22,6 +22,8 @@ type RolesTableProps = {
   onView: (role: RoleListItem) => void;
   onEdit: (role: RoleListItem) => void;
   onDelete: (role: RoleListItem) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 function SkeletonCell({ className }: { className?: string }) {
@@ -73,6 +75,8 @@ export function RolesTable({
   onView,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }: RolesTableProps) {
   const emptyRowsCount = Math.max(0, pageSize - roles.length);
 
@@ -164,14 +168,14 @@ export function RolesTable({
                         icon={<Pencil size={14} />}
                         onClick={() => onEdit(role)}
                         className="border border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
-                        disabled={actionsDisabled || protectedRole}
+                        disabled={actionsDisabled || protectedRole || !canEdit}
                       />
                       <RoleActionButton
                         title="Eliminar"
                         icon={<Trash2 size={14} />}
                         onClick={() => onDelete(role)}
                         className="border border-red-200 bg-white text-red-500 hover:bg-red-50"
-                        disabled={actionsDisabled || protectedRole}
+                        disabled={actionsDisabled || protectedRole || !canDelete}
                       />
                     </div>
                   </td>

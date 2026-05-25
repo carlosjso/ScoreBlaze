@@ -2,6 +2,8 @@ import { useTeamHistoricalStats } from "@/features/teams/hooks/useTeamHistorical
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasPermission } from "@/features/auth/permissions";
 import { TeamDetailModal } from "@/features/teams/components/TeamDetailModal";
 import { TeamFormModal } from "@/features/teams/components/TeamFormModal";
 import { TeamsTable } from "@/features/teams/components/TeamsTable";
@@ -16,6 +18,7 @@ import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export default function Teams() {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
@@ -86,6 +89,10 @@ export default function Teams() {
   };
 
   const panelError = mutationErrorMessage ?? error;
+  const canCreate = hasPermission(session, "teams.create");
+  const canEdit = hasPermission(session, "teams.edit");
+  const canManageRoster = hasPermission(session, "teams.manage_roster");
+  const canDelete = hasPermission(session, "teams.delete");
 
   return (
     <div className="sb-page">
@@ -109,6 +116,7 @@ export default function Teams() {
               setCurrentPage(1);
             }}
             onCreate={openCreate}
+            canCreate={canCreate}
           />
 
           <div className="mt-4">
@@ -133,6 +141,9 @@ export default function Teams() {
                 clearMutationError();
                 modals.requestDelete(team);
               }}
+              canEdit={canEdit}
+              canManageRoster={canManageRoster}
+              canDelete={canDelete}
             />
           </div>
         </Panel>
