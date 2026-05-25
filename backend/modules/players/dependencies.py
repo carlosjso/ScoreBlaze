@@ -5,7 +5,7 @@ from database.dependencies import get_unit_of_work
 from database.unit_of_work import UnitOfWork
 from modules.memberships.repositories import MembershipRepository
 from modules.teams.repositories import TeamRepository
-from modules.users.repositories import RoleRepository, UserRepository
+from modules.users.repositories import PermissionRepository, RoleRepository, UserRepository
 
 from .policy import PlayerPolicy
 from .repositories import PlayerRepository
@@ -32,6 +32,10 @@ def get_role_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) ->
     return RoleRepository(unit_of_work.db)
 
 
+def get_permission_repository(unit_of_work: UnitOfWork = Depends(get_unit_of_work)) -> PermissionRepository:
+    return PermissionRepository(unit_of_work.db)
+
+
 def get_email_sender() -> EmailSender:
     return create_email_sender()
 
@@ -49,8 +53,19 @@ def get_player_service(
     membership_repo: MembershipRepository = Depends(get_membership_repository),
     user_repo: UserRepository = Depends(get_user_repository),
     role_repo: RoleRepository = Depends(get_role_repository),
+    permission_repo: PermissionRepository = Depends(get_permission_repository),
     email_sender: EmailSender = Depends(get_email_sender),
     unit_of_work: UnitOfWork = Depends(get_unit_of_work),
     policy: PlayerPolicy = Depends(get_player_policy),
 ) -> PlayerService:
-    return PlayerService(player_repo, team_repo, membership_repo, user_repo, role_repo, email_sender, unit_of_work, policy)
+    return PlayerService(
+        player_repo,
+        team_repo,
+        membership_repo,
+        user_repo,
+        role_repo,
+        permission_repo,
+        email_sender,
+        unit_of_work,
+        policy,
+    )

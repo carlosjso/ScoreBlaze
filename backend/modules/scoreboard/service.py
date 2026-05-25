@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from authentication.schemas import AuthUserOut
+from core.exceptions import NotFoundException
+from modules.access_scope import TeamAccessScopeResolver
 from core.exceptions import ValidationException
 from data.orm import MatchEvent, MatchPlayerParticipation
 from database.unit_of_work import UnitOfWork
@@ -32,6 +35,7 @@ class ScoreboardService:
         stat_projection_service: ScoreboardStatProjectionService,
         score_projector: ScoreboardScoreProjector,
         snapshot_builder: ScoreboardSnapshotBuilder,
+        scope_resolver: TeamAccessScopeResolver,
         unit_of_work: UnitOfWork,
         policy: ScoreboardPolicy,
     ):
@@ -42,16 +46,32 @@ class ScoreboardService:
         self.stat_projection_service = stat_projection_service
         self.score_projector = score_projector
         self.snapshot_builder = snapshot_builder
+        self.scope_resolver = scope_resolver
         self.unit_of_work = unit_of_work
         self.policy = policy
 
-    def get_snapshot(self, match_id: int) -> ScoreboardSnapshotOut:
+    def _ensure_match_visible(self, match, current_user: AuthUserOut | None) -> None:
+        if current_user is None:
+            return
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return
+
+        if match.team_a_id in visible_team_ids or match.team_b_id in visible_team_ids:
+            return
+
+        raise NotFoundException("Match not found")
+
+    def get_snapshot(self, match_id: int, current_user: AuthUserOut | None = None) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        self._ensure_match_visible(match, current_user)
         active_events = self._list_active_events(match_id)
         return self.snapshot_builder.build(match, active_events)
 
-    def record_event(self, match_id: int, data: ScoreboardEventCreate) -> ScoreboardSnapshotOut:
+    def record_event(self, match_id: int, data: ScoreboardEventCreate, current_user: AuthUserOut | None = None) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        self._ensure_match_visible(match, current_user)
         tracked_stat = get_tracked_stat_for_event(data.event_type)
         if tracked_stat is not None and not does_track_stat(tracked_stat, getattr(match, "tracked_stats", None)):
             raise ValidationException(f"La metrica {tracked_stat} no esta habilitada para este partido.")
@@ -87,18 +107,20 @@ class ScoreboardService:
             active_events = self._list_active_events(match.id)
             self.match_repo.update_status(match, MatchStatus.LIVE)
             self.match_repo.apply_score_state(match, self.score_projector.project(match, active_events))
-        return self.get_snapshot(match.id)
+        return self.get_snapshot(match.id, current_user)
 
     def update_player_participation(
         self,
         match_id: int,
         player_id: int,
         data: ScoreboardPlayerParticipationUpdate,
+        current_user: AuthUserOut | None = None,
     ) -> ScoreboardSnapshotOut:
         if data.is_present is None and data.did_play is None:
             raise ValidationException("Debes indicar al menos un cambio de asistencia o participacion.")
 
         match = self.policy.get_existing_match(match_id)
+        self._ensure_match_visible(match, current_user)
         team = self.actor_resolver.resolve_team(match, data.team_key)
         resolved_player_id, _ = self.actor_resolver.resolve_actor(team.id, player_id, None)
 
@@ -119,10 +141,11 @@ class ScoreboardService:
                 played=next_played,
             )
 
-        return self.get_snapshot(match.id)
+        return self.get_snapshot(match.id, current_user)
 
-    def undo_last_event(self, match_id: int) -> ScoreboardSnapshotOut:
+    def undo_last_event(self, match_id: int, current_user: AuthUserOut | None = None) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        self._ensure_match_visible(match, current_user)
         active_events = self._list_active_events(match.id)
 
         if not active_events:
@@ -138,10 +161,11 @@ class ScoreboardService:
             match_status = MatchStatus.LIVE if remaining_active_events else MatchStatus.SCHEDULED
             self.match_repo.update_status(match, match_status)
             self.match_repo.apply_score_state(match, self.score_projector.project(match, remaining_active_events))
-        return self.get_snapshot(match.id)
+        return self.get_snapshot(match.id, current_user)
 
-    def reset(self, match_id: int) -> ScoreboardSnapshotOut:
+    def reset(self, match_id: int, current_user: AuthUserOut | None = None) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        self._ensure_match_visible(match, current_user)
         active_events = self._list_active_events(match.id)
 
         with self.unit_of_work.transaction():
@@ -155,7 +179,7 @@ class ScoreboardService:
             self.match_repo.update_status(match, MatchStatus.SCHEDULED)
             self.match_repo.apply_score_state(match, self.score_projector.project(match, []))
 
-        return self.get_snapshot(match.id)
+        return self.get_snapshot(match.id, current_user)
 
     def _get_next_event_order(self, match_id: int) -> int:
         events = self.match_event_repo.list_by_match(match_id)

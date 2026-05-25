@@ -19,6 +19,7 @@ class AccountInvitationOut(BaseModel):
     role: str
     player_id: Optional[int] = None
     team_id: Optional[int] = None
+    team_name: Optional[str] = None
     requires_player_profile: bool = False
 
 

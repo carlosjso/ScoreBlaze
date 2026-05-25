@@ -3,7 +3,9 @@ from __future__ import annotations
 from core.exceptions import ConflictException, UnauthorizedException
 from database.unit_of_work import UnitOfWork
 from modules.players.repositories import PlayerRepository
-from modules.users.repositories import RoleRepository, UserRepository
+from modules.teams.repositories import TeamRepository
+from modules.users.default_role_permissions import apply_default_permissions_to_role, ensure_catalog_permissions
+from modules.users.repositories import PermissionRepository, RoleRepository, UserRepository
 from utils.jwt_tokens import decode_jwt
 from utils.media import decode_base64_payload
 from utils.security import hash_password
@@ -19,12 +21,16 @@ class AccountInvitationService:
         self,
         user_repo: UserRepository,
         role_repo: RoleRepository,
+        permission_repo: PermissionRepository,
         player_repo: PlayerRepository,
+        team_repo: TeamRepository,
         unit_of_work: UnitOfWork,
     ):
         self.user_repo = user_repo
         self.role_repo = role_repo
+        self.permission_repo = permission_repo
         self.player_repo = player_repo
+        self.team_repo = team_repo
         self.unit_of_work = unit_of_work
 
     @staticmethod
@@ -63,6 +69,10 @@ class AccountInvitationService:
         team_id = payload.get("team_id")
         if team_id is not None and not isinstance(team_id, int):
             raise UnauthorizedException("Token invalido.")
+        team_name = None
+        if team_id is not None:
+            team = self.team_repo.get(team_id)
+            team_name = None if team is None else team.name
 
         return AccountInvitationOut(
             user_id=user.id,
@@ -71,6 +81,7 @@ class AccountInvitationService:
             role=role,
             player_id=player_id,
             team_id=team_id,
+            team_name=team_name,
             requires_player_profile=role == self.PLAYER_ROLE_NAME and player_id is not None,
         )
 
@@ -81,6 +92,7 @@ class AccountInvitationService:
             raise UnauthorizedException("Token invalido.")
 
         role = self.role_repo.get_or_create(invitation.role)
+        apply_default_permissions_to_role(role, ensure_catalog_permissions(self.permission_repo))
 
         with self.unit_of_work.transaction():
             if invitation.requires_player_profile:
@@ -116,5 +128,6 @@ class AccountInvitationService:
             role=invitation.role,
             player_id=invitation.player_id,
             team_id=invitation.team_id,
+            team_name=invitation.team_name,
             requires_player_profile=invitation.requires_player_profile,
         )

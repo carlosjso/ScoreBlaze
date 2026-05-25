@@ -173,6 +173,11 @@ export default function CompletePlayerProfilePage() {
                     <p className="mt-2 text-sm font-semibold text-slate-500">
                       Rol: {invitation?.role === "coach" ? "Coach" : invitation?.role === "jugador" ? "Jugador" : invitation?.role}
                     </p>
+                    {invitation?.teamName ? (
+                      <p className="mt-2 text-sm font-semibold text-slate-500">
+                        Equipo: {invitation.teamName}
+                      </p>
+                    ) : null}
                   </div>
 
                   {formError ? (

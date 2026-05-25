@@ -3,6 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query, status
 
 from authentication.dependencies import require_permissions
+from authentication.schemas import AuthUserOut
 from core.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from modules.matches.schemas import MatchOut
 
@@ -27,9 +28,9 @@ router = APIRouter()
 def list_leagues(
     competition_type: LeagueCompetitionType | None = Query(default=None),
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.view")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.view")),
 ):
-    return service.list(competition_type=competition_type.value if competition_type else None)
+    return service.list(competition_type=competition_type.value if competition_type else None, current_user=current_user)
 
 
 @router.get("/table", response_model=PaginatedLeaguesTableOut, status_code=status.HTTP_200_OK)
@@ -41,7 +42,7 @@ def list_leagues_table(
     sort_dir: Literal["asc", "desc"] = Query(default="asc"),
     competition_type: LeagueCompetitionType | None = Query(default=None),
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.view")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.view")),
 ):
     return service.list_table(
         page=page,
@@ -50,6 +51,7 @@ def list_leagues_table(
         sort_key=sort_key,
         sort_dir=sort_dir,
         competition_type=competition_type.value if competition_type else None,
+        current_user=current_user,
     )
 
 
@@ -57,36 +59,36 @@ def list_leagues_table(
 def create_league(
     payload: LeagueCreate,
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.create")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.create")),
 ):
-    return service.create(payload)
+    return service.create(payload, current_user)
 
 
 @router.get("/{league_id}", response_model=LeagueDetailOut, status_code=status.HTTP_200_OK)
 def get_league(
     league_id: int,
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.view")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.view")),
 ):
-    return service.get(league_id)
+    return service.get(league_id, current_user)
 
 
 @router.get("/{league_id}/matches", response_model=list[MatchOut], status_code=status.HTTP_200_OK)
 def list_league_matches(
     league_id: int,
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.view")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.view")),
 ):
-    return service.list_matches(league_id)
+    return service.list_matches(league_id, current_user)
 
 
 @router.get("/{league_id}/stats", response_model=LeagueStatsSnapshotOut, status_code=status.HTTP_200_OK)
 def get_league_stats(
     league_id: int,
     service: LeagueStatsService = Depends(get_league_stats_service),
-    _=Depends(require_permissions("leagues.view")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.view")),
 ):
-    return service.get(league_id)
+    return service.get(league_id, current_user)
 
 
 @router.put("/{league_id}", response_model=LeagueOut, status_code=status.HTTP_200_OK)
@@ -94,9 +96,9 @@ def update_league(
     league_id: int,
     payload: LeagueUpdate,
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.edit")),
 ):
-    return service.update(league_id, payload)
+    return service.update(league_id, payload, current_user)
 
 
 @router.put("/{league_id}/teams", response_model=LeagueOut, status_code=status.HTTP_200_OK)
@@ -104,15 +106,15 @@ def replace_league_teams(
     league_id: int,
     payload: LeagueTeamAssignmentsUpdate,
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.edit")),
 ):
-    return service.replace_team_assignments(league_id, payload)
+    return service.replace_team_assignments(league_id, payload, current_user)
 
 
 @router.delete("/{league_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_league(
     league_id: int,
     service: LeagueService = Depends(get_league_service),
-    _=Depends(require_permissions("leagues.delete")),
+    current_user: AuthUserOut = Depends(require_permissions("leagues.delete")),
 ):
-    service.delete(league_id)
+    service.delete(league_id, current_user)

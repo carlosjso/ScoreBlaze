@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from core.exceptions import NotFoundException
+from authentication.schemas import AuthUserOut
+from core.exceptions import ForbiddenException, NotFoundException
+from modules.access_scope import TeamAccessScopeResolver
 from data.orm import Match
 from database.unit_of_work import UnitOfWork
 from modules.matches.domain import MatchResult
@@ -15,10 +17,12 @@ class MatchService:
     def __init__(
         self,
         match_repo: MatchRepository,
+        scope_resolver: TeamAccessScopeResolver,
         unit_of_work: UnitOfWork,
         policy: MatchPolicy,
     ):
         self.match_repo = match_repo
+        self.scope_resolver = scope_resolver
         self.unit_of_work = unit_of_work
         self.policy = policy
 
@@ -51,7 +55,51 @@ class MatchService:
 
         return normalize_match_tracked_stats(list(league.tracked_stats or []))
 
-    def create(self, data: MatchCreate) -> Match:
+    def _filter_visible_matches(self, matches: list[Match], current_user: AuthUserOut | None) -> list[Match]:
+        if current_user is None:
+            return matches
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return matches
+
+        return [
+            match
+            for match in matches
+            if match.team_a_id in visible_team_ids or match.team_b_id in visible_team_ids
+        ]
+
+    def _ensure_match_visible(self, match: Match, current_user: AuthUserOut | None) -> Match:
+        if current_user is None:
+            return match
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return match
+
+        if match.team_a_id in visible_team_ids or match.team_b_id in visible_team_ids:
+            return match
+
+        raise NotFoundException("Match not found")
+
+    def _ensure_team_scope_access(
+        self,
+        *,
+        team_ids: list[int],
+        current_user: AuthUserOut | None,
+    ) -> None:
+        if current_user is None or not team_ids:
+            return
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return
+
+        if not set(team_ids).intersection(visible_team_ids):
+            raise ForbiddenException("El partido debe involucrar al menos uno de tus equipos.")
+
+    def create(self, data: MatchCreate, current_user: AuthUserOut | None = None) -> Match:
+        self._ensure_team_scope_access(team_ids=[data.team_a_id, data.team_b_id], current_user=current_user)
         result = self.policy.resolve_create_result(data)
         tracked_stats = self._resolve_tracked_stats(data.league_id, data.tracked_stats)
 
@@ -61,11 +109,11 @@ class MatchService:
         self.unit_of_work.refresh(match)
         return match
 
-    def list(self, league_id: int | None = None) -> list[Match]:
-        return self.match_repo.list(league_id=league_id)
+    def list(self, league_id: int | None = None, current_user: AuthUserOut | None = None) -> list[Match]:
+        return self._filter_visible_matches(self.match_repo.list(league_id=league_id), current_user)
 
-    def get(self, match_id: int) -> Match:
-        return self.policy.get_existing_match(match_id)
+    def get(self, match_id: int, current_user: AuthUserOut | None = None) -> Match:
+        return self._ensure_match_visible(self.policy.get_existing_match(match_id), current_user)
 
     @staticmethod
     def _update_from_match(match: Match) -> MatchUpdate:
@@ -117,15 +165,18 @@ class MatchService:
         self.unit_of_work.refresh(match)
         return match
 
-    def update(self, match_id: int, data: MatchUpdate) -> Match:
-        match = self.policy.get_existing_match(match_id)
+    def update(self, match_id: int, data: MatchUpdate, current_user: AuthUserOut | None = None) -> Match:
+        match = self.get(match_id, current_user)
+        self._ensure_team_scope_access(team_ids=[data.team_a_id, data.team_b_id], current_user=current_user)
         return self._apply_update(match, data)
 
-    def patch(self, match_id: int, data: MatchPatch) -> Match:
-        match = self.policy.get_existing_match(match_id)
-        return self._apply_update(match, self._merge_patch(match, data))
+    def patch(self, match_id: int, data: MatchPatch, current_user: AuthUserOut | None = None) -> Match:
+        match = self.get(match_id, current_user)
+        merged = self._merge_patch(match, data)
+        self._ensure_team_scope_access(team_ids=[merged.team_a_id, merged.team_b_id], current_user=current_user)
+        return self._apply_update(match, merged)
 
-    def delete(self, match_id: int) -> None:
-        match = self.policy.get_existing_match(match_id)
+    def delete(self, match_id: int, current_user: AuthUserOut | None = None) -> None:
+        match = self.get(match_id, current_user)
         with self.unit_of_work.transaction():
             self.match_repo.delete(match)

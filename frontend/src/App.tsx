@@ -63,7 +63,7 @@ export default function App() {
 
             <Route element={<GuestRoute />}>
               <Route path="/login" element={<AuthPage mode="login" />} />
-              <Route path="/register" element={<AuthPage mode="register" />} />
+              <Route path="/register" element={<Navigate to="/login" replace />} />
             </Route>
 
             <Route element={<ProtectedRoute />}>

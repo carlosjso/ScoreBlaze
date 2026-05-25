@@ -68,9 +68,9 @@ AUTH_BOOTSTRAP_ADMIN_EMAILS = {
     for email in os.getenv("AUTH_BOOTSTRAP_ADMIN_EMAILS", "").split(",")
     if email.strip()
 }
-SEED_SUPERADMIN_NAME = os.getenv("SEED_SUPERADMIN_NAME", "Super Admin").strip() or "Super Admin"
-SEED_SUPERADMIN_EMAIL = os.getenv("SEED_SUPERADMIN_EMAIL", "codexaempresarial@gmail.com").strip().lower()
-SEED_SUPERADMIN_PASSWORD = os.getenv("SEED_SUPERADMIN_PASSWORD", "CodexaAdmin2026!")
+SEED_SUPERADMIN_NAME = os.getenv("SEED_SUPERADMIN_NAME", "Codexa Admin").strip() or "Codexa Admin"
+SEED_SUPERADMIN_EMAIL = os.getenv("SEED_SUPERADMIN_EMAIL", "admin@codexa.com").strip().lower()
+SEED_SUPERADMIN_PASSWORD = os.getenv("SEED_SUPERADMIN_PASSWORD", "codexa123")
 SEED_SUPERADMIN_ROLES = tuple(
     dict.fromkeys(
         role.strip().lower()

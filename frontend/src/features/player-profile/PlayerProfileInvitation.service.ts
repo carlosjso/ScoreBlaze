@@ -9,6 +9,7 @@ export type AccountInvitation = {
   role: string;
   playerId: number | null;
   teamId: number | null;
+  teamName: string | null;
   requiresPlayerProfile: boolean;
 };
 
@@ -32,6 +33,7 @@ const accountInvitationSchema = z
     role: z.string().trim().min(1),
     player_id: z.coerce.number().int().positive().nullable().optional(),
     team_id: z.coerce.number().int().positive().nullable().optional(),
+    team_name: z.string().trim().min(1).nullable().optional(),
     requires_player_profile: z.boolean().default(false),
   })
   .transform((invitation): AccountInvitation => ({
@@ -41,6 +43,7 @@ const accountInvitationSchema = z
     role: invitation.role,
     playerId: invitation.player_id ?? null,
     teamId: invitation.team_id ?? null,
+    teamName: invitation.team_name ?? null,
     requiresPlayerProfile: invitation.requires_player_profile,
   }));
 

@@ -6,7 +6,8 @@ import config
 from core.exceptions import ValidationException
 from data.orm import User
 from database.unit_of_work import UnitOfWork
-from modules.users.repositories import RoleRepository, UserRepository
+from modules.users.default_role_permissions import apply_default_permissions_to_role, ensure_catalog_permissions
+from modules.users.repositories import PermissionRepository, RoleRepository, UserRepository
 from utils.security import hash_password
 
 from .policy import UserPolicy
@@ -18,11 +19,13 @@ class UserService:
         self,
         user_repo: UserRepository,
         role_repo: RoleRepository,
+        permission_repo: PermissionRepository,
         unit_of_work: UnitOfWork,
         policy: UserPolicy,
     ):
         self.user_repo = user_repo
         self.role_repo = role_repo
+        self.permission_repo = permission_repo
         self.unit_of_work = unit_of_work
         self.policy = policy
 
@@ -69,7 +72,11 @@ class UserService:
         explicit_role_name = self._normalize_role_name(data.role_name)
         with self.unit_of_work.transaction():
             role_names = [explicit_role_name] if explicit_role_name else self._resolve_registration_roles(normalized_email)
-            user.roles = [self.role_repo.get_or_create(role_name) for role_name in role_names]
+            permissions_by_name = ensure_catalog_permissions(self.permission_repo)
+            roles = [self.role_repo.get_or_create(role_name) for role_name in role_names]
+            for role in roles:
+                apply_default_permissions_to_role(role, permissions_by_name)
+            user.roles = roles
             self.user_repo.add(user)
         self.unit_of_work.refresh(user)
         return user
@@ -138,7 +145,10 @@ class UserService:
         with self.unit_of_work.transaction():
             self.user_repo.update(user, **fields)
             if explicit_role_name is not None:
-                user.roles = [self.role_repo.get_or_create(explicit_role_name)]
+                permissions_by_name = ensure_catalog_permissions(self.permission_repo)
+                role = self.role_repo.get_or_create(explicit_role_name)
+                apply_default_permissions_to_role(role, permissions_by_name)
+                user.roles = [role]
         self.unit_of_work.refresh(user)
         return user
 
