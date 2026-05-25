@@ -13,10 +13,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      // WebSockets (scoreboard realtime)
       "/ws": {
-        target: "ws://localhost:8000",
+        target: backendTarget,
         ws: true,
+        changeOrigin: true,
       },
+
+      // REST APIs
       "/auth": backendTarget,
       "/users": backendTarget,
       "/match-events": backendTarget,
