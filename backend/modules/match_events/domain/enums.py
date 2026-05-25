@@ -9,6 +9,8 @@ class MatchEventType(StrEnum):
     FOUL = "foul"
     REBOUND = "rebound"
     ASSIST = "assist"
+    STEAL = "steal"
+    BLOCK = "block"
 
 
 class MatchEventStatus(StrEnum):

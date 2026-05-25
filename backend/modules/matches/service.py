@@ -21,9 +21,11 @@ from modules.statistics.repositories.team_stat_repository import (
 )
 
 from modules.match_events.repositories import MatchEventRepository
-
+from modules.match_events.event_builder import EventBuilder
 from .policy import MatchPolicy
 from .schemas import MatchCreate, MatchPatch, MatchUpdate
+
+from modules.match_events.domain import MatchEventStatus, MatchEventType
 
 class MatchService:
     def __init__(
@@ -81,6 +83,48 @@ class MatchService:
 
     def get(self, match_id: int) -> Match:
         return self.policy.get_existing_match(match_id)
+    def _create_player_events(
+        self,
+        match_id: int,
+        team_id: int,
+        player_id: int,
+        player_data: dict,
+        event_order: int,
+    ) -> int:
+
+        def add_event(event_type: str, times: int):
+            nonlocal event_order
+
+            for _ in range(times or 0):
+                match_event = MatchEvent(
+                    match_id=match_id,
+                    team_id=team_id,
+                    player_id=player_id,
+                    event_type=event_type,
+                    period=1,
+                    elapsed_seconds=0,
+                    event_order=event_order,
+                    status=MatchEventStatus.ACTIVE.value,
+                )
+
+                self.match_event_repo.add(match_event)
+                event_order += 1
+
+        # ======================
+        # EVENTOS DESDE BUILDER
+        # ======================
+
+        for event_type, qty in EventBuilder.build_player_events(player_data):
+            add_event(event_type, qty)
+
+        # ======================
+        # MISSES
+        # ======================
+
+        misses = EventBuilder.calculate_misses(player_data)
+        add_event(MatchEventType.MISS.value, misses)
+
+        return event_order
 
     @staticmethod
     def _update_from_match(match: Match) -> MatchUpdate:
@@ -181,7 +225,16 @@ class MatchService:
         for row in range(27, 42):
             player_name = worksheet[f"B{row}"].value
             jersey_number = worksheet[f"C{row}"].value
-            points = int(worksheet[f"K{row}"].value or 0)
+            fouls = int(worksheet[f"D{row}"].value or 0)
+            t1 = int(worksheet[f"E{row}"].value or 0)
+            t2 = int(worksheet[f"F{row}"].value or 0)
+            t3 = int(worksheet[f"G{row}"].value or 0)
+            attempts = int(worksheet[f"H{row}"].value or 0)
+            assists = int(worksheet[f"I{row}"].value or 0)
+            rebounds = int(worksheet[f"J{row}"].value or 0)
+            steals = int(worksheet[f"K{row}"].value or 0)
+            blocks = int(worksheet[f"L{row}"].value or 0)
+            points = int(worksheet[f"M{row}"].value or 0)
 
             if not player_name:
                 continue
@@ -209,6 +262,15 @@ class MatchService:
                 "player_id": player.id,
                 "name": player.name,
                 "jersey_number": jersey_number,
+                "fouls": fouls,
+                "t1": t1,
+                "t2": t2,
+                "t3": t3,
+                "attempts": attempts,
+                "assists": assists,
+                "rebounds": rebounds,
+                "steals": steals,
+                "blocks": blocks,
                 "points": points,
             })
 
@@ -217,7 +279,16 @@ class MatchService:
         for row in range(47, 62):
             player_name = worksheet[f"B{row}"].value
             jersey_number = worksheet[f"C{row}"].value
-            points = int(worksheet[f"K{row}"].value or 0)
+            fouls = int(worksheet[f"D{row}"].value or 0)
+            t1 = int(worksheet[f"E{row}"].value or 0)
+            t2 = int(worksheet[f"F{row}"].value or 0)
+            t3 = int(worksheet[f"G{row}"].value or 0)
+            attempts = int(worksheet[f"H{row}"].value or 0)
+            assists = int(worksheet[f"I{row}"].value or 0)
+            rebounds = int(worksheet[f"J{row}"].value or 0)
+            steals = int(worksheet[f"K{row}"].value or 0)
+            blocks = int(worksheet[f"L{row}"].value or 0)
+            points = int(worksheet[f"M{row}"].value or 0)
 
             if not player_name:
                 continue
@@ -245,6 +316,15 @@ class MatchService:
                 "player_id": player.id,
                 "name": player.name,
                 "jersey_number": jersey_number,
+                "fouls": fouls,
+                "t1": t1,
+                "t2": t2,
+                "t3": t3,
+                "attempts": attempts,
+                "assists": assists,
+                "rebounds": rebounds,
+                "steals": steals,
+                "blocks": blocks,
                 "points": points,
             })
 
@@ -286,32 +366,21 @@ class MatchService:
 
                     self.player_stat_repo.update(
                         player_stat,
-                        matches_played=(
-                            player_stat.matches_played + 1
-                        ),
-                        total_points=(
-                            player_stat.total_points
-                            + player_data["points"]
-                        ),
+                        matches_played=player_stat.matches_played + 1,
+                        total_points=player_stat.total_points + player_data["points"],
                     )
 
-                # CREATE MATCH EVENTS
-                for _ in range(player_data["points"]):
+                # =========================
+                # MATCH EVENTS (OPTIMIZADO)
+                # =========================
 
-                    match_event = MatchEvent(
-                        match_id=match.id,
-                        team_id=team_a.id,
-                        player_id=player_data["player_id"],
-                        event_type="point_1",
-                        period=1,
-                        elapsed_seconds=0,
-                        event_order=event_order,
-                        status="active",
-                    )
-
-                    self.match_event_repo.add(match_event)
-
-                    event_order += 1
+                event_order = self._create_player_events(
+                    match.id,
+                    team_a.id,
+                    player_data["player_id"],
+                    player_data,
+                    event_order,
+                )             
 
             # =====================
             # TEAM B PLAYERS
@@ -347,22 +416,13 @@ class MatchService:
                     )
 
                 # CREATE MATCH EVENTS
-                for _ in range(player_data["points"]):
-
-                    match_event = MatchEvent(
-                        match_id=match.id,
-                        team_id=team_b.id,
-                        player_id=player_data["player_id"],
-                        event_type="point_1",
-                        period=1,
-                        elapsed_seconds=0,
-                        event_order=event_order,
-                        status="active",
-                    )
-
-                    self.match_event_repo.add(match_event)
-
-                    event_order += 1
+                event_order = self._create_player_events(
+                    match.id,
+                    team_b.id,
+                    player_data["player_id"],
+                    player_data,
+                    event_order,
+                ) 
 
             # =====================
             # TEAM A STATS
