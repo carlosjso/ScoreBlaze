@@ -1065,39 +1065,85 @@ export default function QuickMatchStatsPage() {
       <div className="space-y-4">
         <MatchHero stats={stats} />
         <PeriodScoreTable stats={stats} />
-        <StatsSwitcher
-          stats={stats}
-          activePanel={activePanel}
-          onChange={setActivePanel}
-        />
-        {stats.match.status === "finished" ? (
-  <div className="flex justify-end">
-    <label className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
-      {uploading ? "Importando..." : "Importar Excel"}
-
-      <input
-        type="file"
-        accept=".xlsx,.xls"
-        className="hidden"
-        onChange={handleExcelUpload}
-        disabled={uploading}
-      />
-    </label>
-  </div>
-) : null}
-        {activePanel === "stats" ? (
-          <>
-            <MatchStatsTable stats={stats} />
-
-            {!stats.hasEvents ? (
-              <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm font-semibold text-slate-600">
-                Aun no hay jugadas registradas para calcular mas detalle del partido.
-              </div>
-            ) : null}
-          </>
-        ) : selectedTeam ? (
-          <TeamPlayersTable team={selectedTeam} />
+        {stats.hasEvents ? (
+          <StatsSwitcher
+            stats={stats}
+            activePanel={activePanel}
+            onChange={setActivePanel}
+          />
         ) : null}
+{stats.match.status === "finished" && !stats.hasEvents ? (
+  <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="mx-auto max-w-[520px] rounded-[28px] bg-[#f8f8f8] p-6 shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-[24px] font-black text-slate-900">
+            Subir datos
+          </h3>
+
+          <p className="mt-1 text-sm font-medium text-slate-400">
+            Subir datos completos del partido
+          </p>
+        </div>
+      </div>
+
+      <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-orange-200 bg-white px-6 py-10 text-center transition hover:border-orange-300 hover:bg-orange-50/30">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-50">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7 text-orange-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+            />
+          </svg>
+        </div>
+
+        <p className="mt-5 text-sm font-semibold text-slate-700">
+          {uploading ? (
+            "Importando archivo..."
+          ) : (
+            <>
+              Drag your file(s) or{" "}
+              <span className="text-orange-400">browse</span>
+            </>
+          )}
+        </p>
+
+        <p className="mt-2 text-xs font-medium text-slate-400">
+          Maximo 10 MB
+        </p>
+
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={handleExcelUpload}
+          disabled={uploading}
+        />
+      </label>
+
+      <p className="mt-5 text-xs font-medium text-slate-400">
+        Solo acepta .xlsx y .xls
+      </p>
+    </div>
+  </section>
+) : null}
+       {stats.hasEvents ? (
+  <>
+    {activePanel === "stats" ? (
+      <MatchStatsTable stats={stats} />
+    ) : selectedTeam ? (
+      <TeamPlayersTable team={selectedTeam} />
+    ) : null}
+  </>
+) : null}
       </div>
     </StatsShell>
   );
