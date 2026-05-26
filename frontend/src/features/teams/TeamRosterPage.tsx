@@ -3,6 +3,7 @@ import {
 } from "@tanstack/react-query";
 import {
   Check,
+  CirclePlus,
   LoaderCircle,
   Mail,
   Phone,
@@ -22,8 +23,11 @@ import { useTeamsData } from "@/features/teams/hooks/useTeamsData";
 import { useTeamsMutations } from "@/features/teams/hooks/useTeamsMutations";
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import type { ApiPlayer, TeamListItem, TeamPlayerSummary } from "@/features/teams/Teams.types";
+import { playersQueryKeys, playersService } from "@/features/players/Players.service";
+import type { PlayerMutationPayload } from "@/features/players/Players.types";
+import { getApiGlobalErrorMessage } from "@/shared/api/client";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
-import { Button, PageHeader, Panel, SearchInput, Select } from "@/shared/components/ui";
+import { Button, Input, Modal, PageHeader, Panel, SearchInput, Select } from "@/shared/components/ui";
 import { cn } from "@/shared/utils/cn";
 
 function matchesSearch(player: ApiPlayer, query: string) {
@@ -59,6 +63,35 @@ function buildShirtNumbersSignature(playerIds: number[], shirtNumbers: Record<nu
 
 type RosterZone = "assigned" | "available";
 type AvailablePlayerFilter = "all" | "without_team" | "with_other_teams";
+
+type QuickRosterPlayerForm = {
+  name: string;
+  email: string;
+  phone: string;
+  shirtNumber: string;
+};
+
+const emptyQuickRosterPlayerForm: QuickRosterPlayerForm = {
+  name: "",
+  email: "",
+  phone: "",
+  shirtNumber: "",
+};
+
+function buildQuickRosterPlayerPayload(values: QuickRosterPlayerForm, teamId: number): PlayerMutationPayload {
+  return {
+    name: values.name.trim(),
+    email: values.email.trim().toLowerCase(),
+    phone: values.phone.trim() || null,
+    age: null,
+    height_cm: null,
+    weight_kg: null,
+    nationality: null,
+    favorite_position: null,
+    photo_base64: null,
+    team_ids: [teamId],
+  };
+}
 
 function useTeamRosterSnapshot() {
   const { teamId: teamIdParam } = useParams();
@@ -648,6 +681,10 @@ export function TeamRosterManagePage() {
   const [draggedPlayer, setDraggedPlayer] = useState<{ playerId: number; source: RosterZone } | null>(null);
   const [activeDropZone, setActiveDropZone] = useState<RosterZone | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [quickCreateValues, setQuickCreateValues] = useState<QuickRosterPlayerForm>(emptyQuickRosterPlayerForm);
+  const [quickCreateError, setQuickCreateError] = useState<string | null>(null);
+  const [quickCreateSubmitting, setQuickCreateSubmitting] = useState(false);
 
   const { submitting, mutationErrorMessage, clearMutationError, saveTeam } = useTeamsMutations();
 
@@ -660,6 +697,9 @@ export function TeamRosterManagePage() {
     setAssignedSearch("");
     setAvailableFilter("all");
     setSaveFeedback("idle");
+    setQuickCreateOpen(false);
+    setQuickCreateValues(emptyQuickRosterPlayerForm);
+    setQuickCreateError(null);
   }, [selectedTeam?.id, originalPlayerIdsKey]);
 
   const draftPlayerIdsKey = draftPlayerIds.join(",");
@@ -800,6 +840,87 @@ export function TeamRosterManagePage() {
     }
   };
 
+  const openQuickCreate = () => {
+    clearMutationError();
+    setQuickCreateError(null);
+    setQuickCreateValues(emptyQuickRosterPlayerForm);
+    setQuickCreateOpen(true);
+  };
+
+  const closeQuickCreate = () => {
+    if (quickCreateSubmitting) {
+      return;
+    }
+
+    setQuickCreateOpen(false);
+    setQuickCreateValues(emptyQuickRosterPlayerForm);
+    setQuickCreateError(null);
+  };
+
+  const updateQuickCreateField = (fieldName: keyof QuickRosterPlayerForm, value: string) => {
+    setQuickCreateError(null);
+    setQuickCreateValues((currentValues) => ({
+      ...currentValues,
+      [fieldName]: value,
+    }));
+  };
+
+  const handleQuickCreate = async () => {
+    if (!selectedTeam) {
+      return;
+    }
+
+    const normalizedName = quickCreateValues.name.trim();
+    const normalizedEmail = quickCreateValues.email.trim().toLowerCase();
+    const normalizedPhone = quickCreateValues.phone.trim();
+
+    if (!normalizedName || !normalizedEmail) {
+      setQuickCreateError("Captura nombre y correo para crear el jugador.");
+      return;
+    }
+
+    if (normalizedPhone && !/^\d{10}$/.test(normalizedPhone)) {
+      setQuickCreateError("El telefono debe tener 10 digitos.");
+      return;
+    }
+
+    setQuickCreateSubmitting(true);
+    setQuickCreateError(null);
+
+    try {
+      const createdPlayer = await playersService.createPlayer(
+        buildQuickRosterPlayerPayload(
+          {
+            ...quickCreateValues,
+            name: normalizedName,
+            email: normalizedEmail,
+            phone: normalizedPhone,
+          },
+          selectedTeam.id,
+        ),
+      );
+
+      const normalizedShirtNumber = quickCreateValues.shirtNumber.trim();
+      if (normalizedShirtNumber) {
+        await teamsService.updateTeamMembership(createdPlayer.id, selectedTeam.id, normalizedShirtNumber);
+      }
+
+      setDraftPlayerIds((currentIds) => updateDraftWithPlayerIds(currentIds, [createdPlayer.id]));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all }),
+        queryClient.invalidateQueries({ queryKey: playersQueryKeys.all }),
+      ]);
+
+      setQuickCreateOpen(false);
+      setQuickCreateValues(emptyQuickRosterPlayerForm);
+      setSaveFeedback("saved");
+    } catch (createError) {
+      setQuickCreateError(getApiGlobalErrorMessage(createError, "No se pudo crear el jugador.") ?? "No se pudo crear el jugador.");
+    } finally {
+      setQuickCreateSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     if (saveFeedback !== "saved") {
       return;
@@ -824,9 +945,6 @@ export function TeamRosterManagePage() {
                 }
               >
                 Volver a plantilla
-              </Button>
-              <Button variant="ghost" onClick={() => navigate("/teams")}>
-                Equipos
               </Button>
             </div>
           }
@@ -871,13 +989,10 @@ export function TeamRosterManagePage() {
                   <>
                     <AnimatedCountBadge value={draftPlayerIds.length} label="en plantilla" />
                     <AnimatedCountBadge value={availablePlayers.length} label="por asignar" />
-                    <AnimatedCountBadge
-                      value={pendingChangeCount}
-                      label={isDirty ? "sin guardar" : "todo guardado"}
-                      tone={isDirty ? "warning" : "success"}
-                      pulse={!isDirty && saveFeedback === "saved"}
-                      hideValue={!isDirty}
-                    />
+                    <Button variant="secondary" onClick={openQuickCreate} disabled={quickCreateSubmitting}>
+                      <CirclePlus size={14} />
+                      Alta rapida
+                    </Button>
                   </>
                 }
               />
@@ -1025,23 +1140,16 @@ export function TeamRosterManagePage() {
                 </section>
               </div>
 
+              {isDirty ? (
               <div className="sticky bottom-4 z-10 mt-5">
                 <div
-                  className={cn(
-                    "rounded-[24px] border px-4 py-4 shadow-lg backdrop-blur",
-                    isDirty ? "border-amber-200 bg-white/95" : "border-slate-200 bg-white/95"
-                  )}
+                  className="rounded-[24px] border border-amber-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold",
-                          isDirty ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"
-                        )}
-                      >
+                      <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700">
                         <UsersRound size={13} />
-                        {isDirty ? `${pendingChangeCount} cambios pendientes` : "Sin cambios pendientes"}
+                        {pendingChangeCount} cambios pendientes
                       </span>
 
                       {addedPlayerIds.length > 0 ? (
@@ -1068,26 +1176,93 @@ export function TeamRosterManagePage() {
                       <Button
                         variant="primary"
                         onClick={handleSave}
-                        disabled={submitting || !isDirty}
+                        disabled={submitting}
                         className="disabled:cursor-not-allowed disabled:opacity-45 disabled:saturate-50 disabled:shadow-none"
                       >
                         {submitting ? <LoaderCircle size={14} className="animate-spin" /> : null}
-                        {!submitting && saveFeedback === "saved" && !isDirty ? <Check size={14} /> : null}
-                        {!submitting && !(saveFeedback === "saved" && !isDirty) ? <Save size={14} /> : null}
-                        {submitting
-                          ? "Guardando..."
-                          : saveFeedback === "saved" && !isDirty
-                            ? "Guardado"
-                            : "Guardar plantilla"}
+                        {!submitting ? <Save size={14} /> : null}
+                        {submitting ? "Guardando..." : "Guardar plantilla"}
                       </Button>
                     </div>
                   </div>
                 </div>
               </div>
+              ) : null}
             </>
           )}
         </Panel>
       </div>
+
+      <Modal
+        isOpen={quickCreateOpen}
+        onClose={closeQuickCreate}
+        title="Alta rapida de jugador"
+        maxWidthClassName="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">Datos minimos para plantilla</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Crea el jugador y agregalo a este equipo. El perfil deportivo se puede completar despues.
+            </p>
+          </div>
+
+          {quickCreateError ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {quickCreateError}
+            </div>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              label="Nombre"
+              value={quickCreateValues.name}
+              onChange={(event) => updateQuickCreateField("name", event.target.value)}
+              placeholder="Ivan Perez"
+              disabled={quickCreateSubmitting}
+              className="bg-slate-100 sm:col-span-2"
+            />
+            <Input
+              label="Correo"
+              type="email"
+              value={quickCreateValues.email}
+              onChange={(event) => updateQuickCreateField("email", event.target.value)}
+              placeholder="ivan@email.com"
+              disabled={quickCreateSubmitting}
+              className="bg-slate-100 sm:col-span-2"
+            />
+            <Input
+              label="Telefono"
+              value={quickCreateValues.phone}
+              onChange={(event) => updateQuickCreateField("phone", event.target.value.replace(/\D/g, "").slice(0, 10))}
+              placeholder="7717777344"
+              inputMode="numeric"
+              maxLength={10}
+              disabled={quickCreateSubmitting}
+              className="bg-slate-100"
+            />
+            <Input
+              label="No. camiseta"
+              value={quickCreateValues.shirtNumber}
+              onChange={(event) => updateQuickCreateField("shirtNumber", event.target.value.slice(0, 20))}
+              placeholder="10"
+              maxLength={20}
+              disabled={quickCreateSubmitting}
+              className="bg-slate-100"
+            />
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={closeQuickCreate} disabled={quickCreateSubmitting}>
+              Cancelar
+            </Button>
+            <Button variant="secondary" onClick={() => void handleQuickCreate()} disabled={quickCreateSubmitting}>
+              {quickCreateSubmitting ? <LoaderCircle size={14} className="animate-spin" /> : <UserPlus size={14} />}
+              {quickCreateSubmitting ? "Creando..." : "Crear y agregar"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

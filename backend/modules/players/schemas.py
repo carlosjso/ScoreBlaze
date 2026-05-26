@@ -128,3 +128,4 @@ class PaginatedPlayersTableOut(BaseModel):
     page_size: int
     total_items: int
     total_pages: int
+

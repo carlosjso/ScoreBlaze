@@ -254,6 +254,7 @@ export default function LeagueMatchesPage() {
         initialMatch={modals.editingMatch}
         teams={teams}
         title={modals.formMode === "create" ? "Crear partido de liga" : "Editar partido de liga"}
+        matchType="league"
         loading={submitting}
         apiError={mutationError}
         onClose={() => {

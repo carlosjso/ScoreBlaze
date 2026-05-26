@@ -23,6 +23,9 @@ type TeamsTableProps = {
   onEdit: (team: TeamListItem) => void;
   onManage: (team: TeamListItem) => void;
   onDelete: (team: TeamListItem) => void;
+  canEdit?: boolean;
+  canManageRoster?: boolean;
+  canDelete?: boolean;
 };
 
 const rosterClass: Record<"Con jugadores" | "Sin jugadores", string> = {
@@ -95,8 +98,14 @@ function TeamCardActions({
   onEdit,
   onManage,
   onDelete,
+  canEdit,
+  canManageRoster,
+  canDelete,
 }: Pick<TeamsTableProps, "deletingTeamId" | "onEdit" | "onManage" | "onDelete"> & {
   team: TeamListItem;
+  canEdit: boolean;
+  canManageRoster: boolean;
+  canDelete: boolean;
 }) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -148,7 +157,7 @@ function TeamCardActions({
       <IconButton
         label="Ver plantilla"
         onClick={() => onManage(team)}
-        disabled={disabled}
+        disabled={disabled || !canManageRoster}
         className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
       >
         <Shirt size={14} />
@@ -168,7 +177,7 @@ function TeamCardActions({
           <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
             <button
               type="button"
-              disabled={disabled}
+              disabled={disabled || !canEdit}
               onClick={() => runAction(() => onEdit(team))}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -177,7 +186,7 @@ function TeamCardActions({
             </button>
             <button
               type="button"
-              disabled={disabled}
+              disabled={disabled || !canDelete}
               onClick={() => runAction(() => onDelete(team))}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -198,8 +207,14 @@ function TeamCard({
   onEdit,
   onManage,
   onDelete,
+  canEdit,
+  canManageRoster,
+  canDelete,
 }: Pick<TeamsTableProps, "deletingTeamId" | "onView" | "onEdit" | "onManage" | "onDelete"> & {
   team: TeamListItem;
+  canEdit: boolean;
+  canManageRoster: boolean;
+  canDelete: boolean;
 }) {
   const rosterSummary =
     team.playerCount === 0
@@ -229,6 +244,9 @@ function TeamCard({
             onEdit={onEdit}
             onManage={onManage}
             onDelete={onDelete}
+            canEdit={canEdit}
+            canManageRoster={canManageRoster}
+            canDelete={canDelete}
           />
         </div>
 
@@ -279,6 +297,9 @@ export function TeamsTable({
   onEdit,
   onManage,
   onDelete,
+  canEdit = true,
+  canManageRoster = true,
+  canDelete = true,
 }: TeamsTableProps) {
   return (
     <div className="space-y-5">
@@ -328,6 +349,9 @@ export function TeamsTable({
               onEdit={onEdit}
               onManage={onManage}
               onDelete={onDelete}
+              canEdit={canEdit}
+              canManageRoster={canManageRoster}
+              canDelete={canDelete}
             />
           ))}
         </div>

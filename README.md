@@ -32,8 +32,8 @@ Archivo: `D:\ScoreBlaze\backend\.env`
 ```env
 DB_URL=postgresql+psycopg2://postgres:postgres@localhost:5435/scoreblaze
 REDIS_URL=redis://localhost:6379/0
-SEED_SUPERADMIN_EMAIL=codexaempresarial@gmail.com
-SEED_SUPERADMIN_PASSWORD=CodexaAdmin2026!
+SEED_SUPERADMIN_EMAIL=admin@codexa.com
+SEED_SUPERADMIN_PASSWORD=codexa123
 ```
 
 El resto de opciones avanzadas ya tienen valor por defecto en [backend/config.py](/C:/Users/dell/Documents/GitHub/ScoreBlaze/backend/config.py:17), asi que para local no necesitas llenar todo el archivo.
@@ -68,23 +68,17 @@ Abrir en navegador:
 - `http://localhost:8000/`
 - `http://localhost:8000/docs`
 
-## 6.1) Crear superadmin inicial
+## 6.1) Sembrar accesos base
 ```powershell
 cd D:\ScoreBlaze\backend
 .\.venv\Scripts\Activate.ps1
-python seed_superadmin.py
+python seed_access.py
 ```
 
 Credenciales por defecto:
-- Email: `codexaempresarial@gmail.com`
-- Password: `CodexaAdmin2026!`
+- Admin: `admin@codexa.com` / `codexa123`
 
-## 6.2) Poblar catalogo base de permisos
-```powershell
-cd D:\ScoreBlaze\backend
-.\.venv\Scripts\Activate.ps1
-python seed_permissions.py
-```
+`seed_access.py` ya sincroniza permisos y crea o actualiza solo el admin. Si solo quieres refrescar permisos puedes seguir usando `python seed_permissions.py`. Si solo quieres refrescar el admin puedes usar `python seed_superadmin.py`.
 
 ## 7) Levantar frontend
 ```powershell

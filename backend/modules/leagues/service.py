@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from authentication.schemas import AuthUserOut
+from core.exceptions import ForbiddenException, NotFoundException
 from core.pagination import paginate_sequence
 from data.orm import League
 from database.unit_of_work import UnitOfWork
+from modules.access_scope import TeamAccessScopeResolver
 from modules.matches.repositories import MatchRepository
 from modules.teams.repositories import TeamRepository
 from utils.media import decode_base64_payload
@@ -26,6 +29,7 @@ class LeagueService:
         self,
         league_repo: LeagueRepository,
         team_repo: TeamRepository,
+        scope_resolver: TeamAccessScopeResolver,
         league_membership_repo: LeagueMembershipRepository,
         match_repo: MatchRepository,
         unit_of_work: UnitOfWork,
@@ -33,6 +37,7 @@ class LeagueService:
     ):
         self.league_repo = league_repo
         self.team_repo = team_repo
+        self.scope_resolver = scope_resolver
         self.league_membership_repo = league_membership_repo
         self.match_repo = match_repo
         self.unit_of_work = unit_of_work
@@ -42,7 +47,40 @@ class LeagueService:
     def _decode_logo(logo_base64: str | None) -> bytes | None:
         return decode_base64_payload(logo_base64, "Invalid league logo. Could not decode Base64")
 
-    def create(self, data: LeagueCreate) -> League:
+    def _filter_visible_leagues(self, leagues: list[League], current_user: AuthUserOut | None) -> list[League]:
+        if current_user is None:
+            return leagues
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return leagues
+
+        return [league for league in leagues if visible_team_ids.intersection(set(league.team_ids))]
+
+    def _ensure_league_visible(self, league: League, current_user: AuthUserOut | None) -> League:
+        if current_user is None:
+            return league
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None or visible_team_ids.intersection(set(league.team_ids)):
+            return league
+
+        raise NotFoundException("Liga no encontrada.")
+
+    def _ensure_visible_team_ids(self, team_ids: list[int], current_user: AuthUserOut | None) -> None:
+        if current_user is None or not team_ids:
+            return
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return
+
+        missing_team_ids = sorted(set(team_ids) - visible_team_ids)
+        if missing_team_ids:
+            raise ForbiddenException("No tienes permisos para usar algunos equipos en esta liga.")
+
+    def create(self, data: LeagueCreate, current_user: AuthUserOut | None = None) -> League:
+        self._ensure_visible_team_ids(data.team_ids, current_user)
         tracked_stats, team_ids, final_phase_settings = self.policy.prepare_payload(
             name=data.name,
             start_date=data.start_date,
@@ -85,8 +123,8 @@ class LeagueService:
 
         return self.policy.get_existing_league(league.id)
 
-    def list(self, *, competition_type: str | None = None) -> list[League]:
-        leagues = self.league_repo.list()
+    def list(self, *, competition_type: str | None = None, current_user: AuthUserOut | None = None) -> list[League]:
+        leagues = self._filter_visible_leagues(self.league_repo.list(), current_user)
         if competition_type:
             return [league for league in leagues if str(league.competition_type) == competition_type]
         return leagues
@@ -100,8 +138,9 @@ class LeagueService:
         sort_key: str,
         sort_dir: str,
         competition_type: str | None = None,
+        current_user: AuthUserOut | None = None,
     ) -> PaginatedLeaguesTableOut:
-        leagues = self.league_repo.list()
+        leagues = self._filter_visible_leagues(self.league_repo.list(), current_user)
         if competition_type:
             leagues = [league for league in leagues if str(league.competition_type) == competition_type]
         row_entries: list[dict[str, object]] = []
@@ -181,8 +220,8 @@ class LeagueService:
             total_pages=total_pages,
         )
 
-    def get(self, league_id: int) -> LeagueDetailOut:
-        league = self.policy.get_existing_league(league_id)
+    def get(self, league_id: int, current_user: AuthUserOut | None = None) -> LeagueDetailOut:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         matches_count = len(self.match_repo.list(league_id=league.id))
 
         teams = [
@@ -240,12 +279,13 @@ class LeagueService:
             matches_count=matches_count,
         )
 
-    def list_matches(self, league_id: int):
-        league = self.policy.get_existing_league(league_id)
+    def list_matches(self, league_id: int, current_user: AuthUserOut | None = None):
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         return self.match_repo.list(league_id=league.id)
 
-    def update(self, league_id: int, data: LeagueUpdate) -> League:
-        league = self.policy.get_existing_league(league_id)
+    def update(self, league_id: int, data: LeagueUpdate, current_user: AuthUserOut | None = None) -> League:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
+        self._ensure_visible_team_ids(data.team_ids, current_user)
         tracked_stats, team_ids, final_phase_settings = self.policy.prepare_payload(
             name=data.name,
             start_date=data.start_date,
@@ -287,8 +327,14 @@ class LeagueService:
 
         return self.policy.get_existing_league(league.id)
 
-    def replace_team_assignments(self, league_id: int, data: LeagueTeamAssignmentsUpdate) -> League:
-        league = self.policy.get_existing_league(league_id)
+    def replace_team_assignments(
+        self,
+        league_id: int,
+        data: LeagueTeamAssignmentsUpdate,
+        current_user: AuthUserOut | None = None,
+    ) -> League:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
+        self._ensure_visible_team_ids(data.team_ids, current_user)
         team_ids = self.policy.resolve_team_ids(data.team_ids)
         self.policy.validate_final_phase_for_team_assignments(league=league, team_count=len(team_ids))
 
@@ -297,7 +343,7 @@ class LeagueService:
 
         return self.policy.get_existing_league(league.id)
 
-    def delete(self, league_id: int) -> None:
-        league = self.policy.get_existing_league(league_id)
+    def delete(self, league_id: int, current_user: AuthUserOut | None = None) -> None:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         with self.unit_of_work.transaction():
             self.league_repo.delete(league)

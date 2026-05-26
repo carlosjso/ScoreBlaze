@@ -9,6 +9,7 @@ type QuickMatchesToolbarProps = {
   disabled?: boolean;
   searchPlaceholder?: string;
   createButtonLabel?: string;
+  canCreate?: boolean;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: MatchStatusFilter) => void;
   onCreate: () => void;
@@ -20,6 +21,7 @@ export function QuickMatchesToolbar({
   disabled = false,
   searchPlaceholder = "Buscar por equipo, estatus o fecha",
   createButtonLabel = "Crear partido",
+  canCreate = true,
   onSearchChange,
   onStatusFilterChange,
   onCreate,
@@ -41,17 +43,19 @@ export function QuickMatchesToolbar({
         <option value="finished">Finalizado</option>
       </Select>
 
-      <Button
-        variant="primary"
-        size="lg"
-        leftIcon={<CirclePlus size={18} />}
-        expandOnHover
-        onClick={onCreate}
-        disabled={disabled}
-        className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
-      >
-        {createButtonLabel}
-      </Button>
+      {canCreate ? (
+        <Button
+          variant="primary"
+          size="lg"
+          leftIcon={<CirclePlus size={18} />}
+          expandOnHover
+          onClick={onCreate}
+          disabled={disabled}
+          className="shadow-[0_8px_18px_rgba(249,115,22,0.28)]"
+        >
+          {createButtonLabel}
+        </Button>
+      ) : null}
     </div>
   );
 }

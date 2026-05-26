@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { FormErrors } from "@/features/quick-matches/components/FormErrors";
 import {
   type ApiTeamOption,
+  getMatchStatusLabel,
   type QuickMatchFormValues,
   type QuickMatchListItem,
 } from "@/features/quick-matches/QuickMatches.types";
@@ -25,6 +26,7 @@ type QuickMatchFormModalProps = {
   initialMatch?: QuickMatchListItem | null;
   teams: ApiTeamOption[];
   title?: string;
+  matchType?: "quick" | "league";
   loading?: boolean;
   apiError?: unknown;
   onClose: () => void;
@@ -39,12 +41,13 @@ export function QuickMatchFormModal({
   initialMatch,
   teams,
   title,
+  matchType = "quick",
   loading = false,
   apiError,
   onClose,
   onSubmit,
 }: QuickMatchFormModalProps) {
-  const { control, handleSubmit, register, reset, trigger } = useForm<QuickMatchFormValues>({
+  const { control, handleSubmit, register, reset, trigger, watch } = useForm<QuickMatchFormValues>({
     resolver: zodResolver(quickMatchFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
@@ -95,8 +98,15 @@ export function QuickMatchFormModal({
     return apiFormError.fieldErrors[fieldName];
   };
 
+  const isQuickMatch = matchType === "quick";
+  const currentStatus = watch("status");
+
   const submitForm = async (values: QuickMatchFormValues) => {
-    await onSubmit(values);
+    await onSubmit({
+      ...values,
+      status: isQuickMatch ? values.status || "scheduled" : values.status,
+      tournament: isQuickMatch ? "" : values.tournament,
+    });
   };
 
   const revalidateTimeFields = () => {
@@ -184,27 +194,35 @@ export function QuickMatchFormModal({
             )}
           />
 
-          <Controller
-            name="status"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Select
-                label="Estatus"
-                value={field.value}
-                onChange={(event) => {
-                  dismissApiFieldError("status");
-                  field.onChange(event);
-                }}
-                onBlur={field.onBlur}
-                error={fieldState.error?.message ?? getApiFieldError("status")}
-                disabled={loading}
-              >
-                <option value="scheduled">Programado</option>
-                <option value="live">En juego</option>
-                <option value="finished">Finalizado</option>
-              </Select>
-            )}
-          />
+          {isQuickMatch ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Estatus inicial</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{getMatchStatusLabel(currentStatus ?? "scheduled")}</p>
+              <p className="mt-1 text-xs text-slate-500">El estatus del partido rapido se actualiza desde el marcador.</p>
+            </div>
+          ) : (
+            <Controller
+              name="status"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Select
+                  label="Estatus"
+                  value={field.value}
+                  onChange={(event) => {
+                    dismissApiFieldError("status");
+                    field.onChange(event);
+                  }}
+                  onBlur={field.onBlur}
+                  error={fieldState.error?.message ?? getApiFieldError("status")}
+                  disabled={loading}
+                >
+                  <option value="scheduled">Programado</option>
+                  <option value="live">En juego</option>
+                  <option value="finished">Finalizado</option>
+                </Select>
+              )}
+            />
+          )}
 
           <Controller
             name="startTime"
@@ -267,26 +285,28 @@ export function QuickMatchFormModal({
             )}
           />
 
-          <Controller
-            name="tournament"
-            control={control}
-            render={({ field, fieldState }) => (
-              <Input
-                label="Torneo"
-                value={field.value}
-                onChange={(event) => {
-                  dismissApiFieldError("tournament");
-                  field.onChange(event);
-                }}
-                onBlur={field.onBlur}
-                leftIcon={<Shield size={14} />}
-                placeholder="Torneo relampago"
-                maxLength={QUICK_MATCH_FORM_LIMITS.tournament}
-                error={fieldState.error?.message ?? getApiFieldError("tournament")}
-                disabled={loading}
-              />
-            )}
-          />
+          {isQuickMatch ? null : (
+            <Controller
+              name="tournament"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Torneo"
+                  value={field.value}
+                  onChange={(event) => {
+                    dismissApiFieldError("tournament");
+                    field.onChange(event);
+                  }}
+                  onBlur={field.onBlur}
+                  leftIcon={<Shield size={14} />}
+                  placeholder="Torneo relampago"
+                  maxLength={QUICK_MATCH_FORM_LIMITS.tournament}
+                  error={fieldState.error?.message ?? getApiFieldError("tournament")}
+                  disabled={loading}
+                />
+              )}
+            />
+          )}
         </div>
 
         <FormErrors message={apiFormError.globalMessage} />
