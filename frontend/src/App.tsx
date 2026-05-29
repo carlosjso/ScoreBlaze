@@ -12,6 +12,11 @@ import { QueryProvider } from "@/app/providers/QueryProvider";
 import AuthPage from "@/features/auth/AuthPage";
 import { GuestRoute, ProtectedRoute } from "@/features/auth/AuthRouteGuards";
 import BasketballHubPage from "@/features/basketball/BasketballHubPage";
+
+{/* Modificación de rutas de importación para corregir el error ts(2307) */}
+import { FootballHubPage } from "./features/football/FootballHubPage";
+import { FootballTeamsPage } from "./features/football/FootballTeamsPage";
+
 import LeagueCalendarPage from "@/features/leagues/LeagueCalendarPage";
 import LeagueDashboardPage from "@/features/leagues/LeagueDashboardPage";
 import LeagueMatchesPage from "@/features/leagues/LeagueMatchesPage";
@@ -81,7 +86,25 @@ export default function App() {
                 <Route path="/leagues/:leagueId/standings" element={<LeagueStandingsPage />} />
                 <Route path="/leagues/:leagueId/settings" element={<LeagueSettingsPage />} />
                 <Route path="/leagues/:leagueId/matches/:matchId/stats" element={<QuickMatchStatsPage />} />
-                <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
+                
+                {/* ================= SECCIÓN DE FÚTBOL ================= */}
+                <Route path="/football" element={<FootballHubPage />} />
+                
+                <Route path="/football/leagues" element={
+                  <div className="sb-page"><div className="sb-page-shell"><h2>Módulo de Ligas de Fútbol (Próximamente)</h2></div></div>
+                } />
+                <Route path="/football/players" element={
+                  <div className="sb-page"><div className="sb-page-shell"><h2>Módulo de Jugadores de Fútbol (Próximamente)</h2></div></div>
+                } />
+                
+                {/* Conexión de la pantalla de equipos de fútbol */}
+                <Route path="/football/teams" element={<FootballTeamsPage />} />
+                
+                <Route path="/football/quick-match" element={
+                  <div className="sb-page"><div className="sb-page-shell"><h2>Módulo de Partido Rápido de Fútbol (Próximamente)</h2></div></div>
+                } />
+                {/* ===================================================== */}
+                
                 <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />
                 <Route path="/padel" element={<SportDashboardPage sport="Padel" />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -93,4 +116,3 @@ export default function App() {
     </QueryProvider>
   );
 }
-
