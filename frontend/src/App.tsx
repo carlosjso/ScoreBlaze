@@ -10,6 +10,7 @@ import AppLayout from "@/app/layouts/AppLayout";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { AuthProvider } from "@/app/providers/AuthProvider";
 import { QueryProvider } from "@/app/providers/QueryProvider";
+import { ToastProvider } from "@/app/providers/ToastProvider";
 import AuthPage from "@/features/auth/AuthPage";
 import { GuestRoute, PermissionRoute, ProtectedRoute } from "@/features/auth/AuthRouteGuards";
 import LeagueCalendarPage from "@/features/leagues/LeagueCalendarPage";
@@ -55,84 +56,86 @@ export default function App() {
     <QueryProvider>
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/scoreboard/live" element={<LiveScoreboard />} />
-            <Route path="/scoreboard/live/:matchId" element={<LiveScoreboard />} />
-            <Route path="/invitation/complete" element={<CompletePlayerProfilePage />} />
-            <Route path="/player-profile/complete" element={<CompletePlayerProfilePage />} />
+          <ToastProvider>
+            <Routes>
+              <Route path="/scoreboard/live" element={<LiveScoreboard />} />
+              <Route path="/scoreboard/live/:matchId" element={<LiveScoreboard />} />
+              <Route path="/invitation/complete" element={<CompletePlayerProfilePage />} />
+              <Route path="/player-profile/complete" element={<CompletePlayerProfilePage />} />
 
-            <Route element={<GuestRoute />}>
-              <Route path="/login" element={<AuthPage mode="login" />} />
-              <Route path="/register" element={<Navigate to="/login" replace />} />
-            </Route>
-
-            <Route element={<ProtectedRoute />}>
-              <Route element={<AppLayout />}>
-                <Route index element={<HomeRedirect />} />
-                <Route path="/sports" element={<Navigate to="/dashboard" replace />} />
-                <Route element={<PermissionRoute permissions={["dashboard.view"]} />}>
-                  <Route path="/dashboard" element={<SportsPage />} />
-                </Route>
-                <Route path="/basketball" element={<BasketballRedirect />} />
-                <Route element={<PermissionRoute permissions={["players.view"]} />}>
-                  <Route path="/players" element={<Players />} />
-                  <Route path="/players/:playerId/teams" element={<PlayerTeamAssignmentPage />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["teams.view"]} />}>
-                  <Route path="/teams" element={<Teams />} />
-                  <Route path="/teams/:teamId/roster" element={<TeamRosterPage />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["teams.manage_roster"]} />}>
-                  <Route path="/teams/:teamId/roster/manage" element={<TeamRosterManagePage />} />
-                </Route>
-                <Route path="/team-players" element={<Navigate to="/teams" replace />} />
-                <Route element={<PermissionRoute permissions={["quick_match.view"]} />}>
-                  <Route path="/quick-match" element={<QuickMatches />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["quick_match.view_stats"]} />}>
-                  <Route path="/quick-match/:matchId/stats" element={<QuickMatchStatsPage />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["quick_match.edit"]} />}>
-                  <Route path="/scoreboard" element={<Scoreboard />} />
-                  <Route path="/scoreboard/:matchId" element={<Scoreboard />} />
-                </Route>
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route element={<PermissionRoute permissions={["permissions.view"]} />}>
-                  <Route path="/settings/permissions" element={<Permissions />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["roles.view"]} />}>
-                  <Route path="/settings/role-permissions" element={<RolePermissions />} />
-                  <Route path="/settings/roles" element={<Roles />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["users.view"]} />}>
-                  <Route path="/settings/users" element={<Users />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["leagues.view"]} />}>
-                  <Route path="/leagues" element={<LeaguesPage />} />
-                </Route>
-                <Route path="/eliminations" element={<Navigate to="/leagues?type=ELIMINATION" replace />} />
-                <Route element={<PermissionRoute permissions={["leagues.view"]} />}>
-                  <Route path="/leagues/:leagueId" element={<LeagueDashboardPage />} />
-                  <Route path="/leagues/:leagueId/bracket" element={<LeagueBracketPage />} />
-                  <Route path="/leagues/:leagueId/calendar" element={<LeagueCalendarPage />} />
-                  <Route path="/leagues/:leagueId/records" element={<LeagueRecordsPage />} />
-                  <Route path="/leagues/:leagueId/teams" element={<LeagueTeamsPage />} />
-                  <Route path="/leagues/:leagueId/matches" element={<LeagueMatchesPage />} />
-                  <Route path="/leagues/:leagueId/standings" element={<LeagueStandingsPage />} />
-                  <Route path="/leagues/:leagueId/matches/:matchId/stats" element={<QuickMatchStatsPage />} />
-                </Route>
-                <Route element={<PermissionRoute permissions={["leagues.edit"]} />}>
-                  <Route path="/leagues/:leagueId/teams/manage" element={<LeagueTeamsManagePage />} />
-                  <Route path="/leagues/:leagueId/final-phase/settings" element={<LeagueFinalPhaseSettingsPage />} />
-                  <Route path="/leagues/:leagueId/settings" element={<LeagueSettingsPage />} />
-                </Route>
-                <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
-                <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />
-                <Route path="/padel" element={<SportDashboardPage sport="Padel" />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route element={<GuestRoute />}>
+                <Route path="/login" element={<AuthPage mode="login" />} />
+                <Route path="/register" element={<Navigate to="/login" replace />} />
               </Route>
-            </Route>
-          </Routes>
+
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AppLayout />}>
+                  <Route index element={<HomeRedirect />} />
+                  <Route path="/sports" element={<Navigate to="/dashboard" replace />} />
+                  <Route element={<PermissionRoute permissions={["dashboard.view"]} />}>
+                    <Route path="/dashboard" element={<SportsPage />} />
+                  </Route>
+                  <Route path="/basketball" element={<BasketballRedirect />} />
+                  <Route element={<PermissionRoute permissions={["players.view"]} />}>
+                    <Route path="/players" element={<Players />} />
+                    <Route path="/players/:playerId/teams" element={<PlayerTeamAssignmentPage />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["teams.view"]} />}>
+                    <Route path="/teams" element={<Teams />} />
+                    <Route path="/teams/:teamId/roster" element={<TeamRosterPage />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["teams.manage_roster"]} />}>
+                    <Route path="/teams/:teamId/roster/manage" element={<TeamRosterManagePage />} />
+                  </Route>
+                  <Route path="/team-players" element={<Navigate to="/teams" replace />} />
+                  <Route element={<PermissionRoute permissions={["quick_match.view"]} />}>
+                    <Route path="/quick-match" element={<QuickMatches />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["quick_match.view_stats"]} />}>
+                    <Route path="/quick-match/:matchId/stats" element={<QuickMatchStatsPage />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["quick_match.edit"]} />}>
+                    <Route path="/scoreboard" element={<Scoreboard />} />
+                    <Route path="/scoreboard/:matchId" element={<Scoreboard />} />
+                  </Route>
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route element={<PermissionRoute permissions={["permissions.view"]} />}>
+                    <Route path="/settings/permissions" element={<Permissions />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["roles.view"]} />}>
+                    <Route path="/settings/role-permissions" element={<RolePermissions />} />
+                    <Route path="/settings/roles" element={<Roles />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["users.view"]} />}>
+                    <Route path="/settings/users" element={<Users />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["leagues.view"]} />}>
+                    <Route path="/leagues" element={<LeaguesPage />} />
+                  </Route>
+                  <Route path="/eliminations" element={<Navigate to="/leagues?type=ELIMINATION" replace />} />
+                  <Route element={<PermissionRoute permissions={["leagues.view"]} />}>
+                    <Route path="/leagues/:leagueId" element={<LeagueDashboardPage />} />
+                    <Route path="/leagues/:leagueId/bracket" element={<LeagueBracketPage />} />
+                    <Route path="/leagues/:leagueId/calendar" element={<LeagueCalendarPage />} />
+                    <Route path="/leagues/:leagueId/records" element={<LeagueRecordsPage />} />
+                    <Route path="/leagues/:leagueId/teams" element={<LeagueTeamsPage />} />
+                    <Route path="/leagues/:leagueId/matches" element={<LeagueMatchesPage />} />
+                    <Route path="/leagues/:leagueId/standings" element={<LeagueStandingsPage />} />
+                    <Route path="/leagues/:leagueId/matches/:matchId/stats" element={<QuickMatchStatsPage />} />
+                  </Route>
+                  <Route element={<PermissionRoute permissions={["leagues.edit"]} />}>
+                    <Route path="/leagues/:leagueId/teams/manage" element={<LeagueTeamsManagePage />} />
+                    <Route path="/leagues/:leagueId/final-phase/settings" element={<LeagueFinalPhaseSettingsPage />} />
+                    <Route path="/leagues/:leagueId/settings" element={<LeagueSettingsPage />} />
+                  </Route>
+                  <Route path="/football" element={<SportDashboardPage sport="Futbol" />} />
+                  <Route path="/tennis" element={<SportDashboardPage sport="Tennis" />} />
+                  <Route path="/padel" element={<SportDashboardPage sport="Padel" />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Route>
+              </Route>
+            </Routes>
+          </ToastProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryProvider>

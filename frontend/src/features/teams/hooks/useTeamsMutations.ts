@@ -5,6 +5,7 @@ import { playersQueryKeys } from "@/features/players/Players.service";
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import type { TeamFormMode, TeamFormValues } from "@/features/teams/Teams.types";
 import { toTeamMutationPayload } from "@/features/teams/schemas/Teams.schema";
+import { useToast } from "@/app/providers/ToastProvider";
 import { getApiGlobalErrorMessage } from "@/shared/api/client";
 
 type SaveTeamArgs = {
@@ -21,6 +22,7 @@ type SaveTeamMutationArgs = {
 
 export function useTeamsMutations() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [deletingTeamId, setDeletingTeamId] = useState<number | null>(null);
 
   const saveMutation = useMutation({
@@ -35,9 +37,19 @@ export function useTeamsMutations() {
 
       return teamsService.updateTeam(teamId, payload);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
+      toast.success({
+        title: variables.mode === "create" ? "Equipo creado correctamente" : "Equipo actualizado correctamente",
+        description: "La accion se completo sin problemas.",
+      });
+    },
+    onError: (error, variables) => {
+      toast.error({
+        title: variables.mode === "create" ? "No se pudo crear el equipo" : "No se pudo actualizar el equipo",
+        description: getApiGlobalErrorMessage(error) ?? undefined,
+      });
     },
   });
 
@@ -46,6 +58,16 @@ export function useTeamsMutations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: playersQueryKeys.all });
+      toast.success({
+        title: "Equipo eliminado",
+        description: "El equipo se elimino correctamente.",
+      });
+    },
+    onError: (error) => {
+      toast.error({
+        title: "No se pudo eliminar el equipo",
+        description: getApiGlobalErrorMessage(error) ?? undefined,
+      });
     },
   });
 
