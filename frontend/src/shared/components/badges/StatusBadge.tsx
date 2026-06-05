@@ -7,12 +7,12 @@ type StatusBadgeProps = {
 };
 
 const statusClass: Record<Status, string> = {
-  "En curso": "bg-emerald-100 text-emerald-700",
-  "Sin empezar": "bg-rose-100 text-rose-700",
-  Finalizada: "bg-slate-200 text-slate-700",
+  "En curso": "bg-amber-100 text-amber-700",
+  "Sin empezar": "bg-red-100 text-red-700",
+  Finalizada: "bg-emerald-100 text-emerald-700",
   Activo: "bg-emerald-100 text-emerald-700",
-  Inactivo: "bg-slate-200 text-slate-700",
-  Suspendido: "bg-rose-100 text-rose-700",
+  Inactivo: "bg-red-100 text-red-700",
+  Suspendido: "bg-red-100 text-red-700",
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

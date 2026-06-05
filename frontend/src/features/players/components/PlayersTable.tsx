@@ -33,7 +33,7 @@ type PlayersTableProps = {
 
 const statusClass: Record<"Con equipo" | "Sin equipo", string> = {
   "Con equipo": "bg-emerald-100 text-emerald-700",
-  "Sin equipo": "bg-slate-200 text-slate-700",
+  "Sin equipo": "bg-red-100 text-red-700",
 };
 
 export function PlayersTable({

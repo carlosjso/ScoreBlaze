@@ -216,13 +216,13 @@ export default function Scoreboard() {
     if (realtimeStatus === "connecting") {
       return {
         label: "Conectando marcador",
-        className: "border-sky-200 bg-sky-50 text-sky-700",
+        className: "border-amber-200 bg-amber-50 text-amber-700",
       };
     }
 
     return {
       label: "Sin partido abierto",
-      className: "border-slate-200 bg-slate-100 text-slate-600",
+      className: "border-red-200 bg-red-50 text-red-700",
     };
   })();
 

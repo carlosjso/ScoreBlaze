@@ -330,7 +330,7 @@ function PlayerCard({
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                    isAssigned ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                    isAssigned ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
                   )}
                 >
                   {statusLabel}
@@ -577,8 +577,8 @@ export default function TeamRosterPage() {
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs font-semibold",
                         isShirtDirty
-                          ? "border-sky-200 bg-sky-50 text-sky-700"
-                          : "border-slate-200 bg-slate-100 text-slate-600"
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : "border-emerald-200 bg-emerald-50 text-emerald-700"
                       )}
                     >
                       {isShirtDirty ? `${shirtNumberChangeCount} camiseta(s) pendiente(s)` : "Camisetas al dia"}
@@ -623,10 +623,22 @@ export default function TeamRosterPage() {
 
               {selectedTeam.players.length > 0 && (isShirtDirty || savingShirts || shirtSaveFeedback === "saved") ? (
                 <div className="sticky bottom-4 z-10 mt-5">
-                  <div className="rounded-[24px] border border-sky-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur">
+                  <div
+                    className={cn(
+                      "rounded-[24px] border bg-white/95 px-4 py-4 shadow-lg backdrop-blur",
+                      shirtSaveFeedback === "saved" && !isShirtDirty ? "border-emerald-200" : "border-amber-200"
+                    )}
+                  >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1.5 text-xs font-semibold text-sky-700">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold",
+                            shirtSaveFeedback === "saved" && !isShirtDirty
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                          )}
+                        >
                           <Shirt size={13} />
                           {savingShirts
                             ? "Guardando camisetas..."
