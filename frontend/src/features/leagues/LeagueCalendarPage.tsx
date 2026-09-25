@@ -57,9 +57,9 @@ const viewLabels: Record<CalendarViewMode, string> = {
 };
 
 const eventToneClassName = {
-  scheduled: "border-amber-200 bg-amber-50 text-amber-900",
-  live: "border-orange-300 bg-orange-100 text-orange-950",
-  finished: "border-slate-200 bg-slate-100 text-slate-700",
+  scheduled: "border-red-200 bg-red-50 text-red-700",
+  live: "border-amber-200 bg-amber-50 text-amber-700",
+  finished: "border-emerald-200 bg-emerald-50 text-emerald-700",
 } as const;
 
 function parseDateTime(dateValue: string, timeValue: string) {
@@ -1003,6 +1003,7 @@ export default function LeagueCalendarPage() {
         teams={teams}
         teamGroups={league?.groupStageConfig?.groups ?? []}
         title={modals.formMode === "create" ? "Crear partido de liga" : "Editar partido de liga"}
+        matchType="league"
         loading={submitting}
         apiError={mutationError}
         onClose={() => {

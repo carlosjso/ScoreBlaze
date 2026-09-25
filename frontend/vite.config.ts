@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 
-const backendTarget = "http://localhost:8000";
+const backendTarget = "http://127.0.0.1:8000";
 
 export default defineConfig({
   plugins: [react()],
@@ -14,10 +14,11 @@ export default defineConfig({
   server: {
     proxy: {
       "/ws": {
-        target: "ws://localhost:8000",
+        target: "ws://127.0.0.1:8000",
         ws: true,
       },
       "/auth": backendTarget,
+      "/account-invitations": backendTarget,
       "/users": backendTarget,
       "/match-events": backendTarget,
       "/player-stats": backendTarget,

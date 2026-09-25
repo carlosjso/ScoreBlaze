@@ -23,6 +23,7 @@ export const apiUserSchema = z
     email: z.string().trim().email(),
     roles: z.array(z.string().trim().min(1)),
     role_count: z.coerce.number().int().min(0).optional(),
+    account_status: z.string().trim().min(1).default("active"),
     created_at: z.string().trim().min(1),
   })
   .transform(
@@ -32,6 +33,7 @@ export const apiUserSchema = z
       email: user.email,
       roles: user.roles,
       roleCount: user.role_count ?? user.roles.length,
+      accountStatus: user.account_status,
       createdAt: user.created_at,
     }),
   );

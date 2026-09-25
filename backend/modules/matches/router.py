@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, status
 
 from authentication.dependencies import require_any_permission, require_permissions
+from authentication.schemas import AuthUserOut
 from modules.matches.dependencies import get_match_service
 from modules.scoreboard.schemas import (
     ScoreboardEventCreate,
@@ -20,36 +21,36 @@ router = APIRouter()
 def list_matches(
     league_id: int | None = Query(default=None, ge=1),
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_permissions("quick_match.view")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.view")),
 ):
-    return service.list(league_id=league_id)
+    return service.list(league_id=league_id, current_user=current_user)
 
 
 @router.post("/", response_model=MatchOut, status_code=status.HTTP_201_CREATED)
 def create_match(
     payload: MatchCreate,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_permissions("quick_match.create")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.create")),
 ):
-    return service.create(payload)
+    return service.create(payload, current_user)
 
 
 @router.get("/{match_id}", response_model=MatchOut, status_code=status.HTTP_200_OK)
 def get_match(
     match_id: int,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_permissions("quick_match.view")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.view")),
 ):
-    return service.get(match_id)
+    return service.get(match_id, current_user)
 
 
 @router.get("/{match_id}/scoreboard", response_model=ScoreboardSnapshotOut, status_code=status.HTTP_200_OK)
 def get_match_scoreboard(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_any_permission("quick_match.view", "quick_match.view_stats")),
+    current_user: AuthUserOut = Depends(require_any_permission("quick_match.view", "quick_match.view_stats")),
 ):
-    return service.get_snapshot(match_id)
+    return service.get_snapshot(match_id, current_user)
 
 
 @router.post(
@@ -61,9 +62,9 @@ def create_match_scoreboard_event(
     match_id: int,
     payload: ScoreboardEventCreate,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_permissions("quick_match.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
 ):
-    return service.record_event(match_id, payload)
+    return service.record_event(match_id, payload, current_user)
 
 
 @router.patch(
@@ -76,27 +77,27 @@ def update_match_scoreboard_player_participation(
     player_id: int,
     payload: ScoreboardPlayerParticipationUpdate,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_permissions("quick_match.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
 ):
-    return service.update_player_participation(match_id, player_id, payload)
+    return service.update_player_participation(match_id, player_id, payload, current_user)
 
 
 @router.post("/{match_id}/scoreboard/undo", response_model=ScoreboardSnapshotOut, status_code=status.HTTP_200_OK)
 def undo_match_scoreboard_event(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_permissions("quick_match.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
 ):
-    return service.undo_last_event(match_id)
+    return service.undo_last_event(match_id, current_user)
 
 
 @router.post("/{match_id}/scoreboard/reset", response_model=ScoreboardSnapshotOut, status_code=status.HTTP_200_OK)
 def reset_match_scoreboard(
     match_id: int,
     service: ScoreboardService = Depends(get_scoreboard_service),
-    _=Depends(require_permissions("quick_match.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
 ):
-    return service.reset(match_id)
+    return service.reset(match_id, current_user)
 
 
 @router.put("/{match_id}", response_model=MatchOut, status_code=status.HTTP_200_OK)
@@ -104,9 +105,9 @@ def update_match(
     match_id: int,
     payload: MatchUpdate,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_permissions("quick_match.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
 ):
-    return service.update(match_id, payload)
+    return service.update(match_id, payload, current_user)
 
 
 @router.patch("/{match_id}", response_model=MatchOut, status_code=status.HTTP_200_OK)
@@ -114,15 +115,15 @@ def patch_match(
     match_id: int,
     payload: MatchPatch,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_permissions("quick_match.edit")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
 ):
-    return service.patch(match_id, payload)
+    return service.patch(match_id, payload, current_user)
 
 
 @router.delete("/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_match(
     match_id: int,
     service: MatchService = Depends(get_match_service),
-    _=Depends(require_permissions("quick_match.delete")),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.delete")),
 ):
-    service.delete(match_id)
+    service.delete(match_id, current_user)

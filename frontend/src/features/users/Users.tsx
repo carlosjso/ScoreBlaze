@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasPermission } from "@/features/auth/permissions";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
@@ -13,6 +15,7 @@ import { useUsersTableData } from "@/features/users/hooks/useUsersTableData";
 import type { SortDir, SortKey } from "@/features/users/Users.types";
 
 export default function Users() {
+  const { session } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
@@ -81,6 +84,9 @@ export default function Users() {
   };
 
   const panelError = mutationErrorMessage ?? error;
+  const canCreate = hasPermission(session, "users.create");
+  const canEdit = hasPermission(session, "users.edit");
+  const canDelete = hasPermission(session, "users.delete");
 
   return (
     <div className="sb-page">
@@ -104,6 +110,7 @@ export default function Users() {
               setCurrentPage(1);
             }}
             onCreate={openCreate}
+            canCreate={canCreate}
           />
 
           <div className="mt-4">
@@ -127,6 +134,8 @@ export default function Users() {
                 clearMutationError();
                 modals.requestDelete(user);
               }}
+              canEdit={canEdit}
+              canDelete={canDelete}
             />
           </div>
         </Panel>

@@ -30,10 +30,11 @@ def get_user_policy(user_repo: UserRepository = Depends(get_user_repository)) ->
 def get_user_service(
     user_repo: UserRepository = Depends(get_user_repository),
     role_repo: RoleRepository = Depends(get_role_repository),
+    permission_repo: PermissionRepository = Depends(get_permission_repository),
     unit_of_work: UnitOfWork = Depends(get_unit_of_work),
     policy: UserPolicy = Depends(get_user_policy),
 ) -> UserService:
-    return UserService(user_repo, role_repo, unit_of_work, policy)
+    return UserService(user_repo, role_repo, permission_repo, unit_of_work, policy)
 
 
 def get_role_service(

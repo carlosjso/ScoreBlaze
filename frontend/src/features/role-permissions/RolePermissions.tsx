@@ -226,8 +226,8 @@ export default function RolePermissions() {
     <div className="sb-page">
       <div className="sb-page-shell">
         <PageHeader
-          title="Roles por permiso"
-          subtitle="Define visualmente que acciones puede realizar cada rol en cada modulo del sistema."
+          title="Permisos por rol"
+          subtitle="Selecciona un rol y define que acciones puede realizar en cada modulo del sistema."
         />
 
         <Panel>
@@ -263,7 +263,7 @@ export default function RolePermissions() {
             <div className="flex flex-col gap-3 md:items-end">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600">
                 <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                {activePermissionsCount} permisos activos
+                {activePermissionsCount} permisos activos para este rol
               </div>
 
               <div className="flex flex-wrap items-center gap-2">

@@ -22,6 +22,8 @@ type UsersTableProps = {
   onView: (user: UserListItem) => void;
   onEdit: (user: UserListItem) => void;
   onDelete: (user: UserListItem) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 function SkeletonCell({ className }: { className?: string }) {
@@ -59,6 +61,10 @@ function UserActionButton({
   );
 }
 
+function getAccountStatusLabel(status: string) {
+  return status === "pending" ? "Pendiente" : "Activo";
+}
+
 export function UsersTable({
   users,
   loading,
@@ -73,6 +79,8 @@ export function UsersTable({
   onView,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }: UsersTableProps) {
   const emptyRowsCount = Math.max(0, pageSize - users.length);
 
@@ -81,7 +89,7 @@ export function UsersTable({
       <table className="w-full min-w-[860px] table-fixed border-collapse">
         <colgroup>
           <col style={{ width: "90px" }} />
-          <col style={{ width: "170px" }} />
+          <col style={{ width: "210px" }} />
           <col style={{ width: "320px" }} />
           <col />
         </colgroup>
@@ -134,9 +142,14 @@ export function UsersTable({
                 <tr key={user.id} className={tableRowClass}>
                   <td className={`${tableCellClass} font-semibold text-slate-800`}>{user.id}</td>
                   <td className={tableCellClass}>
-                    <p className="truncate font-medium text-slate-900" title={user.name}>
-                      {user.name}
-                    </p>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className="truncate font-medium text-slate-900" title={user.name}>
+                        {user.name}
+                      </p>
+                      <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                        {getAccountStatusLabel(user.accountStatus)}
+                      </span>
+                    </div>
                   </td>
                   <td className={tableCellClass}>
                     <p className="truncate text-slate-700" title={user.email}>
@@ -152,20 +165,24 @@ export function UsersTable({
                         className="border border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
                         disabled={actionsDisabled}
                       />
-                      <UserActionButton
-                        title="Editar"
-                        icon={<Pencil size={14} />}
-                        onClick={() => onEdit(user)}
-                        className="border border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
-                        disabled={actionsDisabled}
-                      />
-                      <UserActionButton
-                        title="Eliminar"
-                        icon={<Trash2 size={14} />}
-                        onClick={() => onDelete(user)}
-                        className="border border-red-200 bg-white text-red-500 hover:bg-red-50"
-                        disabled={actionsDisabled}
-                      />
+                      {canEdit ? (
+                        <UserActionButton
+                          title="Editar"
+                          icon={<Pencil size={14} />}
+                          onClick={() => onEdit(user)}
+                          className="border border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                          disabled={actionsDisabled}
+                        />
+                      ) : null}
+                      {canDelete ? (
+                        <UserActionButton
+                          title="Eliminar"
+                          icon={<Trash2 size={14} />}
+                          onClick={() => onDelete(user)}
+                          className="border border-red-200 bg-white text-red-500 hover:bg-red-50"
+                          disabled={actionsDisabled}
+                        />
+                      ) : null}
                     </div>
                   </td>
                 </tr>

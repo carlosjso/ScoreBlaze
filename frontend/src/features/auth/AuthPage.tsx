@@ -22,16 +22,11 @@ type AuthPageProps = {
   mode: AuthMode;
 };
 
-type AuthPanelFrameProps = {
-  mode: AuthMode;
-  children: ReactNode;
-};
-
 type SocialButtonProps = {
   icon: ReactNode;
 };
 
-function AuthPanelFrame({ mode, children }: AuthPanelFrameProps) {
+function AuthPanelFrame({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[#1b1b1b] p-3 sm:p-6">
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1160px] overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,#f8fbfe_0%,#e8f0fa_52%,#dce8f6_100%)] shadow-[0_32px_90px_rgba(0,0,0,0.34)] sm:min-h-[calc(100vh-3rem)]">
@@ -40,7 +35,7 @@ function AuthPanelFrame({ mode, children }: AuthPanelFrameProps) {
           <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.7),rgba(255,255,255,0)_72%)]" />
           <div className="absolute inset-x-7 top-7 z-10 sm:inset-x-10 sm:top-8">
             <div className="mx-auto w-full max-w-[352px]">
-              <AuthTabs mode={mode} />
+              <AuthTabs />
             </div>
           </div>
           <div className="relative z-10 mx-auto w-full max-w-[352px]">{children}</div>
@@ -75,28 +70,15 @@ function HeroSection() {
   );
 }
 
-function AuthTabs({ mode }: { mode: AuthMode }) {
+function AuthTabs() {
   return (
     <div className="flex items-center justify-end gap-3">
       <Link
         to="/login"
-        className={cn(
-          "relative inline-flex items-center px-2 py-1 text-sm font-semibold no-underline transition",
-          mode === "login" ? "text-slate-950" : "rounded-full bg-slate-950 px-4 py-2 text-white shadow-sm hover:bg-black",
-        )}
+        className={cn("relative inline-flex items-center px-2 py-1 text-sm font-semibold no-underline transition text-slate-950")}
       >
         Iniciar
-        {mode === "login" ? <span className="absolute -bottom-1 left-2 right-2 h-[2px] rounded-full bg-slate-950" /> : null}
-      </Link>
-      <Link
-        to="/register"
-        className={cn(
-          "relative inline-flex items-center px-2 py-1 text-sm font-semibold no-underline transition",
-          mode === "register" ? "text-slate-950" : "rounded-full bg-slate-950 px-4 py-2 text-white shadow-sm hover:bg-black",
-        )}
-      >
-        Registrar
-        {mode === "register" ? <span className="absolute -bottom-1 left-2 right-2 h-[2px] rounded-full bg-slate-950" /> : null}
+        <span className="absolute -bottom-1 left-2 right-2 h-[2px] rounded-full bg-slate-950" />
       </Link>
     </div>
   );
@@ -213,7 +195,7 @@ function LoginView() {
   };
 
   return (
-    <AuthPanelFrame mode="login">
+    <AuthPanelFrame>
       <AuthCard title="Bienvenido">
         <form className="mt-10 space-y-4" onSubmit={handleSubmit(handleLogin)}>
           <Controller
@@ -287,11 +269,8 @@ function LoginView() {
           </div>
         </div>
 
-        <p className="mt-9 text-center text-[13px] text-slate-600">
-          No Tienes Cuenta?{" "}
-          <Link to="/register" className="font-semibold text-slate-950 no-underline transition hover:text-orange-600">
-            Registrate
-          </Link>
+        <p className="mt-9 text-center text-[13px] leading-6 text-slate-600">
+          El acceso se habilita por invitacion. Si todavia no tienes cuenta, pide a un administrador que te comparta tu enlace.
         </p>
       </AuthCard>
     </AuthPanelFrame>
@@ -331,7 +310,7 @@ function RegisterView() {
   };
 
   return (
-    <AuthPanelFrame mode="register">
+    <AuthPanelFrame>
       <AuthCard title="Crear cuenta">
         <form className="mt-10 space-y-4" onSubmit={handleSubmit(handleRegister)}>
           <Controller

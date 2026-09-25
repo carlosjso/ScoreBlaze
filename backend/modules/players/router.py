@@ -46,9 +46,9 @@ def _ensure_can_update_player(current_user: AuthUserOut) -> None:
 @router.get("/", response_model=list[PlayerOut], status_code=status.HTTP_200_OK)
 def list_players(
     service: PlayerService = Depends(get_player_service),
-    _=Depends(require_permissions("players.view")),
+    current_user: AuthUserOut = Depends(require_permissions("players.view")),
 ):
-    return service.list()
+    return service.list(current_user)
 
 
 @router.get("/table", response_model=PaginatedPlayersTableOut, status_code=status.HTTP_200_OK)
@@ -60,7 +60,7 @@ def list_players_table(
     sort_key: Literal["id", "name"] = Query(default="id"),
     sort_dir: Literal["asc", "desc"] = Query(default="asc"),
     service: PlayerService = Depends(get_player_service),
-    _=Depends(require_permissions("players.view")),
+    current_user: AuthUserOut = Depends(require_permissions("players.view")),
 ):
     return service.list_table(
         page=page,
@@ -69,6 +69,7 @@ def list_players_table(
         team_filter=team_filter,
         sort_key=sort_key,
         sort_dir=sort_dir,
+        current_user=current_user,
     )
 
 
@@ -80,16 +81,16 @@ def create_player(
 ):
     if payload.team_ids:
         _ensure_can_assign_player_teams(current_user)
-    return service.create(payload)
+    return service.create(payload, current_user)
 
 
 @router.get("/{player_id}", response_model=PlayerOut, status_code=status.HTTP_200_OK)
 def get_player(
     player_id: int,
     service: PlayerService = Depends(get_player_service),
-    _=Depends(require_permissions("players.view")),
+    current_user: AuthUserOut = Depends(require_permissions("players.view")),
 ):
-    return service.get(player_id)
+    return service.get(player_id, current_user)
 
 
 @router.put("/{player_id}", response_model=PlayerOut, status_code=status.HTTP_200_OK)
@@ -101,7 +102,7 @@ def update_player(
 ):
     _ensure_can_update_player(current_user)
     if not _has_permission(current_user, "players.edit"):
-        player = service.get(player_id)
+        player = service.get(player_id, current_user)
         current_phone = None if player.phone is None else str(player.phone)
         if (
             payload.name != player.name
@@ -116,22 +117,22 @@ def update_player(
         ):
             raise ForbiddenException("No tienes permisos para editar jugadores.")
 
-    return service.update(player_id, payload)
+    return service.update(player_id, payload, current_user)
 
 
 @router.delete("/{player_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_player(
     player_id: int,
     service: PlayerService = Depends(get_player_service),
-    _=Depends(require_permissions("players.delete")),
+    current_user: AuthUserOut = Depends(require_permissions("players.delete")),
 ):
-    service.delete(player_id)
+    service.delete(player_id, current_user)
 
 
 @router.get("/{player_id}/teams", response_model=list[TeamOut], status_code=status.HTTP_200_OK)
 def list_player_teams(
     player_id: int,
     service: PlayerService = Depends(get_player_service),
-    _=Depends(require_permissions("players.view")),
+    current_user: AuthUserOut = Depends(require_permissions("players.view")),
 ):
-    return service.list_teams(player_id)
+    return service.list_teams(player_id, current_user)

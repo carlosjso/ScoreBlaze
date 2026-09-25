@@ -8,6 +8,7 @@ export type SidebarRouteItem = {
   label: string;
   icon: ReactNode;
   sidebarContext: SidebarContext;
+  permissions?: readonly string[];
 };
 
 export const sidebarRoutes: SidebarRouteItem[] = [
@@ -16,6 +17,7 @@ export const sidebarRoutes: SidebarRouteItem[] = [
     label: "Dashboard",
     icon: <House size={16} />,
     sidebarContext: "home",
+    permissions: ["dashboard.view"],
   },
   {
     path: "/basketball",
@@ -28,24 +30,28 @@ export const sidebarRoutes: SidebarRouteItem[] = [
     label: "Jugadores",
     icon: <UsersRound size={16} />,
     sidebarContext: "basketball",
+    permissions: ["players.view"],
   },
   {
     path: "/teams",
     label: "Equipos",
     icon: <Shield size={16} />,
     sidebarContext: "basketball",
+    permissions: ["teams.view"],
   },
   {
     path: "/quick-match",
     label: "Partido rapido",
     icon: <Dribbble size={16} />,
     sidebarContext: "basketball",
+    permissions: ["quick_match.view"],
   },
   {
     path: "/leagues",
     label: "Ligas",
     icon: <Trophy size={16} />,
     sidebarContext: "basketball",
+    permissions: ["leagues.view"],
   },
   {
     path: "/football",

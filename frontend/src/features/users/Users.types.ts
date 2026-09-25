@@ -4,6 +4,7 @@ export type UserListItem = {
   email: string;
   roles: string[];
   roleCount: number;
+  accountStatus: string;
   createdAt: string;
 };
 

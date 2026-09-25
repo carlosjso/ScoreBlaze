@@ -2,6 +2,7 @@ from fastapi import Depends
 
 from database.dependencies import get_unit_of_work
 from database.unit_of_work import UnitOfWork
+from modules.access_scope import TeamAccessScopeResolver
 from modules.match_events.repositories import MatchEventRepository
 from modules.match_participations.repositories import MatchPlayerParticipationRepository
 from modules.matches.repositories import MatchRepository
@@ -35,6 +36,7 @@ def get_scoreboard_service(
     player_repo = PlayerRepository(db)
     membership_repo = MembershipRepository(db)
     policy = ScoreboardPolicy(match_repo)
+    scope_resolver = TeamAccessScopeResolver(team_repo, player_repo, membership_repo)
     actor_resolver = ScoreboardActorResolver(
         team_repo=team_repo,
         player_repo=player_repo,
@@ -61,6 +63,7 @@ def get_scoreboard_service(
             membership_repo=membership_repo,
             player_repo=player_repo,
         ),
+        scope_resolver=scope_resolver,
         unit_of_work=unit_of_work,
         policy=policy,
     )

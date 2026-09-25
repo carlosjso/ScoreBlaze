@@ -54,7 +54,12 @@ class AuthService:
     def authenticate_credentials(self, credentials: AuthLoginRequest):
         normalized_email = str(credentials.email).strip().lower()
         user = self.user_repo.get_by_email(normalized_email)
-        if user is None or not verify_password(credentials.password, user.password_hash):
+        if (
+            user is None
+            or getattr(user, "account_status", "active") != "active"
+            or not user.password_hash
+            or not verify_password(credentials.password, user.password_hash)
+        ):
             raise UnauthorizedException("Credenciales inválidas.")
         return user
 

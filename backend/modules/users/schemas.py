@@ -34,6 +34,7 @@ class UserOut(UserBase):
     id: int
     created_at: datetime
     roles: list[str] = []
+    account_status: str = "active"
     model_config = ConfigDict(from_attributes=True)
 
 class UserTableItem(UserOut):

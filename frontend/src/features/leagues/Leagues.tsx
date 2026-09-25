@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasPermission } from "@/features/auth/permissions";
 import { LeagueDetailModal } from "@/features/leagues/components/LeagueDetailModal";
 import { LeagueFormModal } from "@/features/leagues/components/LeagueFormModal";
 import { leagueMatchesService, type LeagueMatchesSnapshot } from "@/features/leagues/LeagueMatches.service";
@@ -42,6 +44,7 @@ type PendingFinish = {
 
 export default function Leagues() {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -339,6 +342,7 @@ export default function Leagues() {
   const panelError = workflowErrorMessage ?? mutationErrorMessage ?? tableError ?? catalogError;
   const deleteLeagueLabel = modals.deleteLeague ? truncateText(modals.deleteLeague.name, 56) : null;
   const formCompetitionType = editingLeague?.competitionType ?? competitionTypeFilter ?? "LEAGUE";
+  const canCreate = hasPermission(session, "leagues.create");
   const formLoading = submitting || convertingLeague;
   const formApiError = workflowError ?? mutationError;
   const pendingMatchesCount = pendingStructureChange?.snapshot.matches.length ?? 0;
@@ -384,8 +388,8 @@ export default function Leagues() {
     <div className="sb-page">
       <div className="sb-page-shell">
         <PageHeader
-          title="Competencias"
-          subtitle="Gestiona fase regular y eliminatorias dentro de un solo apartado."
+          title="Ligas"
+          subtitle="Gestiona ligas, eliminatorias, equipos, calendario y partidos desde un solo apartado."
         />
 
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -430,6 +434,7 @@ export default function Leagues() {
             onCompetitionTypeChange={handleCompetitionTypeChange}
             onCreate={openCreate}
             createLabel="Crear competencia"
+            canCreate={canCreate}
           />
 
           <div className="mt-4">

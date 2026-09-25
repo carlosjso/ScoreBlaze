@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Response, status
 
+from core.exceptions import ForbiddenException
+
 from .dependencies import (
     clear_auth_session_cookie,
     get_auth_service,
@@ -30,9 +32,7 @@ async def register(
     payload: AuthRegisterRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    auth_session, session = await auth_service.register(payload)
-    set_auth_session_cookie(response, session.session_id)
-    return auth_session
+    raise ForbiddenException("El registro publico esta deshabilitado. Solicita una invitacion para acceder.")
 
 
 @router.get("/me", response_model=AuthSessionOut, status_code=status.HTTP_200_OK)

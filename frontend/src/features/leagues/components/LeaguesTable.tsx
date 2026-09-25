@@ -47,9 +47,9 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 const statusClass: Record<LeagueStatus, string> = {
-  "En curso": "border-emerald-200 bg-emerald-50 text-emerald-700",
-  "Sin empezar": "border-amber-200 bg-amber-50 text-amber-700",
-  Finalizada: "border-slate-200 bg-slate-100 text-slate-600",
+  "En curso": "border-amber-200 bg-amber-50 text-amber-700",
+  "Sin empezar": "border-red-200 bg-red-50 text-red-700",
+  Finalizada: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
 function SortPill({

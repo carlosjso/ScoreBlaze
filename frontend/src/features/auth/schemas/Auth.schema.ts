@@ -10,6 +10,7 @@ export const apiAuthUserSchema = z
     name: z.string().trim().min(1),
     email: z.string().trim().email(),
     roles: z.array(z.string().trim().min(1)),
+    permissions: z.array(z.string().trim().min(1)).default([]),
     created_at: z.string().trim().min(1),
   })
   .transform(
@@ -18,6 +19,7 @@ export const apiAuthUserSchema = z
       name: user.name,
       email: user.email,
       roles: user.roles,
+      permissions: user.permissions,
       createdAt: user.created_at,
     }),
   );

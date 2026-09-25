@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from random import SystemRandom
 
-from core.exceptions import ValidationException
+from authentication.schemas import AuthUserOut
+from core.exceptions import ForbiddenException, NotFoundException, ValidationException
 from core.pagination import paginate_sequence
 from data.orm import League
 from database.unit_of_work import UnitOfWork
+from modules.access_scope import TeamAccessScopeResolver
 from modules.matches.repositories import MatchRepository
 from modules.teams.repositories import TeamRepository
 from utils.media import decode_base64_payload
@@ -44,9 +46,11 @@ class LeagueService:
         match_repo: MatchRepository,
         unit_of_work: UnitOfWork,
         policy: LeaguePolicy,
+        scope_resolver: TeamAccessScopeResolver | None = None,
     ):
         self.league_repo = league_repo
         self.team_repo = team_repo
+        self.scope_resolver = scope_resolver
         self.league_membership_repo = league_membership_repo
         self.match_repo = match_repo
         self.unit_of_work = unit_of_work
@@ -56,7 +60,39 @@ class LeagueService:
     def _decode_logo(logo_base64: str | None) -> bytes | None:
         return decode_base64_payload(logo_base64, "Invalid league logo. Could not decode Base64")
 
-    def create(self, data: LeagueCreate) -> League:
+    def _filter_visible_leagues(self, leagues: list[League], current_user: AuthUserOut | None) -> list[League]:
+        if current_user is None or self.scope_resolver is None:
+            return leagues
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return leagues
+
+        return [league for league in leagues if visible_team_ids.intersection(set(league.team_ids))]
+
+    def _ensure_league_visible(self, league: League, current_user: AuthUserOut | None) -> League:
+        if current_user is None or self.scope_resolver is None:
+            return league
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None or visible_team_ids.intersection(set(league.team_ids)):
+            return league
+
+        raise NotFoundException("Liga no encontrada.")
+
+    def _ensure_visible_team_ids(self, team_ids: list[int], current_user: AuthUserOut | None) -> None:
+        if current_user is None or self.scope_resolver is None or not team_ids:
+            return
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None:
+            return
+
+        if set(team_ids) - visible_team_ids:
+            raise ForbiddenException("No tienes permisos para usar algunos equipos en esta liga.")
+
+    def create(self, data: LeagueCreate, current_user: AuthUserOut | None = None) -> League:
+        self._ensure_visible_team_ids(data.team_ids, current_user)
         tracked_stats, team_ids, final_phase_settings, group_stage_config = self.policy.prepare_payload(
             name=data.name,
             start_date=data.start_date,
@@ -104,8 +140,8 @@ class LeagueService:
 
         return self.policy.get_existing_league(league.id)
 
-    def list(self, *, competition_type: str | None = None) -> list[League]:
-        leagues = self.league_repo.list()
+    def list(self, *, competition_type: str | None = None, current_user: AuthUserOut | None = None) -> list[League]:
+        leagues = self._filter_visible_leagues(self.league_repo.list(), current_user)
         if competition_type:
             return [league for league in leagues if str(league.competition_type) == competition_type]
         return leagues
@@ -119,8 +155,9 @@ class LeagueService:
         sort_key: str,
         sort_dir: str,
         competition_type: str | None = None,
+        current_user: AuthUserOut | None = None,
     ) -> PaginatedLeaguesTableOut:
-        leagues = self.league_repo.list()
+        leagues = self._filter_visible_leagues(self.league_repo.list(), current_user)
         if competition_type:
             leagues = [league for league in leagues if str(league.competition_type) == competition_type]
         row_entries: list[dict[str, object]] = []
@@ -206,8 +243,8 @@ class LeagueService:
             total_pages=total_pages,
         )
 
-    def get(self, league_id: int) -> LeagueDetailOut:
-        league = self.policy.get_existing_league(league_id)
+    def get(self, league_id: int, current_user: AuthUserOut | None = None) -> LeagueDetailOut:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         matches_count = len(self.match_repo.list(league_id=league.id))
 
         teams = [
@@ -271,12 +308,17 @@ class LeagueService:
             matches_count=matches_count,
         )
 
-    def list_matches(self, league_id: int):
-        league = self.policy.get_existing_league(league_id)
+    def list_matches(self, league_id: int, current_user: AuthUserOut | None = None):
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         return self.match_repo.list(league_id=league.id)
 
-    def generate_bracket(self, league_id: int, data: LeagueBracketGenerate):
-        league = self.policy.get_existing_league(league_id)
+    def generate_bracket(
+        self,
+        league_id: int,
+        data: LeagueBracketGenerate,
+        current_user: AuthUserOut | None = None,
+    ):
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         if str(league.status) == LeagueStatus.FINISHED.value:
             raise ValidationException("No puedes generar una llave dentro de una competencia finalizada.")
         if str(league.competition_type) != LeagueCompetitionType.ELIMINATION.value and not bool(league.final_phase_enabled):
@@ -429,8 +471,14 @@ class LeagueService:
 
         return created
 
-    def convert_to_single_elimination(self, league_id: int, data: LeagueEliminationConversion) -> League:
-        league = self.policy.get_existing_league(league_id)
+    def convert_to_single_elimination(
+        self,
+        league_id: int,
+        data: LeagueEliminationConversion,
+        current_user: AuthUserOut | None = None,
+    ) -> League:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
+        self._ensure_visible_team_ids(data.league.team_ids, current_user)
         if str(league.competition_type) == LeagueCompetitionType.ELIMINATION.value:
             raise ValidationException("La competencia ya es una eliminatoria.")
         if data.league.competition_type != LeagueCompetitionType.ELIMINATION:
@@ -513,8 +561,8 @@ class LeagueService:
         self.unit_of_work.expire(league, ["team_memberships"])
         return self.policy.get_existing_league(league.id)
 
-    def reset_bracket(self, league_id: int) -> None:
-        league = self.policy.get_existing_league(league_id)
+    def reset_bracket(self, league_id: int, current_user: AuthUserOut | None = None) -> None:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         had_bracket_champion = bool((league.bracket_state or {}).get("champion_team_id"))
         is_direct_elimination = str(league.competition_type) == LeagueCompetitionType.ELIMINATION.value
         bracket_matches = [
@@ -546,8 +594,14 @@ class LeagueService:
                 **({"status": LeagueStatus.ACTIVE.value} if had_bracket_champion else {}),
             )
 
-    def update(self, league_id: int, data: LeagueUpdate) -> League:
-        league = self.policy.get_existing_league(league_id)
+    def update(
+        self,
+        league_id: int,
+        data: LeagueUpdate,
+        current_user: AuthUserOut | None = None,
+    ) -> League:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
+        self._ensure_visible_team_ids(data.team_ids, current_user)
         existing_matches = self.match_repo.list(league_id=league.id)
         removed_team_ids = set(getattr(league, "team_ids", data.team_ids)) - set(data.team_ids)
         if removed_team_ids and any(
@@ -767,8 +821,14 @@ class LeagueService:
 
         return self.policy.get_existing_league(league.id)
 
-    def replace_team_assignments(self, league_id: int, data: LeagueTeamAssignmentsUpdate) -> League:
-        league = self.policy.get_existing_league(league_id)
+    def replace_team_assignments(
+        self,
+        league_id: int,
+        data: LeagueTeamAssignmentsUpdate,
+        current_user: AuthUserOut | None = None,
+    ) -> League:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
+        self._ensure_visible_team_ids(data.team_ids, current_user)
         if (
             str(league.competition_type) == LeagueCompetitionType.GROUPS.value
             and league.group_stage_config is not None
@@ -800,7 +860,7 @@ class LeagueService:
 
         return self.policy.get_existing_league(league.id)
 
-    def delete(self, league_id: int) -> None:
-        league = self.policy.get_existing_league(league_id)
+    def delete(self, league_id: int, current_user: AuthUserOut | None = None) -> None:
+        league = self._ensure_league_visible(self.policy.get_existing_league(league_id), current_user)
         with self.unit_of_work.transaction():
             self.league_repo.delete(league)

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from authentication.schemas import AuthUserOut
+from core.exceptions import NotFoundException
 from data.orm import LeagueStat
 from database.unit_of_work import UnitOfWork
+from modules.access_scope import TeamAccessScopeResolver
 from modules.match_events.repositories import MatchEventRepository
 from modules.match_participations.repositories import MatchPlayerParticipationRepository
 from modules.matches.domain import MatchCompetitionStage
@@ -27,16 +30,28 @@ class LeagueStatsService:
         match_participation_repo: MatchPlayerParticipationRepository,
         unit_of_work: UnitOfWork,
         policy: LeaguePolicy,
+        scope_resolver: TeamAccessScopeResolver | None = None,
     ):
         self.league_repo = league_repo
         self.league_stat_repo = league_stat_repo
         self.team_repo = team_repo
         self.player_repo = player_repo
+        self.scope_resolver = scope_resolver
         self.match_repo = match_repo
         self.match_event_repo = match_event_repo
         self.match_participation_repo = match_participation_repo
         self.unit_of_work = unit_of_work
         self.policy = policy
+
+    def _ensure_league_visible(self, league, current_user: AuthUserOut | None) -> None:
+        if current_user is None or self.scope_resolver is None:
+            return
+
+        visible_team_ids = self.scope_resolver.get_visible_team_ids(current_user)
+        if visible_team_ids is None or visible_team_ids.intersection(set(league.team_ids)):
+            return
+
+        raise NotFoundException("Liga no encontrada.")
 
     @staticmethod
     def _resolve_standings_match_ids(league, matches: list[object]) -> set[int]:
@@ -60,8 +75,9 @@ class LeagueStatsService:
             != MatchCompetitionStage.FINAL_PHASE.value
         }
 
-    def get(self, league_id: int) -> LeagueStatsSnapshotOut:
+    def get(self, league_id: int, current_user: AuthUserOut | None = None) -> LeagueStatsSnapshotOut:
         league = self.policy.get_existing_league(league_id)
+        self._ensure_league_visible(league, current_user)
         matches = self.match_repo.list(league_id=league.id)
         match_ids = [match.id for match in matches]
         events = self.match_event_repo.list_by_match_ids(match_ids)

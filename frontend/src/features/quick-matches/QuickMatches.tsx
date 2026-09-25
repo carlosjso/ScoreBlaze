@@ -1,5 +1,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasPermission } from "@/features/auth/permissions";
 import { QuickMatchDetailModal } from "@/features/quick-matches/components/QuickMatchDetailModal";
 import { QuickMatchFormModal } from "@/features/quick-matches/components/QuickMatchFormModal";
 import { QuickMatchesTable } from "@/features/quick-matches/components/QuickMatchesTable";
@@ -13,6 +15,7 @@ import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
 
 export default function QuickMatches() {
+  const { session } = useAuth();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<MatchStatusFilter>("all");
   const sortKey: SortKey = "id";
@@ -75,6 +78,7 @@ export default function QuickMatches() {
   }, [deferredSearch, matches, sortDir, sortKey, statusFilter]);
 
   const hasActiveFilters = Boolean(search.trim()) || statusFilter !== "all";
+  const canCreate = hasPermission(session, "quick_match.create");
 
   const resetFilters = () => {
     setSearch("");
@@ -139,6 +143,7 @@ export default function QuickMatches() {
             onSearchChange={setSearch}
             onStatusFilterChange={setStatusFilter}
             onCreate={openCreate}
+            canCreate={canCreate}
           />
 
           <div className="mt-4">

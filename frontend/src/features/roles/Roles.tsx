@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { hasPermission } from "@/features/auth/permissions";
 import { RoleDetailModal } from "@/features/roles/components/RoleDetailModal";
 import { RoleFormModal } from "@/features/roles/components/RoleFormModal";
 import { RolesTable } from "@/features/roles/components/RolesTable";
@@ -13,6 +15,7 @@ import { PageHeader, Panel } from "@/shared/components/ui";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export default function Roles() {
+  const { session } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
@@ -80,6 +83,9 @@ export default function Roles() {
   };
 
   const panelError = mutationErrorMessage ?? error;
+  const canCreate = hasPermission(session, "roles.create");
+  const canEdit = hasPermission(session, "roles.edit");
+  const canDelete = hasPermission(session, "roles.delete");
 
   return (
     <div className="sb-page">
@@ -103,6 +109,7 @@ export default function Roles() {
               setCurrentPage(1);
             }}
             onCreate={openCreate}
+            canCreate={canCreate}
           />
 
           <div className="mt-4">
@@ -126,6 +133,8 @@ export default function Roles() {
                 clearMutationError();
                 modals.requestDelete(role);
               }}
+              canEdit={canEdit}
+              canDelete={canDelete}
             />
           </div>
         </Panel>

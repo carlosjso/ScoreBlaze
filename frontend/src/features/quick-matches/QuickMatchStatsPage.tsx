@@ -99,7 +99,7 @@ const POINTS_BY_EVENT: Partial<Record<QuickMatchStatsEventType, number>> = {
 };
 
 const statusTextClassName = {
-  scheduled: "text-sky-600",
+  scheduled: "text-red-600",
   live: "text-amber-600",
   finished: "text-emerald-600",
 } as const;
