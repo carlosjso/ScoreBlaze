@@ -118,12 +118,19 @@ export default function AppLayout() {
           { label: "Ligas", to: "/leagues" },
           { label: "Lideres y records" },
         ]
+      : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/groups")
+      ? [
+          { label: "Inicio", to: "/dashboard" },
+          { label: "Basquet", to: "/basketball" },
+          { label: "Ligas", to: "/leagues" },
+          { label: "Grupos" },
+        ]
       : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/final-phase/settings")
       ? [
           { label: "Inicio", to: "/dashboard" },
           { label: "Basquet", to: "/basketball" },
           { label: "Ligas", to: "/leagues" },
-          { label: "Ajustes avanzados" },
+          { label: "Configurar modo" },
         ]
       : location.pathname.startsWith("/teams/") && location.pathname.endsWith("/roster")
       ? [

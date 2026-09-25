@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from modules.match_events.domain import MatchEventStatus, MatchEventType
-from modules.matches.domain import MatchStatus
+from modules.matches.domain import MatchCompetitionStage, MatchStatus
 from modules.matches.tracked_stats import does_track_stat, normalize_match_tracked_stats
 
 from .enums import LeagueStatus
@@ -20,6 +20,14 @@ def _league_status_value(raw_status: Any) -> str:
     if isinstance(raw_status, LeagueStatus):
         return raw_status.value
     return str(raw_status)
+
+
+def _match_stage_value(raw_stage: Any) -> str:
+    if isinstance(raw_stage, MatchCompetitionStage):
+        return raw_stage.value
+    if raw_stage is None:
+        return MatchCompetitionStage.REGULAR_SEASON.value
+    return str(raw_stage)
 
 
 def _team_name(team_lookup: dict[int, Any], team_id: int) -> str:
@@ -143,11 +151,249 @@ def _pick_player_leader(rows: list[dict[str, Any]], field: str) -> dict[str, Any
     }
 
 
+def _build_standings_payload(
+    *,
+    team_ids: list[int],
+    team_lookup: dict[int, Any],
+    matches: list[Any],
+    standings_match_ids: set[int],
+    standings_tiebreakers: list[str] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    team_rows: dict[int, dict[str, Any]] = {}
+
+    for team_id in team_ids:
+        team_rows[team_id] = _make_team_row(team_id, team_lookup)
+
+    for match in matches:
+        if match.id not in standings_match_ids:
+            continue
+
+        team_rows.setdefault(match.team_a_id, _make_team_row(match.team_a_id, team_lookup))
+        team_rows.setdefault(match.team_b_id, _make_team_row(match.team_b_id, team_lookup))
+
+    for match in matches:
+        if match.id not in standings_match_ids:
+            continue
+
+        match_status = _match_status_value(match.status)
+        if match_status != MatchStatus.FINISHED.value:
+            continue
+
+        if match.score_team_a is None or match.score_team_b is None:
+            continue
+
+        team_a_row = team_rows.setdefault(match.team_a_id, _make_team_row(match.team_a_id, team_lookup))
+        team_b_row = team_rows.setdefault(match.team_b_id, _make_team_row(match.team_b_id, team_lookup))
+
+        team_a_row["matches_played"] += 1
+        team_b_row["matches_played"] += 1
+        team_a_row["points_for"] += match.score_team_a
+        team_a_row["points_against"] += match.score_team_b
+        team_b_row["points_for"] += match.score_team_b
+        team_b_row["points_against"] += match.score_team_a
+
+        if match.is_draw or match.score_team_a == match.score_team_b:
+            team_a_row["draws"] += 1
+            team_b_row["draws"] += 1
+            team_a_row["standings_points"] += LEAGUE_STANDINGS_DRAW_POINTS
+            team_b_row["standings_points"] += LEAGUE_STANDINGS_DRAW_POINTS
+        else:
+            winner_team_id = match.winner_team_id
+            if winner_team_id is None:
+                winner_team_id = match.team_a_id if match.score_team_a > match.score_team_b else match.team_b_id
+
+            loser_team_id = match.team_b_id if winner_team_id == match.team_a_id else match.team_a_id
+            winning_row = team_rows[winner_team_id]
+            losing_row = team_rows[loser_team_id]
+            winning_row["wins"] += 1
+            winning_row["standings_points"] += LEAGUE_STANDINGS_WIN_POINTS
+            losing_row["losses"] += 1
+
+    for row in team_rows.values():
+        row["points_difference"] = row["points_for"] - row["points_against"]
+
+    resolved_tiebreakers = standings_tiebreakers or ["HEAD_TO_HEAD", "POINT_DIFFERENCE", "POINTS_FOR"]
+    head_to_head: dict[int, tuple[int, int]] = {}
+    for row in team_rows.values():
+        tied_team_ids = {candidate["team_id"] for candidate in team_rows.values() if candidate["wins"] == row["wins"]}
+        wins = 0
+        difference = 0
+        for match in matches:
+            if match.id not in standings_match_ids or _match_status_value(match.status) != MatchStatus.FINISHED.value:
+                continue
+            if match.team_a_id not in tied_team_ids or match.team_b_id not in tied_team_ids:
+                continue
+            if match.score_team_a is None or match.score_team_b is None:
+                continue
+            if row["team_id"] == match.team_a_id:
+                difference += match.score_team_a - match.score_team_b
+            elif row["team_id"] == match.team_b_id:
+                difference += match.score_team_b - match.score_team_a
+            else:
+                continue
+            if match.winner_team_id == row["team_id"]:
+                wins += 1
+        head_to_head[row["team_id"]] = (wins, difference)
+
+    def standings_sort_key(row: dict[str, Any]) -> tuple[Any, ...]:
+        key: list[Any] = [-row["wins"]]
+        for criterion in resolved_tiebreakers:
+            if criterion == "HEAD_TO_HEAD":
+                direct_wins, direct_difference = head_to_head[row["team_id"]]
+                key.extend((-direct_wins, -direct_difference))
+            elif criterion == "POINT_DIFFERENCE":
+                key.append(-row["points_difference"])
+            elif criterion == "POINTS_FOR":
+                key.append(-row["points_for"])
+        key.extend((row["team_name"].lower(), row["team_id"]))
+        return tuple(key)
+
+    standings = sorted(team_rows.values(), key=standings_sort_key)
+
+    return standings, [
+        {
+            **row,
+            "position": index,
+        }
+        for index, row in enumerate(standings, start=1)
+    ]
+
+
+def build_league_standings(
+    *,
+    team_ids: list[int],
+    team_lookup: dict[int, Any],
+    matches: list[Any],
+    standings_match_ids: set[int],
+    standings_tiebreakers: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Build the canonical ordered table used to freeze playoff qualifiers."""
+    _, standings = _build_standings_payload(
+        team_ids=team_ids,
+        team_lookup=team_lookup,
+        matches=matches,
+        standings_match_ids=standings_match_ids,
+        standings_tiebreakers=standings_tiebreakers,
+    )
+    return standings
+
+
+def _build_group_standings_payload(
+    *,
+    group_stage_config: dict[str, Any] | None,
+    team_lookup: dict[int, Any],
+    matches: list[Any],
+    standings_tiebreakers: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    if not isinstance(group_stage_config, dict):
+        return []
+
+    raw_groups = group_stage_config.get("groups")
+    if not isinstance(raw_groups, list):
+        return []
+
+    group_matches_by_key: dict[str, list[Any]] = {}
+    for match in matches:
+        if _match_stage_value(getattr(match, "competition_stage", None)) != MatchCompetitionStage.GROUP_STAGE.value:
+            continue
+
+        group_key = str(getattr(match, "group_stage_group_key", "") or "").strip()
+        if not group_key:
+            continue
+
+        group_matches_by_key.setdefault(group_key, []).append(match)
+
+    payload: list[dict[str, Any]] = []
+    for raw_group in raw_groups:
+        if not isinstance(raw_group, dict):
+            continue
+
+        group_key = str(raw_group.get("key", "") or "").strip()
+        if not group_key:
+            continue
+
+        raw_team_ids = raw_group.get("team_ids", [])
+        group_team_ids = [int(team_id) for team_id in raw_team_ids] if isinstance(raw_team_ids, list) else []
+        group_matches = group_matches_by_key.get(group_key, [])
+        _, standings_payload = _build_standings_payload(
+            team_ids=group_team_ids,
+            team_lookup=team_lookup,
+            matches=group_matches,
+            standings_match_ids={match.id for match in group_matches},
+            standings_tiebreakers=standings_tiebreakers,
+        )
+
+        payload.append(
+            {
+                "group_key": group_key,
+                "group_name": str(raw_group.get("name", group_key) or group_key),
+                "team_ids": group_team_ids,
+                "match_count": len(group_matches),
+                "standings": standings_payload,
+            }
+        )
+
+    return payload
+
+
+def build_group_qualification_order(
+    *,
+    group_stage_config: dict[str, Any] | None,
+    team_lookup: dict[int, Any],
+    matches: list[Any],
+    standings_tiebreakers: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Build the official fixed qualifiers and cross-group wildcard order."""
+    if not isinstance(group_stage_config, dict):
+        return []
+
+    group_standings = _build_group_standings_payload(
+        group_stage_config=group_stage_config,
+        team_lookup=team_lookup,
+        matches=matches,
+        standings_tiebreakers=standings_tiebreakers,
+    )
+    qualifiers_per_group = int(group_stage_config.get("qualifiers_per_group", 0) or 0)
+    best_extra_slots = int(group_stage_config.get("best_extra_slots", 0) or 0)
+    fixed_qualifiers: list[dict[str, Any]] = []
+    wildcard_candidates: list[dict[str, Any]] = []
+
+    for position in range(qualifiers_per_group):
+        for group in group_standings:
+            standings = group["standings"]
+            if position < len(standings):
+                fixed_qualifiers.append(standings[position])
+
+    for group in group_standings:
+        wildcard_candidates.extend(group["standings"][qualifiers_per_group:])
+
+    wildcard_tiebreakers = group_stage_config.get("wildcard_tiebreakers", [])
+    if not isinstance(wildcard_tiebreakers, list):
+        wildcard_tiebreakers = []
+
+    def wildcard_sort_key(row: dict[str, Any]) -> tuple[Any, ...]:
+        played = int(row["matches_played"])
+        divisor = played if played > 0 else 1
+        key: list[Any] = [-int(row["wins"]) / divisor]
+        for criterion in wildcard_tiebreakers:
+            if criterion == "AVERAGE_POINT_DIFFERENCE":
+                key.append(-int(row["points_difference"]) / divisor)
+            elif criterion == "AVERAGE_POINTS_FOR":
+                key.append(-int(row["points_for"]) / divisor)
+        key.extend((str(row["team_name"]).lower(), int(row["team_id"])))
+        return tuple(key)
+
+    wildcard_candidates.sort(key=wildcard_sort_key)
+    qualified = fixed_qualifiers + wildcard_candidates[:best_extra_slots]
+    return [{**row, "position": index} for index, row in enumerate(qualified, start=1)]
+
+
 def compute_league_stats_snapshot(
     *,
     league_id: int,
     league_name: str,
     league_status: str,
+    competition_type: str,
     tracked_stats: list[str],
     current_team_ids: list[int],
     team_lookup: dict[int, Any],
@@ -155,16 +401,20 @@ def compute_league_stats_snapshot(
     matches: list[Any],
     events: list[Any],
     participations: list[Any] | None = None,
+    group_stage_config: dict[str, Any] | None = None,
+    standings_match_ids: set[int] | None = None,
+    standings_tiebreakers: list[str] | None = None,
 ) -> dict[str, Any]:
-    team_rows: dict[int, dict[str, Any]] = {}
+    resolved_standings_match_ids = standings_match_ids if standings_match_ids is not None else {match.id for match in matches}
     match_by_id = {match.id: match for match in matches}
-
-    for team_id in current_team_ids:
-        team_rows[team_id] = _make_team_row(team_id, team_lookup)
-
-    for match in matches:
-        team_rows.setdefault(match.team_a_id, _make_team_row(match.team_a_id, team_lookup))
-        team_rows.setdefault(match.team_b_id, _make_team_row(match.team_b_id, team_lookup))
+    standings, standings_payload = _build_standings_payload(
+        team_ids=current_team_ids,
+        team_lookup=team_lookup,
+        matches=matches,
+        standings_match_ids=resolved_standings_match_ids,
+        standings_tiebreakers=standings_tiebreakers,
+    )
+    team_rows_by_id = {row["team_id"]: row for row in standings}
 
     scheduled_matches = 0
     live_matches = 0
@@ -183,39 +433,6 @@ def compute_league_stats_snapshot(
             finished_matches += 1
             live_or_finished_match_ids.add(match.id)
             finished_match_ids.add(match.id)
-
-            if match.score_team_a is None or match.score_team_b is None:
-                continue
-
-            team_a_row = team_rows.setdefault(match.team_a_id, _make_team_row(match.team_a_id, team_lookup))
-            team_b_row = team_rows.setdefault(match.team_b_id, _make_team_row(match.team_b_id, team_lookup))
-
-            team_a_row["matches_played"] += 1
-            team_b_row["matches_played"] += 1
-            team_a_row["points_for"] += match.score_team_a
-            team_a_row["points_against"] += match.score_team_b
-            team_b_row["points_for"] += match.score_team_b
-            team_b_row["points_against"] += match.score_team_a
-
-            if match.is_draw or match.score_team_a == match.score_team_b:
-                team_a_row["draws"] += 1
-                team_b_row["draws"] += 1
-                team_a_row["standings_points"] += LEAGUE_STANDINGS_DRAW_POINTS
-                team_b_row["standings_points"] += LEAGUE_STANDINGS_DRAW_POINTS
-            else:
-                winner_team_id = match.winner_team_id
-                if winner_team_id is None:
-                    winner_team_id = match.team_a_id if match.score_team_a > match.score_team_b else match.team_b_id
-
-                loser_team_id = match.team_b_id if winner_team_id == match.team_a_id else match.team_a_id
-                winning_row = team_rows[winner_team_id]
-                losing_row = team_rows[loser_team_id]
-                winning_row["wins"] += 1
-                winning_row["standings_points"] += LEAGUE_STANDINGS_WIN_POINTS
-                losing_row["losses"] += 1
-
-    for row in team_rows.values():
-        row["points_difference"] = row["points_for"] - row["points_against"]
 
     player_rows: dict[int, dict[str, Any]] = {}
 
@@ -248,7 +465,7 @@ def compute_league_stats_snapshot(
         event_tracked_stats = normalize_match_tracked_stats(
             getattr(event_match, "tracked_stats", None) or tracked_stats,
         )
-        team_row = team_rows.setdefault(event.team_id, _make_team_row(event.team_id, team_lookup))
+        team_row = team_rows_by_id.setdefault(event.team_id, _make_team_row(event.team_id, team_lookup))
         event_type = MatchEventType(event.event_type)
 
         if (
@@ -291,27 +508,6 @@ def compute_league_stats_snapshot(
     for row in player_rows.values():
         row["matches_played"] = len(row.pop("_match_ids"))
 
-    standings = sorted(
-        team_rows.values(),
-        key=lambda row: (
-            row["standings_points"],
-            row["wins"],
-            row["points_difference"],
-            row["points_for"],
-            row["team_name"].lower(),
-            -row["team_id"],
-        ),
-        reverse=True,
-    )
-
-    standings_payload = [
-        {
-            **row,
-            "position": index,
-        }
-        for index, row in enumerate(standings, start=1)
-    ]
-
     player_rankings = sorted(
         player_rows.values(),
         key=lambda row: (
@@ -334,14 +530,32 @@ def compute_league_stats_snapshot(
     ]
 
     champion = None
-    if _league_status_value(league_status) == LeagueStatus.FINISHED.value and standings_payload:
+    excluded_from_standings_count = len(matches) - len(resolved_standings_match_ids)
+    overview_team_ids = set(current_team_ids)
+    for match in matches:
+        overview_team_ids.add(match.team_a_id)
+        overview_team_ids.add(match.team_b_id)
+
+    if (
+        competition_type != "GROUPS"
+        and excluded_from_standings_count == 0
+        and _league_status_value(league_status) == LeagueStatus.FINISHED.value
+        and standings_payload
+    ):
         top_team = standings_payload[0]
         if top_team["matches_played"] > 0:
             champion = {
                 "team_id": top_team["team_id"],
                 "team_name": top_team["team_name"],
-                "value": top_team["standings_points"],
+                "value": top_team["wins"],
             }
+
+    group_standings_payload = _build_group_standings_payload(
+        group_stage_config=group_stage_config,
+        team_lookup=team_lookup,
+        matches=matches,
+        standings_tiebreakers=standings_tiebreakers,
+    )
 
     return {
         "league_id": league_id,
@@ -349,7 +563,7 @@ def compute_league_stats_snapshot(
         "league_status": _league_status_value(league_status),
         "tracked_stats": tracked_stats,
         "overview": {
-            "teams_count": len(team_rows),
+            "teams_count": len(overview_team_ids),
             "total_matches": len(matches),
             "scheduled_matches": scheduled_matches,
             "live_matches": live_matches,
@@ -371,5 +585,6 @@ def compute_league_stats_snapshot(
             "top_foul": _pick_player_leader(player_rankings, "total_fouls"),
         },
         "standings": standings_payload,
+        "group_standings": group_standings_payload,
         "player_rankings": player_rankings_payload,
     }

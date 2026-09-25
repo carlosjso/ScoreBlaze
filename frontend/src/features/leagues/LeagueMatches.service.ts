@@ -86,6 +86,35 @@ export const leagueMatchesService = {
     );
   },
 
+  generateBracket(
+    leagueId: number,
+    orderedTeamIds: number[],
+    seedMode: "STANDINGS" | "RANDOM" | "MANUAL",
+    confirmIncompleteRegularSeason = false,
+    signal?: AbortSignal,
+  ) {
+    return requestJson(
+      apiClient.post(
+        `/api/leagues/${leagueId}/bracket`,
+        {
+          ordered_team_ids: orderedTeamIds,
+          seed_mode: seedMode,
+          confirm_incomplete_regular_season: confirmIncompleteRegularSeason,
+        },
+        { signal },
+      ),
+      apiMatchesSchema,
+      "La respuesta de la llave es invalida.",
+    );
+  },
+
+  resetBracket(leagueId: number, signal?: AbortSignal) {
+    return requestVoid(
+      apiClient.delete(`/api/leagues/${leagueId}/bracket`, { signal }),
+      "No se pudo reiniciar la llave.",
+    );
+  },
+
   updateMatch(matchId: number, leagueId: number, payload: MatchMutationPayload, signal?: AbortSignal) {
     return requestJson(
       apiClient.put(

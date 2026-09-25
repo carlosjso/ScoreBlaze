@@ -24,27 +24,32 @@ type QuickMatchFormModalProps = {
   mode: "create" | "edit";
   initialMatch?: QuickMatchListItem | null;
   teams: ApiTeamOption[];
+  teamGroups?: Array<{ key: string; name: string; teamIds: number[] }>;
   title?: string;
   loading?: boolean;
   apiError?: unknown;
+  lockTeams?: boolean;
   onClose: () => void;
   onSubmit: (values: QuickMatchFormValues) => Promise<void> | void;
 };
 
 type QuickMatchFormFieldName = Extract<keyof QuickMatchFormValues, string>;
+const EMPTY_TEAM_GROUPS: Array<{ key: string; name: string; teamIds: number[] }> = [];
 
 export function QuickMatchFormModal({
   isOpen,
   mode,
   initialMatch,
   teams,
+  teamGroups = EMPTY_TEAM_GROUPS,
   title,
   loading = false,
   apiError,
+  lockTeams = false,
   onClose,
   onSubmit,
 }: QuickMatchFormModalProps) {
-  const { control, handleSubmit, register, reset, trigger } = useForm<QuickMatchFormValues>({
+  const { control, getValues, handleSubmit, register, reset, setValue, trigger } = useForm<QuickMatchFormValues>({
     resolver: zodResolver(quickMatchFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
@@ -58,17 +63,38 @@ export function QuickMatchFormModal({
     quickMatchFormApiFieldMap,
     quickMatchFormApiMessageFieldMap,
   );
+  const restrictToGroup = teamGroups.length > 0 && initialMatch?.competitionStage !== "FINAL_PHASE";
+  const [selectedGroupKey, setSelectedGroupKey] = useState("");
+  const selectedGroup = teamGroups.find((group) => group.key === selectedGroupKey);
+  const groupTeams = restrictToGroup && selectedGroup
+    ? teams.filter((team) => selectedGroup.teamIds.includes(team.id))
+    : teams;
 
   useEffect(() => {
     if (isOpen) {
       setDismissedApiFields({});
-      reset(toQuickMatchFormValues(initialMatch, teams));
+      const nextValues = toQuickMatchFormValues(initialMatch, teams);
+      if (teamGroups.length > 0 && initialMatch?.competitionStage !== "FINAL_PHASE") {
+        const initialGroup = initialMatch
+          ? teamGroups.find((group) => group.teamIds.includes(initialMatch.teamAId))
+          : teamGroups.find((group) => group.teamIds.length >= 2);
+        if (initialGroup) {
+          setSelectedGroupKey(initialGroup.key);
+          if (!initialMatch) {
+            nextValues.teamAId = initialGroup.teamIds[0];
+            nextValues.teamBId = initialGroup.teamIds[1];
+          }
+        }
+      } else {
+        setSelectedGroupKey("");
+      }
+      reset(nextValues);
       return;
     }
 
     setDismissedApiFields({});
     reset(toQuickMatchFormValues(null, teams));
-  }, [initialMatch, isOpen, reset, teams]);
+  }, [initialMatch, isOpen, reset, teamGroups, teams]);
 
   useEffect(() => {
     setDismissedApiFields({});
@@ -114,6 +140,35 @@ export function QuickMatchFormModal({
         <input type="hidden" {...register("scoreTeamA")} />
         <input type="hidden" {...register("scoreTeamB")} />
 
+        {restrictToGroup ? (
+          <div className="grid gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 sm:grid-cols-[220px_minmax(0,1fr)] sm:items-end">
+            <Select
+              label="Grupo"
+              value={selectedGroupKey}
+              disabled={loading || lockTeams}
+              onChange={(event) => {
+                const nextGroup = teamGroups.find((group) => group.key === event.target.value);
+                setSelectedGroupKey(event.target.value);
+                if (nextGroup) {
+                  setValue("teamAId", nextGroup.teamIds[0] ?? 0, { shouldValidate: true });
+                  setValue("teamBId", nextGroup.teamIds[1] ?? 0, { shouldValidate: true });
+                }
+              }}
+            >
+              {teamGroups.map((group) => <option key={group.key} value={group.key}>{group.name}</option>)}
+            </Select>
+            <p className="pb-2 text-sm text-sky-900">
+              Los dos participantes se limitan al grupo seleccionado.
+            </p>
+          </div>
+        ) : null}
+
+        {lockTeams ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Los participantes pertenecen a una llave cerrada. Puedes reprogramar el cruce y capturar su resultado, pero no cambiar los equipos.
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Controller
             name="teamAId"
@@ -124,14 +179,21 @@ export function QuickMatchFormModal({
                 value={String(field.value)}
                 onChange={(event) => {
                   dismissApiFieldError("teamAId");
-                  field.onChange(Number(event.target.value));
+                  const nextTeamAId = Number(event.target.value);
+                  field.onChange(nextTeamAId);
+                  if (restrictToGroup && selectedGroup) {
+                    const currentTeamBId = getValues("teamBId");
+                    if (!selectedGroup.teamIds.includes(currentTeamBId) || currentTeamBId === nextTeamAId) {
+                      setValue("teamBId", selectedGroup.teamIds.find((teamId) => teamId !== nextTeamAId) ?? 0, { shouldValidate: true });
+                    }
+                  }
                 }}
                 onBlur={field.onBlur}
                 error={fieldState.error?.message ?? getApiFieldError("teamAId")}
-                disabled={loading}
+                disabled={loading || lockTeams}
               >
-                {teams.length === 0 ? <option value="0">No hay equipos disponibles</option> : null}
-                {teams.map((team) => (
+                {groupTeams.length === 0 ? <option value="0">No hay equipos disponibles</option> : null}
+                {groupTeams.map((team) => (
                   <option key={team.id} value={team.id}>
                     {team.name}
                   </option>
@@ -153,10 +215,10 @@ export function QuickMatchFormModal({
                 }}
                 onBlur={field.onBlur}
                 error={fieldState.error?.message ?? getApiFieldError("teamBId")}
-                disabled={loading}
+                disabled={loading || lockTeams}
               >
-                {teams.length === 0 ? <option value="0">No hay equipos disponibles</option> : null}
-                {teams.map((team) => (
+                {groupTeams.length === 0 ? <option value="0">No hay equipos disponibles</option> : null}
+                {groupTeams.map((team) => (
                   <option key={team.id} value={team.id}>
                     {team.name}
                   </option>

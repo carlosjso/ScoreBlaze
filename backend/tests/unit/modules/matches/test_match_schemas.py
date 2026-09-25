@@ -3,7 +3,7 @@ from datetime import date, time
 
 from pydantic import ValidationError
 
-from modules.matches.domain import MatchStatus
+from modules.matches.domain import MatchCompetitionStage, MatchStatus
 from modules.matches.schemas import MAX_MATCH_SCORE, MatchPatch, MatchUpdate
 
 
@@ -26,10 +26,13 @@ class MatchSchemasTest(unittest.TestCase):
             is_draw=False,
             court=None,
             tournament=None,
+            competition_stage=MatchCompetitionStage.FINAL_PHASE,
+            group_stage_group_key=None,
             status=MatchStatus.FINISHED,
         )
 
         self.assertEqual(payload.status, MatchStatus.FINISHED)
+        self.assertEqual(payload.competition_stage, MatchCompetitionStage.FINAL_PHASE)
 
     def test_match_patch_accepts_partial_payload(self):
         payload = MatchPatch(score_team_a=80, score_team_b=75, status=MatchStatus.FINISHED)

@@ -52,6 +52,7 @@ class ScoreboardService:
 
     def record_event(self, match_id: int, data: ScoreboardEventCreate) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        self.policy.ensure_scoreboard_open(match)
         tracked_stat = get_tracked_stat_for_event(data.event_type)
         if tracked_stat is not None and not does_track_stat(tracked_stat, getattr(match, "tracked_stats", None)):
             raise ValidationException(f"La metrica {tracked_stat} no esta habilitada para este partido.")
@@ -123,6 +124,7 @@ class ScoreboardService:
 
     def undo_last_event(self, match_id: int) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        self.policy.ensure_scoreboard_open(match)
         active_events = self._list_active_events(match.id)
 
         if not active_events:
@@ -142,6 +144,7 @@ class ScoreboardService:
 
     def reset(self, match_id: int) -> ScoreboardSnapshotOut:
         match = self.policy.get_existing_match(match_id)
+        self.policy.ensure_scoreboard_open(match)
         active_events = self._list_active_events(match.id)
 
         with self.unit_of_work.transaction():

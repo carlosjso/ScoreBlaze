@@ -345,7 +345,6 @@ export default function LeagueTeamsPage() {
   const queryError = error;
   const panelError = mutationErrorMessage ?? queryError ?? playersError;
   const isSavingTeams = selectedLeague !== null && assigningTeamsLeagueId === selectedLeague.id;
-
   const handleShuffleTeams = async () => {
     if (!selectedLeague || !canShuffleTeams) {
       return;
@@ -458,7 +457,7 @@ export default function LeagueTeamsPage() {
                     <span className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
                       {selectedLeague.teamIds.length} {selectedLeague.teamIds.length === 1 ? "equipo" : "equipos"}
                     </span>
-                    {selectedLeague.status === "Sin empezar" ? (
+                    {selectedLeague.status === "Sin empezar" && selectedLeague.competitionType !== "GROUPS" ? (
                       <Button variant="outline" onClick={() => void handleShuffleTeams()} disabled={!canShuffleTeams || isSavingTeams}>
                         Sortear
                       </Button>
@@ -467,9 +466,17 @@ export default function LeagueTeamsPage() {
                       <CalendarDays size={14} />
                       Partidos
                     </Button>
-                    <Button variant="primary" onClick={() => navigate(`/leagues/${selectedLeagueId}/teams/manage`)} disabled={isSavingTeams}>
+                    <Button
+                      variant="primary"
+                      onClick={() => navigate(
+                        selectedLeague.competitionType === "GROUPS" && selectedLeague.groupStageConfig
+                          ? `/leagues/${selectedLeagueId}/groups`
+                          : `/leagues/${selectedLeagueId}/teams/manage`,
+                      )}
+                      disabled={isSavingTeams}
+                    >
                       <Plus size={14} />
-                      Buscar equipos
+                      {selectedLeague.competitionType === "GROUPS" && selectedLeague.groupStageConfig ? "Editar grupos" : "Buscar equipos"}
                     </Button>
                   </>
                 }
@@ -483,7 +490,11 @@ export default function LeagueTeamsPage() {
                     : "border-amber-200 bg-amber-50 text-amber-800"
                 )}
               >
-                {selectedLeague.status === "Sin empezar"
+                {selectedLeague.competitionType === "GROUPS"
+                  ? selectedLeague.groupStageConfig
+                    ? "Los grupos ya estan definidos. Edita su distribucion desde Configurar modo para conservar una estructura valida."
+                    : "Primero reune los equipos participantes. Cuando termines podras distribuirlos desde Configurar grupos."
+                  : selectedLeague.status === "Sin empezar"
                   ? "La liga aun no inicia. Aqui puedes quitar equipos o usar Sortear para previsualizar el calendario."
                   : "La liga ya comenzo o termino. Si retiras un equipo desde esta tabla, primero se abrira el modal de suspension."}
               </div>
@@ -772,6 +783,19 @@ export function LeagueTeamsManagePage() {
   const queryError = error;
   const panelError = mutationErrorMessage ?? queryError;
   const isSavingTeams = selectedLeague !== null && assigningTeamsLeagueId === selectedLeague.id;
+  const eliminationCompatibilityError = useMemo(() => {
+    if (!selectedLeague || selectedLeague.competitionType !== "ELIMINATION" || draftTeamIds.length === 0) {
+      return null;
+    }
+    const teamCount = draftTeamIds.length;
+    if (teamCount < 2 || teamCount > 32 || (teamCount & (teamCount - 1)) !== 0) {
+      return "La eliminacion directa requiere 2, 4, 8, 16 o 32 equipos.";
+    }
+    if (selectedLeague.finalPhaseThirdPlaceMatch && teamCount < 4) {
+      return "El partido por el tercer lugar requiere al menos 4 equipos.";
+    }
+    return null;
+  }, [draftTeamIds.length, selectedLeague]);
 
   const assignTeam = (teamId: number) => {
     clearMutationError();
@@ -854,8 +878,10 @@ export function LeagueTeamsManagePage() {
     <div className="sb-page">
       <div className="sb-page-shell">
         <PageHeader
-          title="Asignar equipos"
-          subtitle="Aqui incorporas o retiras equipos de la liga desde el listado general de equipos."
+          title={selectedLeague?.competitionType === "GROUPS" ? "Reunir equipos" : "Asignar equipos"}
+          subtitle={selectedLeague?.competitionType === "GROUPS"
+            ? "Inscribe primero a todos los participantes; la distribucion por grupos se define en el siguiente paso."
+            : "Aqui incorporas o retiras equipos de la liga desde el listado general de equipos."}
           actions={<LeagueSectionNav league={selectedLeague} />}
         />
 
@@ -890,6 +916,14 @@ export function LeagueTeamsManagePage() {
               actionLabel="Volver a ligas"
               onAction={() => navigate("/leagues")}
             />
+          ) : selectedLeague.competitionType === "GROUPS" && selectedLeague.groupStageConfig ? (
+            <TableEmptyState
+              mode="filtered"
+              title="La distribucion ya esta protegida"
+              description="Los grupos ya fueron definidos. Usa Configurar modo para mover equipos sin dejar participantes fuera."
+              actionLabel="Configurar grupos"
+              onAction={() => navigate(`/leagues/${selectedLeague.id}/groups`)}
+            />
           ) : teams.length === 0 ? (
             <TableEmptyState
               mode="empty"
@@ -916,9 +950,35 @@ export function LeagueTeamsManagePage() {
                 }
               />
 
-              {draftTeamIds.length < 2 ? (
+              {draftTeamIds.length < (selectedLeague.competitionType === "GROUPS" ? 4 : 2) ? (
                 <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  Se recomiendan al menos 2 equipos para que la liga quede lista, pero puedes seguir revisando el flujo en front.
+                  {selectedLeague.competitionType === "GROUPS"
+                    ? `Reune al menos 4 equipos para formar dos grupos validos. Faltan ${Math.max(0, 4 - draftTeamIds.length)}.`
+                    : "Se recomiendan al menos 2 equipos para que la liga quede lista, pero puedes seguir revisando el flujo en front."}
+                </div>
+              ) : null}
+
+              {selectedLeague.competitionType === "GROUPS" && draftTeamIds.length >= 4 ? (
+                <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-bold">Ya puedes preparar los grupos.</p>
+                    <p className="mt-0.5 text-xs text-emerald-700">Guarda primero cualquier cambio pendiente y despues distribuye a los {draftTeamIds.length} equipos.</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isDirty || isSavingTeams}
+                    onClick={() => navigate(`/leagues/${selectedLeague.id}/groups`)}
+                    className="border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-100"
+                  >
+                    Configurar grupos
+                  </Button>
+                </div>
+              ) : null}
+
+              {eliminationCompatibilityError ? (
+                <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  <strong>Combinacion no compatible.</strong> {eliminationCompatibilityError}
                 </div>
               ) : null}
 
@@ -1099,7 +1159,7 @@ export function LeagueTeamsManagePage() {
                       <Button
                         variant="primary"
                         onClick={() => void handleSave()}
-                        disabled={isSavingTeams || !isDirty}
+                        disabled={isSavingTeams || !isDirty || Boolean(eliminationCompatibilityError)}
                         className="disabled:cursor-not-allowed disabled:opacity-45 disabled:saturate-50 disabled:shadow-none"
                       >
                         {isSavingTeams ? <Save size={14} /> : saveFeedback === "saved" && !isDirty ? <Check size={14} /> : <Save size={14} />}

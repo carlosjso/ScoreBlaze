@@ -1,4 +1,5 @@
 import type {
+  CompetitionType,
   LeaguePlayerRankingRow,
   LeagueStatsSnapshot,
 } from "@/features/leagues/Leagues.types";
@@ -48,6 +49,7 @@ function pickTopPlayerByField(
 
 export function buildLeagueLeaderPreviewItems(
   stats: LeagueStatsSnapshot | null,
+  competitionType: CompetitionType = "LEAGUE",
 ): LeagueLeaderPreviewItem[] {
   if (!stats) {
     return [];
@@ -97,13 +99,14 @@ export function buildLeagueLeaderPreviewItems(
   }
 
   if (stats.overview.champion?.teamName) {
+    const isElimination = competitionType === "ELIMINATION";
     items.push({
       key: "team-current-leader",
       category: "team",
-      label: "Lider actual",
+      label: isElimination ? "Campeon" : "Lider actual",
       title: stats.overview.champion.teamName,
-      subtitle: "Tabla general",
-      valueLabel: `${stats.overview.champion.value} pts tabla`,
+      subtitle: isElimination ? "Llave final" : "Tabla general",
+      valueLabel: isElimination ? "Campeon del torneo" : `${stats.overview.champion.value} pts tabla`,
       teamId: stats.overview.champion.teamId,
     });
   }

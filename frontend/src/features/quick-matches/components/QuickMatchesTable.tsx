@@ -41,6 +41,10 @@ type QuickMatchesTableProps = {
   onView: (match: QuickMatchListItem) => void;
   onEdit: (match: QuickMatchListItem) => void;
   onDelete: (match: QuickMatchListItem) => void;
+  isMatchReadOnly?: (match: QuickMatchListItem) => boolean;
+  isMatchEditDisabled?: (match: QuickMatchListItem) => boolean;
+  isMatchDeleteDisabled?: (match: QuickMatchListItem) => boolean;
+  isScoreboardDisabled?: (match: QuickMatchListItem) => boolean;
   onOpenMetrics?: (match: QuickMatchListItem) => void;
   onUpdateTrackedStats?: (match: QuickMatchListItem, trackedStats: string[]) => void | Promise<void>;
 };
@@ -110,6 +114,10 @@ function MatchCardActions({
   onView,
   onEdit,
   onDelete,
+  isMatchReadOnly,
+  isMatchEditDisabled,
+  isMatchDeleteDisabled,
+  isScoreboardDisabled,
   onOpenMetrics,
   onUpdateTrackedStats,
 }: Pick<
@@ -120,6 +128,10 @@ function MatchCardActions({
   | "onView"
   | "onEdit"
   | "onDelete"
+  | "isMatchReadOnly"
+  | "isMatchEditDisabled"
+  | "isMatchDeleteDisabled"
+  | "isScoreboardDisabled"
   | "onOpenMetrics"
   | "onUpdateTrackedStats"
 > & {
@@ -129,6 +141,10 @@ function MatchCardActions({
   const [actionsOpen, setActionsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const disabled = deletingMatchId === match.id || updatingTrackedStatsMatchId === match.id;
+  const readOnly = Boolean(isMatchReadOnly?.(match));
+  const editDisabled = disabled || readOnly || Boolean(isMatchEditDisabled?.(match));
+  const deleteDisabled = disabled || readOnly || Boolean(isMatchDeleteDisabled?.(match));
+  const scoreboardDisabled = disabled || Boolean(isScoreboardDisabled?.(match));
 
   useEffect(() => {
     if (!launchOpen && !actionsOpen) {
@@ -181,7 +197,7 @@ function MatchCardActions({
             setLaunchOpen((current) => !current);
             setActionsOpen(false);
           }}
-          disabled={disabled}
+          disabled={scoreboardDisabled}
           className="border border-slate-200 bg-slate-50 text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
         >
           <Monitor size={16} />
@@ -243,7 +259,7 @@ function MatchCardActions({
             </button>
             <button
               type="button"
-              disabled={disabled}
+              disabled={editDisabled}
               onClick={() => runAction(() => onEdit(match))}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -252,7 +268,7 @@ function MatchCardActions({
             </button>
             <button
               type="button"
-              disabled={disabled}
+              disabled={deleteDisabled}
               onClick={() => runAction(() => onDelete(match))}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -287,6 +303,10 @@ function MatchCard({
   onView,
   onEdit,
   onDelete,
+  isMatchReadOnly,
+  isMatchEditDisabled,
+  isMatchDeleteDisabled,
+  isScoreboardDisabled,
   onOpenMetrics,
   onUpdateTrackedStats,
   emphasisLabel,
@@ -299,6 +319,10 @@ function MatchCard({
   | "onView"
   | "onEdit"
   | "onDelete"
+  | "isMatchReadOnly"
+  | "isMatchEditDisabled"
+  | "isMatchDeleteDisabled"
+  | "isScoreboardDisabled"
   | "onOpenMetrics"
   | "onUpdateTrackedStats"
 > & {
@@ -362,6 +386,10 @@ function MatchCard({
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          isMatchReadOnly={isMatchReadOnly}
+          isMatchEditDisabled={isMatchEditDisabled}
+          isMatchDeleteDisabled={isMatchDeleteDisabled}
+          isScoreboardDisabled={isScoreboardDisabled}
           onOpenMetrics={onOpenMetrics}
           onUpdateTrackedStats={onUpdateTrackedStats}
         />
@@ -430,6 +458,10 @@ function MatchSection({
   onView,
   onEdit,
   onDelete,
+  isMatchReadOnly,
+  isMatchEditDisabled,
+  isMatchDeleteDisabled,
+  isScoreboardDisabled,
   onOpenMetrics,
   onUpdateTrackedStats,
   firstCardHeader,
@@ -442,6 +474,10 @@ function MatchSection({
   | "onView"
   | "onEdit"
   | "onDelete"
+  | "isMatchReadOnly"
+  | "isMatchEditDisabled"
+  | "isMatchDeleteDisabled"
+  | "isScoreboardDisabled"
   | "onOpenMetrics"
   | "onUpdateTrackedStats"
 > & {
@@ -487,6 +523,10 @@ function MatchSection({
                     onView={onView}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    isMatchReadOnly={isMatchReadOnly}
+                    isMatchEditDisabled={isMatchEditDisabled}
+                    isMatchDeleteDisabled={isMatchDeleteDisabled}
+                    isScoreboardDisabled={isScoreboardDisabled}
                     onOpenMetrics={onOpenMetrics}
                     onUpdateTrackedStats={onUpdateTrackedStats}
                   />
@@ -522,6 +562,10 @@ export function QuickMatchesTable({
   onView,
   onEdit,
   onDelete,
+  isMatchReadOnly,
+  isMatchEditDisabled,
+  isMatchDeleteDisabled,
+  isScoreboardDisabled,
   onUpdateTrackedStats,
 }: QuickMatchesTableProps) {
   const [metricsMatchId, setMetricsMatchId] = useState<number | null>(null);
@@ -578,6 +622,10 @@ export function QuickMatchesTable({
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          isMatchReadOnly={isMatchReadOnly}
+          isMatchEditDisabled={isMatchEditDisabled}
+          isMatchDeleteDisabled={isMatchDeleteDisabled}
+          isScoreboardDisabled={isScoreboardDisabled}
           onOpenMetrics={(match) => setMetricsMatchId(match.id)}
           onUpdateTrackedStats={onUpdateTrackedStats}
         />
@@ -596,6 +644,10 @@ export function QuickMatchesTable({
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          isMatchReadOnly={isMatchReadOnly}
+          isMatchEditDisabled={isMatchEditDisabled}
+          isMatchDeleteDisabled={isMatchDeleteDisabled}
+          isScoreboardDisabled={isScoreboardDisabled}
           onOpenMetrics={(match) => setMetricsMatchId(match.id)}
           onUpdateTrackedStats={onUpdateTrackedStats}
           firstCardHeader="Proximo partido"
@@ -615,6 +667,10 @@ export function QuickMatchesTable({
           onView={onView}
           onEdit={onEdit}
           onDelete={onDelete}
+          isMatchReadOnly={isMatchReadOnly}
+          isMatchEditDisabled={isMatchEditDisabled}
+          isMatchDeleteDisabled={isMatchDeleteDisabled}
+          isScoreboardDisabled={isScoreboardDisabled}
           onOpenMetrics={(match) => setMetricsMatchId(match.id)}
           onUpdateTrackedStats={onUpdateTrackedStats}
         />

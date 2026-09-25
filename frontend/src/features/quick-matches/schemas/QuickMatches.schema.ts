@@ -15,6 +15,8 @@ import {
 
 const idSchema = z.coerce.number().int();
 const matchStatusSchema = z.enum(["scheduled", "live", "finished"]);
+const matchCompetitionStageSchema = z.enum(["REGULAR_SEASON", "GROUP_STAGE", "FINAL_PHASE"]);
+const matchBracketPathSchema = z.enum(["MAIN", "PLAY_IN", "WINNERS", "LOSERS", "GRAND_FINAL", "THIRD_PLACE"]);
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 const timeInputRegex = /^\d{2}:\d{2}$/;
 const timeApiRegex = /^\d{2}:\d{2}(:\d{2})?$/;
@@ -75,6 +77,15 @@ export const apiMatchSchema = z.object({
   court: z.string().nullable(),
   tournament: z.string().nullable(),
   tracked_stats: z.array(z.string()),
+  competition_stage: matchCompetitionStageSchema,
+  group_stage_group_key: z.preprocess((value) => value ?? null, z.string().nullable()),
+  bracket_round: z.preprocess((value) => value ?? null, z.number().int().positive().nullable()),
+  bracket_slot: z.preprocess((value) => value ?? null, z.number().int().positive().nullable()),
+  bracket_size: z.preprocess((value) => value ?? null, z.number().int().positive().nullable()),
+  bracket_game: z.preprocess((value) => value ?? null, z.number().int().positive().nullable()),
+  bracket_series_mode: z.preprocess((value) => value ?? null, z.enum(["SINGLE", "BEST_OF", "TWO_LEGS"]).nullable()),
+  bracket_series_best_of: z.preprocess((value) => value ?? null, z.number().int().positive().nullable()),
+  bracket_path: z.preprocess((value) => value ?? null, matchBracketPathSchema.nullable()),
   status: matchStatusSchema,
 }) satisfies z.ZodType<ApiMatch>;
 
@@ -215,6 +226,15 @@ export function buildQuickMatchesView(matches: ApiMatch[], teams: ApiTeamOption[
       court,
       tournament,
       trackedStats: normalizeLeagueTrackedStats(match.tracked_stats),
+      competitionStage: match.competition_stage,
+      groupStageGroupKey: match.group_stage_group_key,
+      bracketRound: match.bracket_round,
+      bracketSlot: match.bracket_slot,
+      bracketSize: match.bracket_size,
+      bracketGame: match.bracket_game,
+      bracketSeriesMode: match.bracket_series_mode,
+      bracketSeriesBestOf: match.bracket_series_best_of,
+      bracketPath: match.bracket_path,
       venueLabel,
       status: match.status,
       statusLabel: getMatchStatusLabel(match.status),

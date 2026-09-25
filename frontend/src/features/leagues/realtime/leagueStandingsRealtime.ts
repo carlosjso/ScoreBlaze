@@ -1,4 +1,4 @@
-import type { LeagueStandingRow } from "@/features/leagues/Leagues.types";
+import type { LeagueStandingRow, LeagueStandingsTiebreaker } from "@/features/leagues/Leagues.types";
 import type { QuickMatchListItem } from "@/features/quick-matches/QuickMatches.types";
 
 const LEAGUE_STANDINGS_WIN_POINTS = 2;
@@ -36,22 +36,19 @@ function createEmptyRow(teamId: number, teamName: string): LiveLeagueStandingRow
   };
 }
 
-function sortStandings(rows: LiveLeagueStandingRow[]) {
+function sortStandings(rows: LiveLeagueStandingRow[], tiebreakers: LeagueStandingsTiebreaker[]) {
   return [...rows].sort((left, right) => {
-    if (right.standingsPoints !== left.standingsPoints) {
-      return right.standingsPoints - left.standingsPoints;
-    }
-
     if (right.wins !== left.wins) {
       return right.wins - left.wins;
     }
 
-    if (right.pointsDifference !== left.pointsDifference) {
-      return right.pointsDifference - left.pointsDifference;
-    }
-
-    if (right.pointsFor !== left.pointsFor) {
-      return right.pointsFor - left.pointsFor;
+    for (const criterion of tiebreakers) {
+      const difference = criterion === "HEAD_TO_HEAD"
+        ? left.position - right.position
+        : criterion === "POINT_DIFFERENCE"
+          ? right.pointsDifference - left.pointsDifference
+          : right.pointsFor - left.pointsFor;
+      if (difference !== 0) return difference;
     }
 
     const nameDiff = left.teamName.localeCompare(right.teamName, "es", { sensitivity: "base" });
@@ -66,6 +63,7 @@ function sortStandings(rows: LiveLeagueStandingRow[]) {
 export function buildLiveLeagueStandings(
   baseStandings: LeagueStandingRow[],
   matches: QuickMatchListItem[],
+  tiebreakers: LeagueStandingsTiebreaker[] = ["HEAD_TO_HEAD", "POINT_DIFFERENCE", "POINTS_FOR"],
 ): LiveLeagueStandingsSnapshot {
   const rowsByTeamId = new Map<number, LiveLeagueStandingRow>();
   const liveSummaryByTeamId = new Map<number, string[]>();
@@ -124,7 +122,7 @@ export function buildLiveLeagueStandings(
     liveSummaryByTeamId.set(match.teamBId, [...(liveSummaryByTeamId.get(match.teamBId) ?? []), teamBSummary]);
   });
 
-  const rows = sortStandings(Array.from(rowsByTeamId.values())).map((row, index) => {
+  const rows = sortStandings(Array.from(rowsByTeamId.values()), tiebreakers).map((row, index) => {
     const liveSummaries = liveSummaryByTeamId.get(row.teamId) ?? [];
     const liveSummary =
       liveSummaries.length === 0

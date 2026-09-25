@@ -10,7 +10,9 @@ from .dependencies import get_league_service, get_league_stats_service
 from .domain import LeagueCompetitionType
 from .schemas import (
     LeagueCreate,
+    LeagueBracketGenerate,
     LeagueDetailOut,
+    LeagueEliminationConversion,
     LeagueOut,
     LeagueStatsSnapshotOut,
     LeagueTeamAssignmentsUpdate,
@@ -78,6 +80,35 @@ def list_league_matches(
     _=Depends(require_permissions("leagues.view")),
 ):
     return service.list_matches(league_id)
+
+
+@router.post("/{league_id}/bracket", response_model=list[MatchOut], status_code=status.HTTP_201_CREATED)
+def generate_league_bracket(
+    league_id: int,
+    payload: LeagueBracketGenerate,
+    service: LeagueService = Depends(get_league_service),
+    _=Depends(require_permissions("leagues.edit")),
+):
+    return service.generate_bracket(league_id, payload)
+
+
+@router.post("/{league_id}/convert-to-elimination", response_model=LeagueOut, status_code=status.HTTP_200_OK)
+def convert_league_to_elimination(
+    league_id: int,
+    payload: LeagueEliminationConversion,
+    service: LeagueService = Depends(get_league_service),
+    _=Depends(require_permissions("leagues.edit")),
+):
+    return service.convert_to_single_elimination(league_id, payload)
+
+
+@router.delete("/{league_id}/bracket", status_code=status.HTTP_204_NO_CONTENT)
+def reset_league_bracket(
+    league_id: int,
+    service: LeagueService = Depends(get_league_service),
+    _=Depends(require_permissions("leagues.edit")),
+):
+    service.reset_bracket(league_id)
 
 
 @router.get("/{league_id}/stats", response_model=LeagueStatsSnapshotOut, status_code=status.HTTP_200_OK)

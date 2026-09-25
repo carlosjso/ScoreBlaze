@@ -16,6 +16,7 @@ import LeagueCalendarPage from "@/features/leagues/LeagueCalendarPage";
 import LeagueBracketPage from "@/features/leagues/LeagueBracketPage";
 import LeagueDashboardPage from "@/features/leagues/LeagueDashboardPage";
 import LeagueFinalPhaseSettingsPage from "@/features/leagues/LeagueFinalPhaseSettingsPage";
+import LeagueGroupsSettingsPage from "@/features/leagues/LeagueGroupsSettingsPage";
 import LeagueMatchesPage from "@/features/leagues/LeagueMatchesPage";
 import LeagueRecordsPage from "@/features/leagues/LeagueRecordsPage";
 import LeagueSettingsPage from "@/features/leagues/LeagueSettingsPage";
@@ -83,6 +84,7 @@ export default function App() {
                 <Route path="/leagues/:leagueId/teams/manage" element={<LeagueTeamsManagePage />} />
                 <Route path="/leagues/:leagueId/matches" element={<LeagueMatchesPage />} />
                 <Route path="/leagues/:leagueId/standings" element={<LeagueStandingsPage />} />
+                <Route path="/leagues/:leagueId/groups" element={<LeagueGroupsSettingsPage />} />
                 <Route path="/leagues/:leagueId/final-phase/settings" element={<LeagueFinalPhaseSettingsPage />} />
                 <Route path="/leagues/:leagueId/settings" element={<LeagueSettingsPage />} />
                 <Route path="/leagues/:leagueId/matches/:matchId/stats" element={<QuickMatchStatsPage />} />

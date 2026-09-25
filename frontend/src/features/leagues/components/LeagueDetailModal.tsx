@@ -5,7 +5,7 @@ import type { LeagueFinalPhasePresetOption, LeagueListItem } from "@/features/le
 const finalPhasePresetLabels: Record<LeagueFinalPhasePresetOption, string> = {
   TOP_4_SINGLE_GAME: "Top 4 - Partido unico",
   TOP_8_SINGLE_GAME: "Top 8 - Partido unico",
-  TOP_8_HOME_AWAY: "Top 8 - Ida y vuelta",
+  TOP_8_HOME_AWAY: "Top 8 - Partido unico (legado)",
   TOP_6_SINGLE_GAME_WITH_BYES: "Top 6 - Bye 1ro y 2do",
   TOP_16_SINGLE_GAME: "Top 16 - Partido unico",
   TOP_32_SINGLE_GAME: "Top 32 - Partido unico",
@@ -36,7 +36,18 @@ export function LeagueDetailModal({ league, isOpen, teamNameById, onClose }: Lea
           <Input label="Categoria" value={league.category} disabled />
           <Input label="Fecha de inicio" value={league.startDate} disabled />
           <Input label="Fecha de fin" value={league.endDate} disabled />
-          <Input label="Tipo" value={league.competitionType === "ELIMINATION" ? "Eliminatoria" : "Liga"} disabled />
+          <Input
+            label="Tipo"
+            value={league.competitionType === "ELIMINATION" ? "Eliminatoria" : league.competitionType === "GROUPS" ? "Torneo por grupos" : "Liga"}
+            disabled
+          />
+          {!isElimination ? (
+            <Input
+              label="Fase regular"
+              value={league.regularSeasonFormat === "DOUBLE_ROUND" ? "Ida y vuelta" : "Una vuelta"}
+              disabled
+            />
+          ) : null}
 
           <div className="space-y-1">
             <p className="text-xs font-semibold text-slate-600">Estatus</p>
@@ -50,7 +61,9 @@ export function LeagueDetailModal({ league, isOpen, teamNameById, onClose }: Lea
             label="Fase final"
             value={
               league.finalPhaseEnabled
-                ? `${finalPhasePresetLabels[league.finalPhasePreset]} (Top ${league.finalPhaseQualifiedTeams})`
+                ? league.competitionType === "ELIMINATION"
+                  ? `${league.finalPhaseQualifiedTeams} participantes - ${finalPhasePresetLabels[league.finalPhasePreset]}`
+                  : `${finalPhasePresetLabels[league.finalPhasePreset]} (Top ${league.finalPhaseQualifiedTeams})`
                 : "Desactivada"
             }
             disabled

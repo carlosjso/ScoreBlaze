@@ -86,6 +86,13 @@ export default function LeagueMatchesPage() {
   const panelError = mutationErrorMessage ?? error;
   const deleteMatchLabel = modals.deleteMatch ? truncateText(modals.deleteMatch.matchupLabel, 48) : null;
   const deleteLeagueLabel = truncateText(league?.name ?? "esta liga", 38);
+  const regularPhaseLocked = Boolean(
+    league?.bracketGenerated && (league.competitionType === "LEAGUE" || league.competitionType === "GROUPS"),
+  );
+  const isDirectElimination = league?.competitionType === "ELIMINATION";
+  const eliminationStructureLocked = Boolean(isDirectElimination && league?.bracketGenerated);
+  const creationLocked = regularPhaseLocked || eliminationStructureLocked || league?.status === "Finalizada";
+  const entityLabel = isDirectElimination ? "eliminatoria" : "liga";
 
   const resetFilters = () => {
     setSearch("");
@@ -134,8 +141,8 @@ export default function LeagueMatchesPage() {
     <div className="sb-page">
       <div className="sb-page-shell">
         <PageHeader
-          title="Partidos de liga"
-          subtitle="Programa y administra partidos usando solo los equipos asignados a esta liga."
+          title={isDirectElimination ? "Partidos de eliminatoria" : "Partidos de liga"}
+          subtitle={isDirectElimination ? "Define los cruces iniciales y, al cerrar la llave, administra su calendario y resultados." : "Programa y administra partidos usando solo los equipos asignados a esta liga."}
           actions={<LeagueSectionNav league={league} active="matches" />}
         />
 
@@ -207,12 +214,28 @@ export default function LeagueMatchesPage() {
                 </div>
               ) : null}
 
+              {regularPhaseLocked ? (
+                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <strong>Fase regular cerrada.</strong> Los partidos regulares conservan su historial, pero ya no se pueden crear, editar ni eliminar. Los cruces de playoffs siguen disponibles.
+                </div>
+              ) : null}
+
+              {isDirectElimination ? (
+                <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${eliminationStructureLocked ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-sky-200 bg-sky-50 text-sky-900"}`}>
+                  {eliminationStructureLocked ? (
+                    <><strong>Llave cerrada.</strong> Ya no puedes crear, borrar ni cambiar participantes. Si hace falta, todavia puedes reprogramar cada cruce o registrar su resultado.</>
+                  ) : (
+                    <><strong>Armado inicial.</strong> Crea y corrige manualmente los cruces de la primera ronda. Cuando termines, ve a Llaves y pulsa “Listo” para bloquear la estructura.</>
+                  )}
+                </div>
+              ) : null}
+
               <QuickMatchesToolbar
                 search={search}
                 statusFilter={statusFilter}
-                disabled={loading || teams.length < 2}
+                disabled={loading || teams.length < 2 || creationLocked}
                 searchPlaceholder="Buscar por equipo, estatus o fecha"
-                createButtonLabel="Crear partido de liga"
+                createButtonLabel={isDirectElimination ? "Crear cruce inicial" : "Crear partido de liga"}
                 onSearchChange={setSearch}
                 onStatusFilterChange={setStatusFilter}
                 onCreate={openCreate}
@@ -226,13 +249,20 @@ export default function LeagueMatchesPage() {
                   hasActiveFilters={hasActiveFilters}
                   deletingMatchId={deletingMatchId}
                   loadingLabel="Cargando partidos de la liga..."
-                  emptyStateTitle="No hay partidos registrados en esta liga"
-                  emptyStateDescription="Programa el primer partido de esta liga usando solo sus equipos asignados."
-                  emptyStateActionLabel="Crear partido de liga"
+                  emptyStateTitle={isDirectElimination ? "Aun no hay cruces iniciales" : "No hay partidos registrados en esta liga"}
+                  emptyStateDescription={isDirectElimination ? "Crea manualmente los partidos de la primera ronda o genera la llave desde Llaves." : "Programa el primer partido de esta liga usando solo sus equipos asignados."}
+                  emptyStateActionLabel={isDirectElimination ? "Crear cruce inicial" : "Crear partido de liga"}
                   buildStatsPath={(match) => `/leagues/${league.id}/matches/${match.id}/stats`}
                   onEmptyAction={openCreate}
                   onClearFilters={resetFilters}
                   onView={modals.openDetail}
+                  isMatchReadOnly={(match) => regularPhaseLocked && (
+                    match.competitionStage === "REGULAR_SEASON" || match.competitionStage === "GROUP_STAGE"
+                  )}
+                  isMatchDeleteDisabled={(match) => (
+                    regularPhaseLocked && (match.competitionStage === "REGULAR_SEASON" || match.competitionStage === "GROUP_STAGE")
+                  ) || (eliminationStructureLocked && match.bracketRound !== null)}
+                  isScoreboardDisabled={(match) => Boolean(isDirectElimination && !eliminationStructureLocked && match.bracketRound === null)}
                   onEdit={(match) => {
                     clearMutationError();
                     modals.openEdit(match);
@@ -253,7 +283,9 @@ export default function LeagueMatchesPage() {
         mode={modals.formMode}
         initialMatch={modals.editingMatch}
         teams={teams}
-        title={modals.formMode === "create" ? "Crear partido de liga" : "Editar partido de liga"}
+        teamGroups={league?.groupStageConfig?.groups ?? []}
+        title={modals.formMode === "create" ? `Crear partido de ${entityLabel}` : `Editar partido de ${entityLabel}`}
+        lockTeams={Boolean(isDirectElimination && modals.formMode === "edit" && modals.editingMatch?.bracketRound !== null)}
         loading={submitting}
         apiError={mutationError}
         onClose={() => {
@@ -266,13 +298,13 @@ export default function LeagueMatchesPage() {
       <QuickMatchDetailModal
         match={modals.detailMatch}
         isOpen={modals.detailMatch !== null}
-        title="Detalle de partido de liga"
+        title={`Detalle de partido de ${entityLabel}`}
         onClose={modals.closeDetail}
       />
 
       <ConfirmModal
         isOpen={modals.deleteMatch !== null}
-        title="Eliminar partido de liga"
+        title={`Eliminar partido de ${entityLabel}`}
         message={
           modals.deleteMatch
             ? `Seguro que deseas eliminar ${deleteMatchLabel ?? "este partido"} de ${deleteLeagueLabel}? Esta accion no se puede deshacer.`

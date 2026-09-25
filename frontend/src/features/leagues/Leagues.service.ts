@@ -130,6 +130,30 @@ export const leaguesService = {
     );
   },
 
+  convertToElimination(
+    leagueId: number,
+    payload: LeagueMutationPayload,
+    orderedTeamIds: number[],
+    expectedMatchIds: number[],
+    seedMode: "STANDINGS" | "RANDOM" | "MANUAL",
+    signal?: AbortSignal,
+  ) {
+    return requestJson(
+      apiClient.post(
+        `/api/leagues/${leagueId}/convert-to-elimination`,
+        {
+          league: payload,
+          ordered_team_ids: orderedTeamIds,
+          expected_match_ids: expectedMatchIds,
+          seed_mode: seedMode,
+        },
+        { signal },
+      ),
+      apiLeagueSchema,
+      "La respuesta de la conversion es invalida.",
+    );
+  },
+
   replaceLeagueTeams(leagueId: number, teamIds: number[], signal?: AbortSignal) {
     return requestJson(
       apiClient.put(

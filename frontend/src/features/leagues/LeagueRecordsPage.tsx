@@ -217,7 +217,7 @@ export default function LeagueRecordsPage() {
   const loading = detailQuery.isPending || statsQuery.isPending;
   const panelError = detailQuery.error instanceof Error ? detailQuery.error.message : null;
   const statsError = statsQuery.error instanceof Error ? statsQuery.error.message : null;
-  const leaderItems = useMemo(() => buildLeagueLeaderPreviewItems(stats), [stats]);
+  const leaderItems = useMemo(() => buildLeagueLeaderPreviewItems(stats, league?.competitionType), [league?.competitionType, stats]);
   const teamLeaderItems = leaderItems.filter((item) => item.category === "team");
   const playerLeaderItems = leaderItems.filter((item) => item.category === "player");
   const scoringRanking = stats?.playerRankings.slice(0, 10) ?? [];

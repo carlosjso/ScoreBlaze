@@ -60,6 +60,31 @@
     @apply rounded-[18px] border border-slate-300/90 bg-white shadow-sm;
   }
 
+  .sb-bracket-scroll {
+    scrollbar-color: #fb923c #f1f5f9;
+    scrollbar-gutter: stable both-edges;
+    scrollbar-width: auto;
+  }
+
+  .sb-bracket-scroll::-webkit-scrollbar {
+    height: 12px;
+  }
+
+  .sb-bracket-scroll::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: #f1f5f9;
+  }
+
+  .sb-bracket-scroll::-webkit-scrollbar-thumb {
+    border: 3px solid #f1f5f9;
+    border-radius: 999px;
+    background: #fb923c;
+  }
+
+  .sb-bracket-scroll::-webkit-scrollbar-thumb:hover {
+    background: #f97316;
+  }
+
   .sb-filter-bar .sb-input {
     @apply h-10 rounded-full border-slate-200 bg-slate-50 py-2 text-sm shadow-none;
   }

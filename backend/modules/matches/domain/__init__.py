@@ -1,4 +1,4 @@
-from .enums import MatchStatus
+from .enums import MatchCompetitionStage, MatchStatus
 from .rules import (
     MatchResult,
     MatchScoreState,
@@ -9,6 +9,7 @@ from .rules import (
 
 __all__ = [
     "MatchStatus",
+    "MatchCompetitionStage",
     "MatchResult",
     "MatchScoreState",
     "resolve_match_result",

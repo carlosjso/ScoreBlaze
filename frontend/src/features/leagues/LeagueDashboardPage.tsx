@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowRight,
   CalendarDays,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
@@ -19,6 +21,7 @@ import { useLeagueMatchesData } from "@/features/leagues/hooks/useLeagueMatchesD
 import { buildLeagueLeaderPreviewItems } from "@/features/leagues/leagueLeaders";
 import { getCompetitionCapabilities } from "@/features/leagues/competitionCapabilities";
 import { leaguesQueryKeys, leaguesService } from "@/features/leagues/Leagues.service";
+import type { LeagueListItem } from "@/features/leagues/Leagues.types";
 import { buildLiveLeagueStandings } from "@/features/leagues/realtime/leagueStandingsRealtime";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
 import { StatusBadge } from "@/shared/components/badges/StatusBadge";
@@ -121,6 +124,77 @@ function SummaryCard({
   );
 }
 
+function GroupPreparationCard({ league, onNavigate }: { league: LeagueListItem; onNavigate: (path: string) => void }) {
+  const hasEnoughTeams = league.teamCount >= 4;
+  const hasGroups = Boolean(league.groupStageConfig);
+  const groupCount = league.groupStageConfig?.groups.length ?? 0;
+  const assignedCount = league.groupStageConfig?.groups.reduce((total, group) => total + group.teamIds.length, 0) ?? 0;
+  const destination = hasEnoughTeams ? `/leagues/${league.id}/groups` : `/leagues/${league.id}/teams/manage`;
+  const actionLabel = hasGroups ? "Revisar grupos" : hasEnoughTeams ? "Distribuir equipos" : "Reunir equipos";
+
+  const steps = [
+    { label: "Torneo creado", detail: "Datos generales listos", complete: true },
+    {
+      label: "Equipos reunidos",
+      detail: `${league.teamCount} ${league.teamCount === 1 ? "equipo inscrito" : "equipos inscritos"}`,
+      complete: hasEnoughTeams,
+    },
+    {
+      label: "Grupos definidos",
+      detail: hasGroups ? `${groupCount} grupos, ${assignedCount} equipos` : "Distribucion pendiente",
+      complete: hasGroups,
+    },
+  ];
+
+  return (
+    <section className="mt-5 overflow-hidden rounded-[28px] border border-sky-200 bg-[linear-gradient(135deg,#eff9ff_0%,#ffffff_52%,#fff7ed_100%)] shadow-[0_16px_38px_rgba(14,116,144,0.08)]">
+      <div className="flex flex-col gap-4 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-sky-700">Preparacion del torneo</p>
+          <h3 className="mt-1 text-xl font-bold text-slate-950">
+            {hasGroups ? "La fase de grupos esta lista" : hasEnoughTeams ? "Ya puedes formar los grupos" : "Primero reune a los participantes"}
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            {hasGroups
+              ? "La distribucion quedo guardada y protegida. Desde Configurar modo puedes revisar sus reglas."
+              : hasEnoughTeams
+                ? "La lista de participantes ya permite crear al menos dos grupos validos."
+                : `Necesitas al menos 4 equipos. Faltan ${Math.max(0, 4 - league.teamCount)} para continuar.`}
+          </p>
+        </div>
+        <Button variant="primary" onClick={() => onNavigate(destination)} className="shrink-0">
+          {actionLabel}
+          <ArrowRight size={15} />
+        </Button>
+      </div>
+
+      <div className="grid border-t border-sky-100 bg-white/70 sm:grid-cols-3">
+        {steps.map((step, index) => {
+          const active = !step.complete && steps.slice(0, index).every((candidate) => candidate.complete);
+          return (
+            <div key={step.label} className="flex items-center gap-3 border-b border-sky-100 px-5 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+              <span className={cn(
+                "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-black",
+                step.complete
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : active
+                    ? "border-orange-300 bg-orange-50 text-orange-700"
+                    : "border-slate-200 bg-slate-50 text-slate-400",
+              )}>
+                {step.complete ? <CheckCircle2 size={17} /> : index + 1}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-slate-900">{step.label}</span>
+                <span className="mt-0.5 block truncate text-xs text-slate-500">{step.detail}</span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function LeagueDashboardPage() {
   const navigate = useNavigate();
   const { leagueId: leagueIdParam } = useParams();
@@ -146,13 +220,14 @@ export default function LeagueDashboardPage() {
   const panelError = detailQuery.error instanceof Error ? detailQuery.error.message : null;
   const statsError = statsQuery.error instanceof Error ? statsQuery.error.message : null;
   const standingsSnapshot = useMemo(
-    () => (stats ? buildLiveLeagueStandings(stats.standings, liveMatchesSnapshot.matches) : null),
-    [liveMatchesSnapshot.matches, stats],
+    () => (stats ? buildLiveLeagueStandings(stats.standings, league?.bracketGenerated ? [] : liveMatchesSnapshot.matches, league?.standingsTiebreakers) : null),
+    [league?.bracketGenerated, league?.standingsTiebreakers, liveMatchesSnapshot.matches, stats],
   );
   const standingsRows = standingsSnapshot?.rows ?? [];
   const hasLiveStandings = (standingsSnapshot?.liveMatchCount ?? 0) > 0;
-  const leaderPreviewItems = useMemo(() => buildLeagueLeaderPreviewItems(stats), [stats]);
+  const leaderPreviewItems = useMemo(() => buildLeagueLeaderPreviewItems(stats, league?.competitionType), [league?.competitionType, stats]);
   const capabilities = league ? getCompetitionCapabilities(league) : null;
+  const groupSetupPending = league?.competitionType === "GROUPS" && !league.groupStageConfig;
   const [activeLeaderPage, setActiveLeaderPage] = useState(0);
 
   const actions: DashboardActionCard[] = [
@@ -163,17 +238,23 @@ export default function LeagueDashboardPage() {
       to: "/leagues/:leagueId/teams",
     },
     {
-      title: "Gestionar equipos",
-      description: "Agrega, quita o reordena los equipos de esta liga.",
+      title: league?.competitionType === "GROUPS" ? "Grupos" : "Gestionar equipos",
+      description: league?.competitionType === "GROUPS"
+        ? groupSetupPending
+          ? "Reune participantes y despues distribuyelos por grupo."
+          : "Revisa la distribucion y las reglas de cada grupo."
+        : "Agrega, quita o reordena los equipos de esta liga.",
       icon: <LayoutGrid size={18} />,
-      to: "/leagues/:leagueId/teams/manage",
+      to: league?.competitionType === "GROUPS" && league.teamCount >= 4
+        ? "/leagues/:leagueId/groups"
+        : "/leagues/:leagueId/teams/manage",
     },
     {
       title: "Calendario",
       description: "Visualiza las jornadas de la competencia en formato calendario.",
       icon: <CalendarDays size={18} />,
       to: "/leagues/:leagueId/calendar",
-      disabled: !capabilities?.showLeagueCalendar,
+      disabled: !capabilities?.showLeagueCalendar || groupSetupPending,
     },
     {
       title: "Llaves",
@@ -187,13 +268,14 @@ export default function LeagueDashboardPage() {
       description: "Programa, edita y controla los partidos competitivos.",
       icon: <Swords size={18} />,
       to: "/leagues/:leagueId/matches",
+      disabled: groupSetupPending,
     },
     {
       title: "Tabla de posiciones",
       description: "Revisa la tabla actual con puntos, victorias y diferencia.",
       icon: <ListOrdered size={18} />,
       to: "/leagues/:leagueId/standings",
-      disabled: !capabilities?.showStandings,
+      disabled: !capabilities?.showStandings || groupSetupPending || league?.competitionType === "GROUPS",
     },
     {
       title: "Ajustes de liga",
@@ -254,7 +336,7 @@ export default function LeagueDashboardPage() {
     <div className="sb-page">
       <div className="sb-page-shell max-w-[1320px]">
         <PageHeader
-          title={league?.competitionType === "ELIMINATION" ? "Centro de eliminatoria" : "Centro de liga"}
+          title={league?.competitionType === "ELIMINATION" ? "Centro de eliminatoria" : league?.competitionType === "GROUPS" ? "Centro de grupos" : "Centro de liga"}
           subtitle="Administra esta competencia desde un solo lugar: equipos, partidos, estructura y ajustes."
           actions={<LeagueSectionNav league={league} active="dashboard" />}
         />
@@ -310,7 +392,7 @@ export default function LeagueDashboardPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-700">
                             <Trophy size={12} />
-                            {league.competitionType === "ELIMINATION" ? "Eliminatoria" : "Liga"} #{league.id}
+                            {league.competitionType === "ELIMINATION" ? "Eliminatoria" : league.competitionType === "GROUPS" ? "Grupos" : "Liga"} #{league.id}
                           </span>
                           {capabilities ? (
                             <span className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
@@ -354,6 +436,8 @@ export default function LeagueDashboardPage() {
                 </div>
               </section>
 
+              {league.competitionType === "GROUPS" ? <GroupPreparationCard league={league} onNavigate={navigate} /> : null}
+
               <section className="mt-5 rounded-[30px] border border-slate-300 bg-[linear-gradient(180deg,#fcfcfd_0%,#f6f7f9_100%)] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
                 <div className="rounded-[26px] border border-slate-200 bg-white px-4 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:px-6">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -387,8 +471,8 @@ export default function LeagueDashboardPage() {
                 <section className="rounded-[28px] border border-slate-300 bg-white p-5 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Tabla actual</p>
-                      <h3 className="mt-1 text-xl font-semibold text-slate-950">Posiciones de la liga</h3>
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{capabilities.showGroups ? "Fase actual" : "Tabla actual"}</p>
+                      <h3 className="mt-1 text-xl font-semibold text-slate-950">{capabilities.showGroups ? "Carpetas de grupos" : "Posiciones de la liga"}</h3>
                       {hasLiveStandings ? (
                         <p className="mt-1 text-xs font-medium text-orange-600">
                           Tabla provisional en vivo
@@ -396,12 +480,24 @@ export default function LeagueDashboardPage() {
                       ) : null}
                     </div>
 
-                    <Button variant="outline" onClick={() => navigate(`/leagues/${league.id}/standings`)}>
-                      Ver tabla
+                    <Button variant="outline" onClick={() => navigate(
+                      capabilities.showGroups ? `/leagues/${league.id}/groups` : `/leagues/${league.id}/standings`,
+                    )}>
+                      {capabilities.showGroups ? "Abrir grupos" : "Ver tabla"}
                     </Button>
                   </div>
 
-                  {standingsRows.length > 0 ? (
+                  {capabilities.showGroups && (stats?.groupStandings.length ?? 0) > 0 ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {stats?.groupStandings.map((group) => (
+                        <div key={group.groupKey} className="rounded-[18px] border border-sky-100 bg-sky-50/60 px-4 py-3">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sky-700">{group.groupName}</p>
+                          <p className="mt-1 truncate text-sm font-bold text-slate-900">{group.standings[0]?.teamName ?? "Sin equipos"}</p>
+                          <p className="mt-1 text-xs text-slate-500">{group.matchCount} partidos registrados</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : standingsRows.length > 0 ? (
                     <div className="mt-4 overflow-hidden rounded-[22px] border border-slate-200">
                       <div className="grid grid-cols-[56px_minmax(0,1fr)_72px_72px] border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                         <span>Pos</span>

@@ -17,6 +17,10 @@ class Match(Base):
             f"('{MatchStatus.SCHEDULED.value}', '{MatchStatus.LIVE.value}', '{MatchStatus.FINISHED.value}')",
             name="ck_matches_status",
         ),
+        CheckConstraint(
+            "competition_stage IN ('REGULAR_SEASON', 'GROUP_STAGE', 'FINAL_PHASE')",
+            name="ck_matches_competition_stage",
+        ),
     )
 
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
@@ -56,6 +60,15 @@ class Match(Base):
     court = Column(String(80), nullable=True)
     tournament = Column(String(100), nullable=True)
     tracked_stats = Column(JSON, nullable=False, default=list)
+    competition_stage = Column(String(20), nullable=False, default="REGULAR_SEASON", server_default="REGULAR_SEASON")
+    group_stage_group_key = Column(String(20), nullable=True)
+    bracket_round = Column(Integer, nullable=True)
+    bracket_slot = Column(Integer, nullable=True)
+    bracket_size = Column(Integer, nullable=True)
+    bracket_game = Column(Integer, nullable=True)
+    bracket_series_mode = Column(String(20), nullable=True)
+    bracket_series_best_of = Column(Integer, nullable=True)
+    bracket_path = Column(String(20), nullable=True)
     status = Column(
         String(20),
         nullable=False,

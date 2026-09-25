@@ -23,9 +23,32 @@ class LeagueFinalPhasePreset(StrEnum):
 class LeagueCompetitionType(StrEnum):
     LEAGUE = "LEAGUE"
     ELIMINATION = "ELIMINATION"
+    GROUPS = "GROUPS"
+
+
+class LeagueRegularSeasonFormat(StrEnum):
+    SINGLE_ROUND = "SINGLE_ROUND"
+    DOUBLE_ROUND = "DOUBLE_ROUND"
+
+
+class LeagueStandingsTiebreaker(StrEnum):
+    HEAD_TO_HEAD = "HEAD_TO_HEAD"
+    POINT_DIFFERENCE = "POINT_DIFFERENCE"
+    POINTS_FOR = "POINTS_FOR"
 
 
 class LeagueFinalPhaseFormat(StrEnum):
     SINGLE_ELIMINATION = "SINGLE_ELIMINATION"
     DOUBLE_ELIMINATION = "DOUBLE_ELIMINATION"
     PLAY_IN_PLUS_BRACKET = "PLAY_IN_PLUS_BRACKET"
+
+
+class LeagueGroupStageMode(StrEnum):
+    UNIFORM = "UNIFORM"
+    MANUAL = "MANUAL"
+
+
+class LeagueGroupWildcardRankingMetric(StrEnum):
+    WIN_PERCENTAGE = "WIN_PERCENTAGE"
+    AVERAGE_POINT_DIFFERENCE = "AVERAGE_POINT_DIFFERENCE"
+    AVERAGE_POINTS_FOR = "AVERAGE_POINTS_FOR"

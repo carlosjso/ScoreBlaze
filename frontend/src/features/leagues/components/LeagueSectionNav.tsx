@@ -7,7 +7,7 @@ import { Button } from "@/shared/components/ui";
 type LeagueSectionNavProps = {
   leagueId?: number | null;
   league?: Pick<LeagueListItem, "id" | "competitionType" | "finalPhaseEnabled" | "finalPhaseFormat" | "finalPhasePreset"> | null;
-  active?: "dashboard" | "bracket" | "matches" | "standings" | "teams";
+  active?: "dashboard" | "bracket" | "groups" | "matches" | "standings" | "teams";
 };
 
 export function LeagueSectionNav({
@@ -19,7 +19,7 @@ export function LeagueSectionNav({
   const resolvedLeagueId = league?.id ?? leagueId;
   const capabilities = league ? getCompetitionCapabilities(league) : null;
 
-  const goTo = (section: "dashboard" | "bracket" | "matches" | "standings" | "teams") => {
+  const goTo = (section: "dashboard" | "bracket" | "groups" | "matches" | "standings" | "teams") => {
     if (!resolvedLeagueId) {
       navigate("/leagues");
       return;
@@ -37,6 +37,11 @@ export function LeagueSectionNav({
 
     if (section === "bracket") {
       navigate(`/leagues/${resolvedLeagueId}/bracket`);
+      return;
+    }
+
+    if (section === "groups") {
+      navigate(`/leagues/${resolvedLeagueId}/groups`);
       return;
     }
 
@@ -64,13 +69,21 @@ export function LeagueSectionNav({
           Llaves
         </Button>
       ) : null}
+      {league?.competitionType === "GROUPS" ? (
+        <Button
+          variant={active === "groups" ? "primary" : "outline"}
+          onClick={() => goTo("groups")}
+        >
+          Grupos
+        </Button>
+      ) : null}
       <Button
         variant={active === "matches" ? "primary" : "outline"}
         onClick={() => goTo("matches")}
       >
         Partidos
       </Button>
-      {capabilities?.showStandings ? (
+      {capabilities?.showStandings && league?.competitionType !== "GROUPS" ? (
         <Button
           variant={active === "standings" ? "primary" : "outline"}
           onClick={() => goTo("standings")}

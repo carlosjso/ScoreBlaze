@@ -36,7 +36,7 @@ type LeaguesTableProps = {
   onEdit: (league: LeagueListItem) => void;
   onManage: (league: LeagueListItem) => void;
   onDelete: (league: LeagueListItem) => void;
-  mode?: "league" | "elimination";
+  mode?: "league" | "elimination" | "groups";
 };
 
 const sortLabels: Record<SortKey, string> = {
@@ -238,8 +238,8 @@ function LeagueCard({
 }) {
   const teamCountLabel = `${league.teamCount} ${league.teamCount === 1 ? "equipo" : "equipos"}`;
   const leagueTypeLabel = league.category || "Sin tipo";
-  const entityLabel = mode === "elimination" ? "Eliminatoria" : "Liga";
-  const typeLabel = mode === "elimination" ? "Tipo de eliminatoria" : "Tipo de liga";
+  const entityLabel = mode === "elimination" ? "Eliminatoria" : mode === "groups" ? "Grupos" : "Liga";
+  const typeLabel = mode === "elimination" ? "Tipo de eliminatoria" : mode === "groups" ? "Categoria" : "Tipo de liga";
 
   return (
     <article
@@ -343,8 +343,8 @@ export function LeaguesTable({
   onDelete,
   mode = "league",
 }: LeaguesTableProps) {
-  const entitySingular = mode === "elimination" ? "eliminatoria" : "liga";
-  const entityPlural = mode === "elimination" ? "eliminatorias" : "ligas";
+  const entitySingular = mode === "elimination" ? "eliminatoria" : mode === "groups" ? "torneo por grupos" : "liga";
+  const entityPlural = mode === "elimination" ? "eliminatorias" : mode === "groups" ? "torneos por grupos" : "ligas";
 
   return (
     <div className="space-y-5">

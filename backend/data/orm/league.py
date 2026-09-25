@@ -17,8 +17,12 @@ class League(Base):
             name="ck_leagues_status",
         ),
         CheckConstraint(
-            "competition_type IN ('LEAGUE', 'ELIMINATION')",
+            "competition_type IN ('LEAGUE', 'ELIMINATION', 'GROUPS')",
             name="ck_leagues_competition_type",
+        ),
+        CheckConstraint(
+            "regular_season_format IN ('SINGLE_ROUND', 'DOUBLE_ROUND')",
+            name="ck_leagues_regular_season_format",
         ),
         CheckConstraint(
             (
@@ -50,6 +54,10 @@ class League(Base):
             name="ck_leagues_final_phase_format",
         ),
         CheckConstraint(
+            "final_phase_seed_mode IN ('STANDINGS', 'RANDOM', 'MANUAL')",
+            name="ck_leagues_final_phase_seed_mode",
+        ),
+        CheckConstraint(
             "final_phase_round_best_of IN (1, 3, 5, 7)",
             name="ck_leagues_final_phase_round_best_of",
         ),
@@ -70,10 +78,19 @@ class League(Base):
     category = Column(String(80), nullable=False)
     status = Column(String(20), nullable=False, default="Sin empezar", server_default="Sin empezar", index=True)
     competition_type = Column(String(20), nullable=False, default="LEAGUE", server_default="LEAGUE", index=True)
+    regular_season_format = Column(String(20), nullable=False, default="SINGLE_ROUND", server_default="SINGLE_ROUND")
+    standings_tiebreakers = Column(
+        JSON,
+        nullable=False,
+        default=lambda: ["HEAD_TO_HEAD", "POINT_DIFFERENCE", "POINTS_FOR"],
+        server_default='["HEAD_TO_HEAD", "POINT_DIFFERENCE", "POINTS_FOR"]',
+    )
     start_date = Column(Date, nullable=False, index=True)
     end_date = Column(Date, nullable=False, index=True)
     logo = Column(LargeBinary, nullable=True)
     tracked_stats = Column(JSON, nullable=False, default=list)
+    group_stage_config = Column(JSON, nullable=True)
+    bracket_state = Column(JSON, nullable=True)
     final_phase_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
     final_phase_preset = Column(
         String(40),
@@ -92,6 +109,7 @@ class League(Base):
     final_phase_two_legs = Column(Boolean, nullable=False, default=False, server_default="false")
     final_phase_third_place_match = Column(Boolean, nullable=False, default=False, server_default="false")
     final_phase_seeded_home_advantage = Column(Boolean, nullable=False, default=True, server_default="true")
+    final_phase_seed_mode = Column(String(20), nullable=False, default="STANDINGS", server_default="STANDINGS")
     final_phase_play_in_slots = Column(Integer, nullable=False, default=0, server_default="0")
     final_phase_round_best_of = Column(Integer, nullable=False, default=1, server_default="1")
     final_phase_final_best_of = Column(Integer, nullable=False, default=1, server_default="1")
@@ -121,6 +139,18 @@ class League(Base):
     @property
     def team_ids(self) -> list[int]:
         return [membership.team_id for membership in self.team_memberships]
+
+    @property
+    def bracket_generated(self) -> bool:
+        return bool(self.bracket_state)
+
+    @property
+    def bracket_completed(self) -> bool:
+        state = self.bracket_state or {}
+        if not state.get("champion_team_id"):
+            return False
+        third_place_nodes = [node for node in state.get("nodes", {}).values() if node.get("is_third_place")]
+        return all(node.get("winner_team_id") for node in third_place_nodes)
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"League(id={self.id}, name={self.name})"

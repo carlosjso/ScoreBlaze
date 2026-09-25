@@ -3,6 +3,7 @@ import type { LeagueListItem } from "@/features/leagues/Leagues.types";
 export type CompetitionStructure =
   | "LEAGUE_ONLY"
   | "LEAGUE_PLAYOFFS"
+  | "GROUP_STAGE"
   | "SINGLE_ELIMINATION"
   | "DOUBLE_ELIMINATION"
   | "PLAY_IN_PLUS_BRACKET";
@@ -34,13 +35,19 @@ function structureLabelForLeague(
     return "Liga + Play-In + bracket";
   }
 
+  if (league.competitionType === "LEAGUE" && league.finalPhaseEnabled) {
+    return "Liga + Playoffs";
+  }
+
   switch (structure) {
     case "LEAGUE_ONLY":
       return "Solo liga";
     case "LEAGUE_PLAYOFFS":
       return "Liga + Playoffs";
+    case "GROUP_STAGE":
+      return league.finalPhaseEnabled ? "Grupos + eliminatoria" : "Torneo por grupos";
     case "SINGLE_ELIMINATION":
-      return "Eliminacion simple";
+      return "Eliminatoria directa";
     case "DOUBLE_ELIMINATION":
       return "Doble eliminacion";
     case "PLAY_IN_PLUS_BRACKET":
@@ -61,6 +68,10 @@ export function inferCompetitionStructure(
     }
 
     return "SINGLE_ELIMINATION";
+  }
+
+  if (league.competitionType === "GROUPS") {
+    return "GROUP_STAGE";
   }
 
   if (!league.finalPhaseEnabled) {
@@ -86,22 +97,20 @@ export function getCompetitionCapabilities(
   league: Pick<LeagueListItem, "competitionType" | "finalPhaseEnabled" | "finalPhaseFormat" | "finalPhasePreset">,
 ): CompetitionCapabilities {
   const structure = inferCompetitionStructure(league);
-  const hasRegularSeason =
-    structure === "LEAGUE_ONLY"
-    || structure === "LEAGUE_PLAYOFFS"
-    || (structure === "PLAY_IN_PLUS_BRACKET" && league.competitionType === "LEAGUE");
-  const hasBracket = structure !== "LEAGUE_ONLY";
+  const hasGroupStage = structure === "GROUP_STAGE";
+  const hasRegularSeason = league.competitionType === "LEAGUE";
+  const hasBracket = hasGroupStage ? league.finalPhaseEnabled : structure !== "LEAGUE_ONLY";
 
   return {
     structure,
     label: structureLabelForLeague(league, structure),
-    showStandings: hasRegularSeason,
+    showStandings: hasRegularSeason || hasGroupStage,
     showBracket: hasBracket,
-    showGroups: false,
+    showGroups: hasGroupStage,
     showPlayIn: structure === "PLAY_IN_PLUS_BRACKET",
-    showLeagueCalendar: hasRegularSeason,
+    showLeagueCalendar: hasRegularSeason || hasGroupStage,
     showLeagueRecords: true,
-    showLeagueRounds: hasRegularSeason,
+    showLeagueRounds: hasRegularSeason || hasGroupStage,
     showTeams: true,
     showMatches: true,
     showSettings: true,

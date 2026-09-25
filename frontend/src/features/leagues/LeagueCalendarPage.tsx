@@ -14,6 +14,8 @@ import { StatusBadge } from "@/shared/components/badges/StatusBadge";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { Button, Modal, PageHeader, Panel, Select } from "@/shared/components/ui";
 import { LeagueSectionNav } from "@/features/leagues/components/LeagueSectionNav";
+import { LeagueScheduleCoveragePanel } from "@/features/leagues/components/LeagueScheduleCoveragePanel";
+import { buildGroupScheduleCoverage, buildLeagueScheduleCoverage } from "@/features/leagues/leagueScheduleCoverage";
 import { cn } from "@/shared/utils/cn";
 
 type CalendarViewMode = "day" | "week" | "month";
@@ -616,6 +618,15 @@ export default function LeagueCalendarPage() {
 
   const { league, matches, teams, loading, error } = useLeagueMatchesData(hasValidLeagueId ? selectedLeagueId : null);
   const capabilities = league ? getCompetitionCapabilities(league) : null;
+  const teamNameById = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
+  const groupScheduleCoverage = useMemo(
+    () => buildGroupScheduleCoverage(league?.groupStageConfig ?? null, league?.regularSeasonFormat ?? "SINGLE_ROUND", matches, teamNameById),
+    [league?.groupStageConfig, league?.regularSeasonFormat, matches, teamNameById],
+  );
+  const leagueScheduleCoverage = useMemo(
+    () => buildLeagueScheduleCoverage(league?.teamIds ?? [], league?.regularSeasonFormat ?? "SINGLE_ROUND", matches, teamNameById),
+    [league?.regularSeasonFormat, league?.teamIds, matches, teamNameById],
+  );
   const modals = useQuickMatchesModals();
   const {
     submitting,
@@ -716,8 +727,12 @@ export default function LeagueCalendarPage() {
     modals.closeForm();
   };
 
+  const regularPhaseLocked = Boolean(
+    league?.bracketGenerated && (league.competitionType === "LEAGUE" || league.competitionType === "GROUPS"),
+  );
+
   const handleCreate = () => {
-    if (!league || teams.length < 2) {
+    if (!league || teams.length < 2 || regularPhaseLocked) {
       return;
     }
 
@@ -806,6 +821,13 @@ export default function LeagueCalendarPage() {
                 </div>
               </section>
 
+              {capabilities.showGroups && groupScheduleCoverage.length > 0 ? (
+                <LeagueScheduleCoveragePanel coverage={groupScheduleCoverage} format={league.regularSeasonFormat} />
+              ) : null}
+              {!capabilities.showGroups && capabilities.showLeagueCalendar && leagueScheduleCoverage.length > 0 ? (
+                <LeagueScheduleCoveragePanel coverage={leagueScheduleCoverage} format={league.regularSeasonFormat} scope="league" />
+              ) : null}
+
               <section className="mt-5 rounded-[28px] border border-slate-300 bg-white p-4 shadow-sm sm:p-5">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                   <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -854,7 +876,7 @@ export default function LeagueCalendarPage() {
                       ))}
                     </Select>
 
-                    <Button variant="primary" onClick={handleCreate} disabled={teams.length < 2}>
+                    <Button variant="primary" onClick={handleCreate} disabled={teams.length < 2 || regularPhaseLocked}>
                       Crear partido
                     </Button>
                   </div>
@@ -882,6 +904,12 @@ export default function LeagueCalendarPage() {
                 {teams.length < 2 ? (
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     Necesitas al menos 2 equipos dentro de la liga para empezar a llenar este calendario.
+                  </div>
+                ) : null}
+
+                {regularPhaseLocked ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {league.competitionType === "GROUPS" ? "Las tablas de grupos" : "La tabla"} quedaron congeladas al generar la llave. El calendario ahora es de consulta.
                   </div>
                 ) : null}
 
@@ -973,6 +1001,7 @@ export default function LeagueCalendarPage() {
         mode={modals.formMode}
         initialMatch={modals.editingMatch}
         teams={teams}
+        teamGroups={league?.groupStageConfig?.groups ?? []}
         title={modals.formMode === "create" ? "Crear partido de liga" : "Editar partido de liga"}
         loading={submitting}
         apiError={mutationError}

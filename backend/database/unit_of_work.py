@@ -25,6 +25,9 @@ class UnitOfWork:
     def refresh(self, entity: object) -> None:
         self.db.refresh(entity)
 
+    def expire(self, entity: object, attribute_names: list[str] | None = None) -> None:
+        self.db.expire(entity, attribute_names)
+
     def commit(self) -> None:
         self.db.commit()
 

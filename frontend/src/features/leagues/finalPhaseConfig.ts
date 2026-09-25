@@ -10,7 +10,7 @@ import { leagueFinalPhasePresetDefaults } from "@/features/leagues/schemas/Leagu
 export const leagueFinalPhasePresetLabels: Record<LeagueFinalPhasePresetOption, string> = {
   TOP_4_SINGLE_GAME: "Liga + Top 4 - Partido unico",
   TOP_8_SINGLE_GAME: "Liga + Top 8 - Partido unico",
-  TOP_8_HOME_AWAY: "Liga + Top 8 - Ida y vuelta",
+  TOP_8_HOME_AWAY: "Liga + Top 8 - Partido unico (legado)",
   TOP_6_SINGLE_GAME_WITH_BYES: "Liga + Top 6 - Bye 1ro y 2do",
   TOP_16_SINGLE_GAME: "Top 16 - Partido unico",
   TOP_32_SINGLE_GAME: "Top 32 - Partido unico",
@@ -21,7 +21,7 @@ export const leagueFinalPhasePresetLabels: Record<LeagueFinalPhasePresetOption, 
 };
 
 export const leagueFinalPhaseFormatLabels: Record<LeagueFinalPhaseFormatOption, string> = {
-  SINGLE_ELIMINATION: "Eliminacion simple",
+  SINGLE_ELIMINATION: "Eliminatoria directa",
   DOUBLE_ELIMINATION: "Doble eliminacion",
   PLAY_IN_PLUS_BRACKET: "Play-In + bracket",
 };
@@ -43,7 +43,6 @@ export const mainFinalPhasePresetOptions: Array<{ value: MainFinalPhasePresetOpt
   { value: "LEAGUE_ONLY", label: "Solo liga" },
   { value: "TOP_4_SINGLE_GAME", label: "Liga + Top 4 - Partido unico" },
   { value: "TOP_8_SINGLE_GAME", label: "Liga + Top 8 - Partido unico" },
-  { value: "TOP_8_HOME_AWAY", label: "Liga + Top 8 - Ida y vuelta" },
   { value: "TOP_6_SINGLE_GAME_WITH_BYES", label: "Liga + Top 6 - Con byes para 1ro y 2do" },
   { value: "TOP_16_SINGLE_GAME", label: "Top 16 - Partido unico" },
   { value: "TOP_32_SINGLE_GAME", label: "Top 32 - Partido unico" },

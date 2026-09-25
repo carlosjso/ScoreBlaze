@@ -4,6 +4,8 @@ export type SortKey = "id" | "matchDate" | "status";
 export type SortDir = "asc" | "desc";
 export type MatchStatusFilter = "all" | MatchStatus;
 export type MatchFormMode = "create" | "edit";
+export type MatchCompetitionStage = "REGULAR_SEASON" | "GROUP_STAGE" | "FINAL_PHASE";
+export type MatchBracketPath = "MAIN" | "PLAY_IN" | "WINNERS" | "LOSERS" | "GRAND_FINAL" | "THIRD_PLACE";
 
 export type ApiTeamOption = {
   id: number;
@@ -26,6 +28,15 @@ export type ApiMatch = {
   court: string | null;
   tournament: string | null;
   tracked_stats: string[];
+  competition_stage: MatchCompetitionStage;
+  group_stage_group_key: string | null;
+  bracket_round: number | null;
+  bracket_slot: number | null;
+  bracket_size: number | null;
+  bracket_game: number | null;
+  bracket_series_mode: "SINGLE" | "BEST_OF" | "TWO_LEGS" | null;
+  bracket_series_best_of: number | null;
+  bracket_path: MatchBracketPath | null;
   status: MatchStatus;
 };
 
@@ -59,6 +70,15 @@ export type QuickMatchListItem = {
   court: string;
   tournament: string;
   trackedStats: string[];
+  competitionStage: MatchCompetitionStage;
+  groupStageGroupKey: string | null;
+  bracketRound: number | null;
+  bracketSlot: number | null;
+  bracketSize: number | null;
+  bracketGame: number | null;
+  bracketSeriesMode: "SINGLE" | "BEST_OF" | "TWO_LEGS" | null;
+  bracketSeriesBestOf: number | null;
+  bracketPath: MatchBracketPath | null;
   venueLabel: string;
   status: MatchStatus;
   statusLabel: string;
@@ -91,6 +111,8 @@ export type MatchMutationPayload = {
   court: string | null;
   tournament: string | null;
   tracked_stats: string[];
+  competition_stage?: MatchCompetitionStage;
+  group_stage_group_key?: string | null;
   status: MatchStatus;
 };
 

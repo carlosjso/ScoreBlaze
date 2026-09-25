@@ -4,11 +4,12 @@ from data.orm import LeagueStat
 from database.unit_of_work import UnitOfWork
 from modules.match_events.repositories import MatchEventRepository
 from modules.match_participations.repositories import MatchPlayerParticipationRepository
+from modules.matches.domain import MatchCompetitionStage
 from modules.matches.repositories import MatchRepository
 from modules.players.repositories import PlayerRepository
 from modules.teams.repositories import TeamRepository
 
-from .domain import compute_league_stats_snapshot
+from .domain import LeagueCompetitionType, compute_league_stats_snapshot
 from .policy import LeaguePolicy
 from .repositories import LeagueRepository, LeagueStatRepository
 from .schemas import LeagueStatsSnapshotOut
@@ -36,6 +37,28 @@ class LeagueStatsService:
         self.match_participation_repo = match_participation_repo
         self.unit_of_work = unit_of_work
         self.policy = policy
+
+    @staticmethod
+    def _resolve_standings_match_ids(league, matches: list[object]) -> set[int]:
+        competition_type = LeagueCompetitionType(str(league.competition_type))
+
+        if competition_type == LeagueCompetitionType.ELIMINATION:
+            return set()
+
+        if competition_type == LeagueCompetitionType.GROUPS:
+            return {
+                match.id
+                for match in matches
+                if str(getattr(match, "competition_stage", MatchCompetitionStage.REGULAR_SEASON.value))
+                == MatchCompetitionStage.GROUP_STAGE.value
+            }
+
+        return {
+            match.id
+            for match in matches
+            if str(getattr(match, "competition_stage", MatchCompetitionStage.REGULAR_SEASON.value))
+            != MatchCompetitionStage.FINAL_PHASE.value
+        }
 
     def get(self, league_id: int) -> LeagueStatsSnapshotOut:
         league = self.policy.get_existing_league(league_id)
@@ -68,6 +91,7 @@ class LeagueStatsService:
             league_id=league.id,
             league_name=league.name,
             league_status=league.status,
+            competition_type=str(league.competition_type),
             tracked_stats=list(league.tracked_stats or []),
             current_team_ids=league.team_ids,
             team_lookup=team_lookup,
@@ -75,7 +99,19 @@ class LeagueStatsService:
             matches=matches,
             events=events,
             participations=participations,
+            group_stage_config=league.group_stage_config,
+            standings_match_ids=self._resolve_standings_match_ids(league, matches),
+            standings_tiebreakers=list(league.standings_tiebreakers or []),
         )
+        bracket_state = league.bracket_state if isinstance(league.bracket_state, dict) else {}
+        champion_team_id = bracket_state.get("champion_team_id")
+        champion_team = team_lookup.get(champion_team_id) if champion_team_id else None
+        if champion_team is not None:
+            payload["overview"]["champion"] = {
+                "team_id": champion_team.id,
+                "team_name": champion_team.name,
+                "value": 1,
+            }
 
         with self.unit_of_work.transaction():
             stat_snapshot = self.league_stat_repo.get(league.id)

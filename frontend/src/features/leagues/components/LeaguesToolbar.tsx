@@ -9,14 +9,16 @@ type LeaguesToolbarProps = {
   onSearchChange: (value: string) => void;
   onCreate: () => void;
   createLabel?: string;
-  competitionType: CompetitionType;
-  onCompetitionTypeChange: (competitionType: CompetitionType) => void;
+  competitionType?: CompetitionType;
+  onCompetitionTypeChange: (competitionType?: CompetitionType) => void;
 };
 
-const competitionTypeLabels: Record<CompetitionType, string> = {
-  LEAGUE: "Fase regular",
-  ELIMINATION: "Eliminatoria",
-};
+const competitionTypeOptions: Array<{ value?: CompetitionType; label: string }> = [
+  { label: "Todos" },
+  { value: "LEAGUE", label: "Fase regular" },
+  { value: "ELIMINATION", label: "Eliminatoria" },
+  { value: "GROUPS", label: "Grupos" },
+];
 
 export function LeaguesToolbar({
   search,
@@ -30,19 +32,19 @@ export function LeaguesToolbar({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-2">
         <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Tipo de competencia</span>
-        {(["LEAGUE", "ELIMINATION"] as const).map((typeOption) => (
+        {competitionTypeOptions.map((typeOption) => (
           <button
-            key={typeOption}
+            key={typeOption.value ?? "ALL"}
             type="button"
-            onClick={() => onCompetitionTypeChange(typeOption)}
+            onClick={() => onCompetitionTypeChange(typeOption.value)}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
-              competitionType === typeOption
+              competitionType === typeOption.value
                 ? "border-orange-200 bg-orange-50 text-orange-700"
                 : "border-slate-200 bg-white text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700",
             )}
           >
-            {competitionTypeLabels[typeOption]}
+            {typeOption.label}
           </button>
         ))}
       </div>

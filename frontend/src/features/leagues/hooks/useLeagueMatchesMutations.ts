@@ -3,8 +3,8 @@ import { useMemo, useState } from "react";
 
 import { leagueMatchesQueryKeys, leagueMatchesService } from "@/features/leagues/LeagueMatches.service";
 import { leaguesQueryKeys } from "@/features/leagues/Leagues.service";
-import type { LeagueFinalPhaseFormatOption } from "@/features/leagues/Leagues.types";
-import type { ApiTeamOption, MatchFormMode, MatchMutationPayload, QuickMatchFormValues } from "@/features/quick-matches/QuickMatches.types";
+import type { LeagueFinalPhaseFormatOption, LeagueGroupStanding, LeagueGroupWildcardRankingMetric, LeagueStandingRow } from "@/features/leagues/Leagues.types";
+import type { ApiTeamOption, MatchFormMode, QuickMatchFormValues } from "@/features/quick-matches/QuickMatches.types";
 import { quickMatchesQueryKeys } from "@/features/quick-matches/QuickMatches.service";
 import { toQuickMatchMutationPayload } from "@/features/quick-matches/schemas/QuickMatches.schema";
 import { getApiGlobalErrorMessage } from "@/shared/api/client";
@@ -32,12 +32,21 @@ type GenerateBracketArgs = {
   playInSlots: number;
   teams: ApiTeamOption[];
   trackedStats: string[];
+  seedMode?: BracketSeedMode;
+  standings?: LeagueStandingRow[];
+  confirmIncompleteRegularSeason?: boolean;
 };
 
 type DeleteAllLeagueMatchesArgs = {
   leagueId: number;
   matchIds: number[];
 };
+
+type BracketSeedMode = "STANDINGS" | "RANDOM" | "MANUAL";
+
+function getUniqueTeams(teams: ApiTeamOption[]) {
+  return Array.from(new Map(teams.map((team) => [team.id, team])).values());
+}
 
 function shuffleTeams(teams: ApiTeamOption[]) {
   const nextTeams = [...teams];
@@ -50,101 +59,79 @@ function shuffleTeams(teams: ApiTeamOption[]) {
   return nextTeams;
 }
 
-function getTodayInputValue() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function getRoundName(teamCount: number) {
-  if (teamCount <= 2) return "Final";
-  if (teamCount <= 4) return "Semifinal";
-  if (teamCount <= 8) return "Cuartos de final";
-  if (teamCount <= 16) return "Octavos de final";
-  return "Ronda inicial";
-}
-
-function getMatchTime(index: number) {
-  const DAY_MINUTES = 24 * 60;
-  const MATCH_DURATION_MINUTES = 60;
-  const FIRST_SLOT_MINUTES = 8 * 60;
-  const SLOT_STEP_MINUTES = 50;
-  const LAST_VALID_START_MINUTES = DAY_MINUTES - MATCH_DURATION_MINUTES - 1;
-  const startMinutes = Math.min(FIRST_SLOT_MINUTES + index * SLOT_STEP_MINUTES, LAST_VALID_START_MINUTES);
-  const endMinutes = startMinutes + MATCH_DURATION_MINUTES;
-  const toTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:00`;
-  };
-
-  return {
-    start_time: toTime(startMinutes),
-    end_time: toTime(endMinutes),
-  };
-}
-
-function resolveFirstRoundTeamCount(
-  format: LeagueFinalPhaseFormatOption,
-  qualifiedTeams: number,
-  byes: number,
-  playInSlots: number,
-) {
-  if (format === "PLAY_IN_PLUS_BRACKET") {
-    return Math.min(playInSlots, qualifiedTeams);
+export function orderTeamsByStandings(teams: ApiTeamOption[], standings: LeagueStandingRow[] | undefined) {
+  if (!standings || standings.length === 0) {
+    return [...teams].sort((left, right) => left.name.localeCompare(right.name, "es", { sensitivity: "base" }) || left.id - right.id);
   }
 
-  return Math.max(0, qualifiedTeams - byes);
-}
-
-function buildBracketPayloads({ format, qualifiedTeams, byes, playInSlots, teams, trackedStats }: GenerateBracketArgs): MatchMutationPayload[] {
-  const uniqueTeams = Array.from(new Map(teams.map((team) => [team.id, team])).values());
-  const firstRoundTeamCount = resolveFirstRoundTeamCount(format, qualifiedTeams, byes, playInSlots);
-  const requestedTeamCount = Math.min(firstRoundTeamCount, uniqueTeams.length);
-  const normalizedTeamCount = requestedTeamCount % 2 === 0 ? requestedTeamCount : requestedTeamCount - 1;
-  const selectedTeams = shuffleTeams(uniqueTeams).slice(0, normalizedTeamCount);
-  const matchDate = getTodayInputValue();
-  const roundName = format === "PLAY_IN_PLUS_BRACKET" ? "Play-In" : getRoundName(normalizedTeamCount);
-  const payloads: MatchMutationPayload[] = [];
+  const teamById = new Map(teams.map((team) => [team.id, team]));
+  const rankedTeamIds: number[] = [];
   const usedTeamIds = new Set<number>();
 
-  for (let index = 0; index + 1 < selectedTeams.length; index += 2) {
-    const teamA = selectedTeams[index];
-    const teamB = selectedTeams[index + 1];
-    if (!teamA || !teamB) {
-      continue;
-    }
-    if (teamA.id === teamB.id || usedTeamIds.has(teamA.id) || usedTeamIds.has(teamB.id)) {
-      continue;
+  standings.forEach((row) => {
+    if (!teamById.has(row.teamId) || usedTeamIds.has(row.teamId)) {
+      return;
     }
 
-    const matchNumber = payloads.length + 1;
-    const time = getMatchTime(matchNumber - 1);
-    usedTeamIds.add(teamA.id);
-    usedTeamIds.add(teamB.id);
+    rankedTeamIds.push(row.teamId);
+    usedTeamIds.add(row.teamId);
+  });
 
-    payloads.push({
-      match_date: matchDate,
-      start_time: time.start_time,
-      end_time: time.end_time,
-      team_a_id: teamA.id,
-      team_b_id: teamB.id,
-      league_id: null,
-      score_team_a: null,
-      score_team_b: null,
-      winner_team_id: null,
-      is_draw: false,
-      court: null,
-      tournament: `${roundName} ${matchNumber}`,
-      tracked_stats: trackedStats,
-      status: "scheduled",
+  const rankedTeams = rankedTeamIds
+    .map((teamId) => teamById.get(teamId) ?? null)
+    .filter((team): team is ApiTeamOption => team !== null);
+  const fallbackTeams = teams
+    .filter((team) => !usedTeamIds.has(team.id))
+    .sort((left, right) => left.name.localeCompare(right.name, "es", { sensitivity: "base" }) || left.id - right.id);
+
+  return [...rankedTeams, ...fallbackTeams];
+}
+
+export function buildGroupQualificationOrder(
+  groupStandings: LeagueGroupStanding[],
+  qualifiersPerGroup: number,
+  bestExtraSlots: number,
+  wildcardTiebreakers: LeagueGroupWildcardRankingMetric[] = ["AVERAGE_POINT_DIFFERENCE", "AVERAGE_POINTS_FOR"],
+) {
+  const fixedQualifiers: LeagueStandingRow[] = [];
+  const wildcardCandidates: LeagueStandingRow[] = [];
+
+  for (let position = 0; position < qualifiersPerGroup; position += 1) {
+    groupStandings.forEach((group) => {
+      const row = group.standings[position];
+      if (row) fixedQualifiers.push(row);
     });
   }
 
-  return payloads;
+  groupStandings.forEach((group) => {
+    wildcardCandidates.push(...group.standings.slice(qualifiersPerGroup));
+  });
+
+  wildcardCandidates.sort((left, right) => {
+    const leftWinRate = left.matchesPlayed > 0 ? left.wins / left.matchesPlayed : 0;
+    const rightWinRate = right.matchesPlayed > 0 ? right.wins / right.matchesPlayed : 0;
+    const leftAverageDifference = left.matchesPlayed > 0 ? left.pointsDifference / left.matchesPlayed : 0;
+    const rightAverageDifference = right.matchesPlayed > 0 ? right.pointsDifference / right.matchesPlayed : 0;
+    const leftAveragePoints = left.matchesPlayed > 0 ? left.pointsFor / left.matchesPlayed : 0;
+    const rightAveragePoints = right.matchesPlayed > 0 ? right.pointsFor / right.matchesPlayed : 0;
+    let comparison = rightWinRate - leftWinRate;
+    for (const criterion of wildcardTiebreakers) {
+      if (comparison !== 0) break;
+      if (criterion === "AVERAGE_POINT_DIFFERENCE") {
+        comparison = rightAverageDifference - leftAverageDifference;
+      } else if (criterion === "AVERAGE_POINTS_FOR") {
+        comparison = rightAveragePoints - leftAveragePoints;
+      }
+    }
+    return comparison
+      || left.teamName.localeCompare(right.teamName, "es", { sensitivity: "base" })
+      || left.teamId - right.teamId;
+  });
+
+  return [...fixedQualifiers, ...wildcardCandidates.slice(0, bestExtraSlots)].map((row, index) => ({
+    ...row,
+    position: index + 1,
+  }));
 }
 
 export function useLeagueMatchesMutations() {
@@ -204,14 +191,23 @@ export function useLeagueMatchesMutations() {
 
   const generateBracketMutation = useMutation({
     mutationFn: async (args: GenerateBracketArgs) => {
-      const payloads = buildBracketPayloads(args);
-
-      if (payloads.length === 0) {
+      const uniqueTeams = getUniqueTeams(args.teams);
+      const orderedTeams = args.seedMode === "STANDINGS"
+        ? orderTeamsByStandings(uniqueTeams, args.standings)
+        : args.seedMode === "MANUAL"
+          ? uniqueTeams
+          : shuffleTeams(uniqueTeams);
+      const qualifiedTeams = orderedTeams.slice(0, Math.min(args.qualifiedTeams, orderedTeams.length));
+      if (qualifiedTeams.length < 2) {
         throw new Error("Necesitas al menos 2 equipos para sortear una llave.");
       }
-
-      await Promise.all(payloads.map((payload) => leagueMatchesService.createMatch(args.leagueId, payload)));
-      return payloads.length;
+      await leagueMatchesService.generateBracket(
+        args.leagueId,
+        qualifiedTeams.map((team) => team.id),
+        args.seedMode ?? "RANDOM",
+        args.confirmIncompleteRegularSeason ?? false,
+      );
+      return qualifiedTeams.length;
     },
     onSuccess: async (_, variables) => {
       await Promise.all([
@@ -222,11 +218,23 @@ export function useLeagueMatchesMutations() {
     },
   });
 
+  const resetBracketMutation = useMutation({
+    mutationFn: (leagueId: number) => leagueMatchesService.resetBracket(leagueId),
+    onSuccess: async (_, leagueId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: leagueMatchesQueryKeys.snapshot(leagueId) }),
+        queryClient.invalidateQueries({ queryKey: leaguesQueryKeys.detail(leagueId) }),
+        queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.all }),
+      ]);
+    },
+  });
+
   const clearMutationError = () => {
     saveMutation.reset();
     deleteMutation.reset();
     deleteAllMutation.reset();
     generateBracketMutation.reset();
+    resetBracketMutation.reset();
   };
 
   const saveMatch = async ({ mode, matchId, leagueId, trackedStats, values }: SaveLeagueMatchArgs) => {
@@ -260,7 +268,12 @@ export function useLeagueMatchesMutations() {
     await deleteAllMutation.mutateAsync({ leagueId, matchIds });
   };
 
-  const mutationError = saveMutation.error ?? deleteMutation.error ?? deleteAllMutation.error ?? generateBracketMutation.error;
+  const resetBracket = async (leagueId: number) => {
+    clearMutationError();
+    await resetBracketMutation.mutateAsync(leagueId);
+  };
+
+  const mutationError = saveMutation.error ?? deleteMutation.error ?? deleteAllMutation.error ?? generateBracketMutation.error ?? resetBracketMutation.error;
   const mutationErrorMessage = useMemo(
     () => (mutationError ? getApiGlobalErrorMessage(mutationError) : null),
     [mutationError],
@@ -270,6 +283,7 @@ export function useLeagueMatchesMutations() {
     submitting: saveMutation.isPending,
     generatingBracket: generateBracketMutation.isPending,
     deletingAllMatches: deleteAllMutation.isPending,
+    resettingBracket: resetBracketMutation.isPending,
     deletingMatchId,
     mutationError,
     mutationErrorMessage,
@@ -278,5 +292,6 @@ export function useLeagueMatchesMutations() {
     deleteMatch,
     deleteAllLeagueMatches,
     generateBracketMatches,
+    resetBracket,
   };
 }

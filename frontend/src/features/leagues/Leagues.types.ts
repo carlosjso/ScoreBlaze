@@ -2,7 +2,38 @@ export type LeagueStatus = "En curso" | "Sin empezar" | "Finalizada";
 export type SortKey = "id" | "name" | "status" | "teams";
 export type SortDir = "asc" | "desc";
 export type LeagueFormMode = "create" | "edit";
-export type CompetitionType = "LEAGUE" | "ELIMINATION";
+export type CompetitionType = "LEAGUE" | "ELIMINATION" | "GROUPS";
+export type LeagueRegularSeasonFormat = "SINGLE_ROUND" | "DOUBLE_ROUND";
+export type LeagueStandingsTiebreaker = "HEAD_TO_HEAD" | "POINT_DIFFERENCE" | "POINTS_FOR";
+export type LeagueGroupStageMode = "UNIFORM" | "MANUAL";
+export type LeagueGroupWildcardRankingMetric =
+  | "WIN_PERCENTAGE"
+  | "AVERAGE_POINT_DIFFERENCE"
+  | "AVERAGE_POINTS_FOR";
+
+export type LeagueGroupStageGroup = {
+  key: string;
+  name: string;
+  teamIds: number[];
+};
+
+export type LeagueGroupStageConfig = {
+  mode: LeagueGroupStageMode;
+  groups: LeagueGroupStageGroup[];
+  qualifiersPerGroup: number;
+  bestExtraSlots: number;
+  wildcardRanking: LeagueGroupWildcardRankingMetric;
+  wildcardTiebreakers: LeagueGroupWildcardRankingMetric[];
+};
+
+export type ApiLeagueGroupStageConfig = {
+  mode: LeagueGroupStageMode;
+  groups: Array<{ key: string; name: string; team_ids: number[] }>;
+  qualifiers_per_group: number;
+  best_extra_slots: number;
+  wildcard_ranking: LeagueGroupWildcardRankingMetric;
+  wildcard_tiebreakers: LeagueGroupWildcardRankingMetric[];
+};
 
 export const leagueTrackedStatOptions = ["Fallo", "Faltas", "Asistencias", "Rebotes"] as const;
 export const leagueFinalPhasePresetOptions = [
@@ -17,13 +48,17 @@ export const leagueFinalPhasePresetOptions = [
   "DOUBLE_ELIMINATION_TOP_16",
   "CUSTOM",
 ] as const;
-export const leagueFinalPhaseQualifiedTeamsOptions = [2, 4, 6, 8, 10, 12, 14, 16, 24, 32] as const;
+export const leagueFinalPhaseQualifiedTeamsOptions = [
+  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+  17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+] as const;
 export const leagueFinalPhaseBestOfOptions = [1, 3, 5, 7] as const;
 
 export type LeagueTrackedStatOption = (typeof leagueTrackedStatOptions)[number];
 export type LeagueTrackedStat = string;
 export type LeagueFinalPhasePresetOption = (typeof leagueFinalPhasePresetOptions)[number];
 export type LeagueFinalPhaseFormatOption = "SINGLE_ELIMINATION" | "DOUBLE_ELIMINATION" | "PLAY_IN_PLUS_BRACKET";
+export type LeagueFinalPhaseSeedMode = "STANDINGS" | "RANDOM" | "MANUAL";
 
 export type ApiLeague = {
   id: number;
@@ -33,6 +68,9 @@ export type ApiLeague = {
   category: string;
   status: LeagueStatus;
   competition_type: CompetitionType;
+  regular_season_format: LeagueRegularSeasonFormat;
+  standings_tiebreakers: LeagueStandingsTiebreaker[];
+  group_stage_config: ApiLeagueGroupStageConfig | null;
   start_date: string;
   end_date: string;
   logo_base64: string | null;
@@ -45,12 +83,15 @@ export type ApiLeague = {
   final_phase_two_legs: boolean;
   final_phase_third_place_match: boolean;
   final_phase_seeded_home_advantage: boolean;
+  final_phase_seed_mode: LeagueFinalPhaseSeedMode;
   final_phase_play_in_slots: number;
   final_phase_round_best_of: number;
   final_phase_final_best_of: number;
   final_phase_reseed_each_round: boolean;
   final_phase_grand_final_reset: boolean;
   team_ids: number[];
+  bracket_generated: boolean;
+  bracket_completed: boolean;
 };
 
 export type ApiLeagueTableRow = ApiLeague & {
@@ -130,6 +171,14 @@ export type LeagueStandingRow = {
   totalTeamFouls: number;
 };
 
+export type LeagueGroupStanding = {
+  groupKey: string;
+  groupName: string;
+  teamIds: number[];
+  matchCount: number;
+  standings: LeagueStandingRow[];
+};
+
 export type LeagueStatsSnapshot = {
   leagueId: number;
   leagueName: string;
@@ -138,6 +187,7 @@ export type LeagueStatsSnapshot = {
   overview: LeagueStatsOverview;
   teamLeaders: LeagueTeamLeaders;
   standings: LeagueStandingRow[];
+  groupStandings: LeagueGroupStanding[];
   playerRankings: LeaguePlayerRankingRow[];
   updatedAt: string;
 };
@@ -150,6 +200,9 @@ export type LeagueListItem = {
   category: string;
   status: LeagueStatus;
   competitionType: CompetitionType;
+  regularSeasonFormat: LeagueRegularSeasonFormat;
+  standingsTiebreakers: LeagueStandingsTiebreaker[];
+  groupStageConfig: LeagueGroupStageConfig | null;
   startDate: string;
   endDate: string;
   logoBase64: string | null;
@@ -162,6 +215,7 @@ export type LeagueListItem = {
   finalPhaseTwoLegs: boolean;
   finalPhaseThirdPlaceMatch: boolean;
   finalPhaseSeededHomeAdvantage: boolean;
+  finalPhaseSeedMode: LeagueFinalPhaseSeedMode;
   finalPhasePlayInSlots: number;
   finalPhaseRoundBestOf: number;
   finalPhaseFinalBestOf: number;
@@ -169,6 +223,8 @@ export type LeagueListItem = {
   finalPhaseGrandFinalReset: boolean;
   teamIds: number[];
   teamCount: number;
+  bracketGenerated: boolean;
+  bracketCompleted: boolean;
 };
 
 export type LeagueDetail = LeagueListItem & {
@@ -185,6 +241,9 @@ export type LeagueFormValues = {
   category: string;
   status: LeagueStatus;
   competitionType: CompetitionType;
+  regularSeasonFormat: LeagueRegularSeasonFormat;
+  standingsTiebreakers: LeagueStandingsTiebreaker[];
+  groupStageConfig: LeagueGroupStageConfig | null;
   startDate: string;
   endDate: string;
   logoBase64: string | null;
@@ -197,6 +256,7 @@ export type LeagueFormValues = {
   finalPhaseTwoLegs: boolean;
   finalPhaseThirdPlaceMatch: boolean;
   finalPhaseSeededHomeAdvantage: boolean;
+  finalPhaseSeedMode: LeagueFinalPhaseSeedMode;
   finalPhasePlayInSlots: number;
   finalPhaseRoundBestOf: number;
   finalPhaseFinalBestOf: number;
@@ -212,6 +272,9 @@ export type LeagueMutationPayload = {
   category: string;
   status: LeagueStatus;
   competition_type: CompetitionType;
+  regular_season_format: LeagueRegularSeasonFormat;
+  standings_tiebreakers: LeagueStandingsTiebreaker[];
+  group_stage_config: ApiLeagueGroupStageConfig | null;
   start_date: string;
   end_date: string;
   logo_base64: string | null;
@@ -224,12 +287,20 @@ export type LeagueMutationPayload = {
   final_phase_two_legs: boolean;
   final_phase_third_place_match: boolean;
   final_phase_seeded_home_advantage: boolean;
+  final_phase_seed_mode: LeagueFinalPhaseSeedMode;
   final_phase_play_in_slots: number;
   final_phase_round_best_of: number;
   final_phase_final_best_of: number;
   final_phase_reseed_each_round: boolean;
   final_phase_grand_final_reset: boolean;
   team_ids: number[];
+  confirm_regular_season_format_change?: boolean;
+  confirm_incomplete_finish?: boolean;
+};
+
+export type LeagueFormSubmitOptions = {
+  confirmRegularSeasonFormatChange?: boolean;
+  confirmIncompleteFinish?: boolean;
 };
 
 export function sanitizeLeagueTeamIds(teamIds: number[]): number[] {

@@ -3,12 +3,14 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .domain import MatchStatus
+from .domain import MatchCompetitionStage, MatchStatus
 from .tracked_stats import normalize_match_tracked_stats
 
 MAX_MATCH_SCORE = 999
 MATCH_COURT_MAX_LENGTH = 80
 MATCH_TOURNAMENT_MAX_LENGTH = 100
+MATCH_GROUP_STAGE_GROUP_KEY_MAX_LENGTH = 20
+MATCH_BRACKET_PATH_PATTERN = "^(MAIN|PLAY_IN|WINNERS|LOSERS|GRAND_FINAL|THIRD_PLACE)$"
 
 
 class MatchBase(BaseModel):
@@ -21,6 +23,15 @@ class MatchBase(BaseModel):
     court: Optional[str] = Field(default=None, max_length=MATCH_COURT_MAX_LENGTH)
     tournament: Optional[str] = Field(default=None, max_length=MATCH_TOURNAMENT_MAX_LENGTH)
     tracked_stats: list[str] = Field(default_factory=list)
+    competition_stage: Optional[MatchCompetitionStage] = None
+    group_stage_group_key: Optional[str] = Field(default=None, max_length=MATCH_GROUP_STAGE_GROUP_KEY_MAX_LENGTH)
+    bracket_round: Optional[int] = Field(default=None, ge=1, le=12)
+    bracket_slot: Optional[int] = Field(default=None, ge=1, le=32)
+    bracket_size: Optional[int] = Field(default=None, ge=2, le=32)
+    bracket_game: Optional[int] = Field(default=None, ge=1, le=7)
+    bracket_series_mode: Optional[str] = Field(default=None, pattern="^(SINGLE|BEST_OF|TWO_LEGS)$")
+    bracket_series_best_of: Optional[int] = Field(default=None, ge=1, le=7)
+    bracket_path: Optional[str] = Field(default=None, pattern=MATCH_BRACKET_PATH_PATTERN)
     status: MatchStatus = MatchStatus.SCHEDULED
 
     @field_validator("tracked_stats", mode="before")
@@ -50,6 +61,15 @@ class MatchUpdate(BaseModel):
     court: Optional[str] = Field(..., max_length=MATCH_COURT_MAX_LENGTH)
     tournament: Optional[str] = Field(..., max_length=MATCH_TOURNAMENT_MAX_LENGTH)
     tracked_stats: list[str] = Field(default_factory=list)
+    competition_stage: Optional[MatchCompetitionStage] = None
+    group_stage_group_key: Optional[str] = Field(default=None, max_length=MATCH_GROUP_STAGE_GROUP_KEY_MAX_LENGTH)
+    bracket_round: Optional[int] = Field(default=None, ge=1, le=12)
+    bracket_slot: Optional[int] = Field(default=None, ge=1, le=32)
+    bracket_size: Optional[int] = Field(default=None, ge=2, le=32)
+    bracket_game: Optional[int] = Field(default=None, ge=1, le=7)
+    bracket_series_mode: Optional[str] = Field(default=None, pattern="^(SINGLE|BEST_OF|TWO_LEGS)$")
+    bracket_series_best_of: Optional[int] = Field(default=None, ge=1, le=7)
+    bracket_path: Optional[str] = Field(default=None, pattern=MATCH_BRACKET_PATH_PATTERN)
     status: MatchStatus
 
     @field_validator("tracked_stats", mode="before")
@@ -72,6 +92,15 @@ class MatchPatch(BaseModel):
     court: Optional[str] = Field(default=None, max_length=MATCH_COURT_MAX_LENGTH)
     tournament: Optional[str] = Field(default=None, max_length=MATCH_TOURNAMENT_MAX_LENGTH)
     tracked_stats: Optional[list[str]] = None
+    competition_stage: Optional[MatchCompetitionStage] = None
+    group_stage_group_key: Optional[str] = Field(default=None, max_length=MATCH_GROUP_STAGE_GROUP_KEY_MAX_LENGTH)
+    bracket_round: Optional[int] = Field(default=None, ge=1, le=12)
+    bracket_slot: Optional[int] = Field(default=None, ge=1, le=32)
+    bracket_size: Optional[int] = Field(default=None, ge=2, le=32)
+    bracket_game: Optional[int] = Field(default=None, ge=1, le=7)
+    bracket_series_mode: Optional[str] = Field(default=None, pattern="^(SINGLE|BEST_OF|TWO_LEGS)$")
+    bracket_series_best_of: Optional[int] = Field(default=None, ge=1, le=7)
+    bracket_path: Optional[str] = Field(default=None, pattern=MATCH_BRACKET_PATH_PATTERN)
     status: Optional[MatchStatus] = None
 
 
