@@ -118,6 +118,8 @@ type ScoreboardEventMutationPayload = {
   elapsed_seconds: number;
 };
 
+export type ScoreboardSheetEventPayload = ScoreboardEventMutationPayload;
+
 type ScoreboardPlayerParticipationPayload = {
   team_key: ApiScoreboardTeamKey;
   is_present?: boolean;
@@ -209,12 +211,19 @@ function getPointsFromApiEventType(eventType: ApiScoreboardEventType) {
   return undefined;
 }
 
+function getTeamPlayerKey(teamId: number, playerId: number) {
+  return `${teamId}:${playerId}`;
+}
+
 function getPlayerLabelByEvent(
   event: ApiScoreboardEvent,
-  playersById: Map<number, ScoreboardPlayerOption>,
+  playersByTeamAndId: Map<string, ScoreboardPlayerOption>,
 ) {
   if (event.player_id !== null) {
-    return playersById.get(event.player_id)?.label ?? `Jugador #${event.player_id}`;
+    return (
+      playersByTeamAndId.get(getTeamPlayerKey(event.team_id, event.player_id))?.label ??
+      `Jugador #${event.player_id}`
+    );
   }
 
   return event.guest_name?.trim() || "Invitado";
@@ -232,18 +241,23 @@ export function buildScoreboardState(snapshot: ApiScoreboardSnapshot): Scoreboar
   const teamBPlayers = snapshot.team_b.players.length
     ? snapshot.team_b.players.map(toPlayerOption)
     : createFallbackPlayers("B");
-  const playersById = new Map<number, ScoreboardPlayerOption>();
+  const playersByTeamAndId = new Map<string, ScoreboardPlayerOption>();
 
-  for (const player of [...teamAPlayers, ...teamBPlayers]) {
+  for (const player of teamAPlayers) {
     if (player.playerId !== null) {
-      playersById.set(player.playerId, player);
+      playersByTeamAndId.set(getTeamPlayerKey(snapshot.team_a.id, player.playerId), player);
+    }
+  }
+  for (const player of teamBPlayers) {
+    if (player.playerId !== null) {
+      playersByTeamAndId.set(getTeamPlayerKey(snapshot.team_b.id, player.playerId), player);
     }
   }
 
   const history: ScoreboardHistoryEvent[] = snapshot.events.map((event) => {
     const type = API_TO_FRONTEND_EVENT_TYPE[event.event_type];
     const points = getPointsFromApiEventType(event.event_type);
-    const playerLabel = getPlayerLabelByEvent(event, playersById);
+    const playerLabel = getPlayerLabelByEvent(event, playersByTeamAndId);
 
     return {
       id: `backend-${event.id}`,
@@ -381,6 +395,19 @@ export async function resetMatchScoreboard(matchId?: number) {
     apiClient.post(`/matches/${matchId}/scoreboard/reset`),
     apiScoreboardSnapshotSchema,
     "No se pudo reiniciar el marcador del partido.",
+  );
+
+  return buildScoreboardState(snapshot);
+}
+
+export async function replaceMatchScoreboardFromSheet(
+  matchId: number,
+  events: ScoreboardSheetEventPayload[],
+) {
+  const snapshot = await requestJson(
+    apiClient.put(`/matches/${matchId}/scoreboard/import`, { events }),
+    apiScoreboardSnapshotSchema,
+    "No se pudo cargar la hoja de partido.",
   );
 
   return buildScoreboardState(snapshot);

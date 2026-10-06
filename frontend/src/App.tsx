@@ -35,21 +35,17 @@ import Roles from "@/features/roles/Roles";
 import Scoreboard from "@/features/scoreboard/Scoreboard";
 import LiveScoreboard from "@/features/scoreboard/LiveScoreboard";
 import SettingsPage from "@/features/settings/SettingsPage";
+import BasketballDashboardPage from "@/features/sports/BasketballDashboardPage";
 import SportDashboardPage from "@/features/sports/SportDashboardPage";
 import SportsPage from "@/features/sports/SportsPage";
 import TeamRosterPage, { TeamRosterManagePage } from "@/features/teams/TeamRosterPage";
 import Teams from "@/features/teams/Teams";
 import Users from "@/features/users/Users";
-import { getFirstAllowedBasketballPath, getFirstAllowedPath } from "@/features/auth/permissions";
+import { getFirstAllowedPath } from "@/features/auth/permissions";
 
 function HomeRedirect() {
   const { session } = useAuth();
   return <Navigate to={getFirstAllowedPath(session) ?? "/dashboard"} replace />;
-}
-
-function BasketballRedirect() {
-  const { session } = useAuth();
-  return <Navigate to={getFirstAllowedBasketballPath(session) ?? getFirstAllowedPath(session) ?? "/dashboard"} replace />;
 }
 
 export default function App() {
@@ -76,7 +72,7 @@ export default function App() {
                   <Route element={<PermissionRoute permissions={["dashboard.view"]} />}>
                     <Route path="/dashboard" element={<SportsPage />} />
                   </Route>
-                  <Route path="/basketball" element={<BasketballRedirect />} />
+                  <Route path="/basketball" element={<BasketballDashboardPage />} />
                   <Route element={<PermissionRoute permissions={["players.view"]} />}>
                     <Route path="/players" element={<Players />} />
                     <Route path="/players/:playerId/teams" element={<PlayerTeamAssignmentPage />} />

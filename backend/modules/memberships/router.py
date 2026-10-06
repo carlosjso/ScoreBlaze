@@ -4,7 +4,12 @@ from authentication.dependencies import require_any_permission, require_permissi
 from authentication.schemas import AuthUserOut
 
 from .dependencies import get_team_membership_service
-from .schemas import TeamMembershipCreate, TeamMembershipOut, TeamMembershipUpdate
+from .schemas import (
+    TeamMembershipCreate,
+    TeamMembershipOut,
+    TeamMembershipUpdate,
+    TeamShirtNumbersUpdate,
+)
 from .service import TeamMembershipService
 
 router = APIRouter()
@@ -46,6 +51,20 @@ def update_team_membership(
     current_user: AuthUserOut = Depends(require_permissions("teams.manage_roster")),
 ):
     return service.update(player_id, team_id, payload, current_user)
+
+
+@router.put(
+    "/team/{team_id}/shirt-numbers",
+    response_model=list[TeamMembershipOut],
+    status_code=status.HTTP_200_OK,
+)
+def update_team_shirt_numbers(
+    team_id: int,
+    payload: TeamShirtNumbersUpdate,
+    service: TeamMembershipService = Depends(get_team_membership_service),
+    current_user: AuthUserOut = Depends(require_permissions("teams.manage_roster")),
+):
+    return service.update_shirt_numbers(team_id, payload, current_user)
 
 
 @router.delete("/{player_id}/{team_id}", status_code=status.HTTP_204_NO_CONTENT)

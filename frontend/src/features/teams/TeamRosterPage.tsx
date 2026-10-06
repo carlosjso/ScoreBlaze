@@ -68,14 +68,12 @@ type QuickRosterPlayerForm = {
   name: string;
   email: string;
   phone: string;
-  shirtNumber: string;
 };
 
 const emptyQuickRosterPlayerForm: QuickRosterPlayerForm = {
   name: "",
   email: "",
   phone: "",
-  shirtNumber: "",
 };
 
 function buildQuickRosterPlayerPayload(values: QuickRosterPlayerForm, teamId: number): PlayerMutationPayload {
@@ -468,18 +466,35 @@ export default function TeamRosterPage() {
       return;
     }
 
-    setSavingShirts(true);
     setShirtSaveError(null);
+    const normalizedNumbers = selectedTeam.players.map((player) => ({
+      playerName: player.name,
+      value: normalizeShirtNumber(draftShirtNumbers[player.id]),
+    }));
+    const playerWithoutNumber = normalizedNumbers.find((item) => !item.value);
+    if (playerWithoutNumber) {
+      setShirtSaveError(`${playerWithoutNumber.playerName} debe conservar un numero de camiseta.`);
+      return;
+    }
+    const usedNumbers = new Set<string>();
+    for (const item of normalizedNumbers) {
+      const key = item.value.toLowerCase();
+      if (usedNumbers.has(key)) {
+        setShirtSaveError(`El numero ${item.value} esta repetido dentro del equipo.`);
+        return;
+      }
+      usedNumbers.add(key);
+    }
+
+    setSavingShirts(true);
 
     try {
-      await Promise.all(
-        selectedTeam.players.map((player) =>
-          teamsService.updateTeamMembership(
-            player.id,
-            selectedTeam.id,
-            draftShirtNumbers[player.id]?.trim() || null,
-          ),
-        ),
+      await teamsService.updateTeamShirtNumbers(
+        selectedTeam.id,
+        selectedTeam.players.map((player) => ({
+          player_id: player.id,
+          shirt_number: draftShirtNumbers[player.id].trim(),
+        })),
       );
 
       await queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all });
@@ -912,11 +927,6 @@ export function TeamRosterManagePage() {
         ),
       );
 
-      const normalizedShirtNumber = quickCreateValues.shirtNumber.trim();
-      if (normalizedShirtNumber) {
-        await teamsService.updateTeamMembership(createdPlayer.id, selectedTeam.id, normalizedShirtNumber);
-      }
-
       setDraftPlayerIds((currentIds) => updateDraftWithPlayerIds(currentIds, [createdPlayer.id]));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: teamsQueryKeys.all }),
@@ -1225,7 +1235,7 @@ export function TeamRosterManagePage() {
             </div>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3">
             <Input
               label="Nombre"
               value={quickCreateValues.name}
@@ -1253,16 +1263,11 @@ export function TeamRosterManagePage() {
               disabled={quickCreateSubmitting}
               className="bg-slate-100"
             />
-            <Input
-              label="No. camiseta"
-              value={quickCreateValues.shirtNumber}
-              onChange={(event) => updateQuickCreateField("shirtNumber", event.target.value.slice(0, 20))}
-              placeholder="10"
-              maxLength={20}
-              disabled={quickCreateSubmitting}
-              className="bg-slate-100"
-            />
           </div>
+
+          <p className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs leading-5 text-orange-800">
+            Al agregarlo al equipo recibira automaticamente el primer numero disponible. Podras cambiarlo despues desde Plantilla.
+          </p>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={closeQuickCreate} disabled={quickCreateSubmitting}>

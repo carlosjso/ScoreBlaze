@@ -41,6 +41,7 @@ export default function Players() {
   } = usePlayersMutations();
 
   const hasActiveFilters = Boolean(search.trim());
+  const canCreate = hasPermission(session, "players.create");
   const canEdit = hasPermission(session, "players.edit");
   const canAssignTeam = hasPermission(session, "players.assign_team");
   const canDelete = hasPermission(session, "players.delete");
@@ -115,7 +116,7 @@ export default function Players() {
               setCurrentPage(1);
             }}
             onCreate={openCreate}
-            canCreate={false}
+            canCreate={canCreate}
           />
 
           <div className="mt-4">

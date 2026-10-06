@@ -32,6 +32,40 @@ class MembershipRepository:
         )
         return self.db.scalar(statement)
 
+    @staticmethod
+    def shirt_number_key(value: str | None) -> str:
+        return (value or "").strip().lower()
+
+    def next_available_shirt_number(
+        self,
+        team_id: int,
+        *,
+        exclude_player_id: int | None = None,
+    ) -> str:
+        used_numbers = {
+            self.shirt_number_key(membership.shirt_number)
+            for membership in self.list_by_team(team_id)
+            if membership.player_id != exclude_player_id and membership.shirt_number
+        }
+        candidate = 1
+        while str(candidate) in used_numbers:
+            candidate += 1
+        return str(candidate)
+
+    def is_shirt_number_available(
+        self,
+        team_id: int,
+        shirt_number: str,
+        *,
+        exclude_player_id: int | None = None,
+    ) -> bool:
+        requested_key = self.shirt_number_key(shirt_number)
+        return all(
+            membership.player_id == exclude_player_id
+            or self.shirt_number_key(membership.shirt_number) != requested_key
+            for membership in self.list_by_team(team_id)
+        )
+
     def list(self) -> list[TeamMembership]:
         statement = select(TeamMembership).order_by(
             TeamMembership.player_id.asc(),
@@ -70,8 +104,14 @@ class MembershipRepository:
             )
             self.db.execute(statement)
 
-        for team_id in to_add:
-            self.db.add(TeamMembership(player_id=player_id, team_id=team_id))
+        for team_id in sorted(to_add):
+            self.db.add(
+                TeamMembership(
+                    player_id=player_id,
+                    team_id=team_id,
+                    shirt_number=self.next_available_shirt_number(team_id),
+                )
+            )
 
     def replace_player_ids_for_team(self, team_id: int, player_ids: list[int]) -> None:
         unique_player_ids = set(player_ids)
@@ -88,5 +128,22 @@ class MembershipRepository:
             )
             self.db.execute(statement)
 
-        for player_id in to_add:
-            self.db.add(TeamMembership(player_id=player_id, team_id=team_id))
+        used_numbers = {
+            self.shirt_number_key(link.shirt_number)
+            for link in current_links
+            if link.player_id not in to_remove and link.shirt_number
+        }
+        next_candidate = 1
+        for player_id in sorted(to_add):
+            while str(next_candidate) in used_numbers:
+                next_candidate += 1
+            shirt_number = str(next_candidate)
+            used_numbers.add(str(next_candidate))
+            next_candidate += 1
+            self.db.add(
+                TeamMembership(
+                    player_id=player_id,
+                    team_id=team_id,
+                    shirt_number=shirt_number,
+                )
+            )

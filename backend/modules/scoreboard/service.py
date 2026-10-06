@@ -18,6 +18,7 @@ from .score_projector import ScoreboardScoreProjector
 from .schemas import (
     ScoreboardEventCreate,
     ScoreboardPlayerParticipationUpdate,
+    ScoreboardSheetImport,
     ScoreboardSnapshotOut,
 )
 from .snapshot_builder import ScoreboardSnapshotBuilder
@@ -180,6 +181,82 @@ class ScoreboardService:
 
             self.match_repo.update_status(match, MatchStatus.SCHEDULED)
             self.match_repo.apply_score_state(match, self.score_projector.project(match, []))
+
+        return self.get_snapshot(match.id, current_user)
+
+    def replace_from_sheet(
+        self,
+        match_id: int,
+        data: ScoreboardSheetImport,
+        current_user: AuthUserOut | None = None,
+    ) -> ScoreboardSnapshotOut:
+        match = self.policy.get_existing_match(match_id)
+        self._ensure_match_visible(match, current_user)
+        self.policy.ensure_scoreboard_open(match)
+
+        # Resolve every row before touching the current scoreboard. This keeps a
+        # malformed spreadsheet from leaving a partially imported match.
+        resolved_events: list[tuple[ScoreboardEventCreate, int, int | None, str | None]] = []
+        for item in data.events:
+            tracked_stat = get_tracked_stat_for_event(item.event_type)
+            if tracked_stat is not None and not does_track_stat(
+                tracked_stat,
+                getattr(match, "tracked_stats", None),
+            ):
+                raise ValidationException(
+                    f"La metrica {tracked_stat} no esta habilitada para este partido."
+                )
+            team = self.actor_resolver.resolve_team(match, item.team_key)
+            player_id, guest_name = self.actor_resolver.resolve_actor(
+                team.id,
+                item.player_id,
+                item.guest_name,
+            )
+            resolved_events.append((item, team.id, player_id, guest_name))
+
+        active_events = self._list_active_events(match.id)
+        next_order = self._get_next_event_order(match.id)
+        imported_events: list[MatchEvent] = []
+
+        with self.unit_of_work.transaction():
+            for event in reversed(active_events):
+                self.match_event_repo.mark_voided(event)
+                self.stat_projection_service.apply_event(event, direction=-1)
+
+            for participation in self.match_participation_repo.list_by_match(match.id):
+                self.match_participation_repo.update(participation, played=False)
+
+            for offset, (item, team_id, player_id, guest_name) in enumerate(resolved_events):
+                event = MatchEvent(
+                    match_id=match.id,
+                    team_id=team_id,
+                    player_id=player_id,
+                    guest_name=guest_name,
+                    event_type=item.event_type.value,
+                    period=item.period,
+                    elapsed_seconds=item.elapsed_seconds,
+                    event_order=next_order + offset,
+                    status=MatchEventStatus.ACTIVE.value,
+                )
+                self.match_event_repo.add(event)
+                self.unit_of_work.flush()
+                imported_events.append(event)
+
+                if player_id is not None:
+                    self._upsert_player_participation(
+                        match_id=match.id,
+                        team_id=team_id,
+                        player_id=player_id,
+                        present=True,
+                        played=True,
+                    )
+                self.stat_projection_service.apply_event(event, direction=1)
+
+            self.match_repo.update_status(match, MatchStatus.LIVE)
+            self.match_repo.apply_score_state(
+                match,
+                self.score_projector.project(match, imported_events),
+            )
 
         return self.get_snapshot(match.id, current_user)
 

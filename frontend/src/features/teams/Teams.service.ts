@@ -123,6 +123,22 @@ export const teamsService = {
     );
   },
 
+  updateTeamShirtNumbers(
+    teamId: number,
+    assignments: Array<{ player_id: number; shirt_number: string }>,
+    signal?: AbortSignal,
+  ) {
+    return requestJson(
+      apiClient.put(
+        `/team-memberships/team/${teamId}/shirt-numbers`,
+        { assignments },
+        { signal },
+      ),
+      apiTeamMembershipSchema.array(),
+      "La respuesta de las camisetas es invalida.",
+    );
+  },
+
   deleteTeam(teamId: number, signal?: AbortSignal) {
     return requestVoid(apiClient.delete(`/api/teams/${teamId}`, { signal }), "No se pudo eliminar el equipo.");
   },

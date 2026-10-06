@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from authentication.schemas import AuthUserOut
-from core.exceptions import ForbiddenException, NotFoundException
+from core.exceptions import ForbiddenException, NotFoundException, ValidationException
 from data.orm import TeamMembership
 from database.unit_of_work import UnitOfWork
 from modules.memberships.repositories import MembershipRepository
 
 from .policy import TeamMembershipPolicy
-from .schemas import TeamMembershipCreate, TeamMembershipUpdate
+from .schemas import TeamMembershipCreate, TeamMembershipUpdate, TeamShirtNumbersUpdate
 
 
 class TeamMembershipService:
@@ -81,15 +81,39 @@ class TeamMembershipService:
 
         raise NotFoundException("Team not found")
 
+    def _resolve_shirt_number(
+        self,
+        team_id: int,
+        requested_number: str | None,
+        *,
+        exclude_player_id: int | None = None,
+    ) -> str:
+        normalized_number = (requested_number or "").strip()
+        if not normalized_number:
+            return self.membership_repo.next_available_shirt_number(
+                team_id,
+                exclude_player_id=exclude_player_id,
+            )
+        if not self.membership_repo.is_shirt_number_available(
+            team_id,
+            normalized_number,
+            exclude_player_id=exclude_player_id,
+        ):
+            raise ValidationException(
+                f"El numero {normalized_number} ya esta asignado a otro jugador de este equipo."
+            )
+        return normalized_number
+
     def create(self, data: TeamMembershipCreate, current_user: AuthUserOut | None = None) -> TeamMembership:
         self.policy.ensure_player_and_team_exist(data.player_id, data.team_id)
         self.policy.ensure_new_membership(data.player_id, data.team_id)
         self._ensure_team_visible(data.team_id, current_user)
+        shirt_number = self._resolve_shirt_number(data.team_id, data.shirt_number)
 
         relation = TeamMembership(
             player_id=data.player_id,
             team_id=data.team_id,
-            shirt_number=data.shirt_number,
+            shirt_number=shirt_number,
         )
         with self.unit_of_work.transaction():
             self.membership_repo.add(relation)
@@ -119,9 +143,14 @@ class TeamMembershipService:
         current_user: AuthUserOut | None = None,
     ) -> TeamMembership:
         relation = self.get(player_id, team_id, current_user)
+        shirt_number = self._resolve_shirt_number(
+            team_id,
+            data.shirt_number,
+            exclude_player_id=player_id,
+        )
 
         with self.unit_of_work.transaction():
-            self.membership_repo.update(relation, shirt_number=data.shirt_number)
+            self.membership_repo.update(relation, shirt_number=shirt_number)
         self.unit_of_work.refresh(relation)
         return relation
 
@@ -129,6 +158,73 @@ class TeamMembershipService:
         relation = self.get(player_id, team_id, current_user)
         with self.unit_of_work.transaction():
             self.membership_repo.delete(relation)
+
+    def update_shirt_numbers(
+        self,
+        team_id: int,
+        data: TeamShirtNumbersUpdate,
+        current_user: AuthUserOut | None = None,
+    ) -> list[TeamMembership]:
+        self.policy.ensure_team_exists(team_id)
+        self._ensure_team_visible(team_id, current_user)
+        memberships = self.membership_repo.list_by_team(team_id)
+        memberships_by_player_id = {membership.player_id: membership for membership in memberships}
+        assignments: dict[int, str] = {}
+        for item in data.assignments:
+            if item.player_id in assignments:
+                raise ValidationException("Cada jugador debe aparecer una sola vez.")
+            if item.player_id not in memberships_by_player_id:
+                raise ValidationException("Uno de los jugadores ya no pertenece a este equipo.")
+            assignments[item.player_id] = item.shirt_number.strip()
+
+        final_numbers = {
+            membership.player_id: assignments.get(
+                membership.player_id,
+                (membership.shirt_number or "").strip(),
+            )
+            for membership in memberships
+        }
+        used_keys: set[str] = set()
+        for shirt_number in final_numbers.values():
+            key = self.membership_repo.shirt_number_key(shirt_number)
+            if not key:
+                raise ValidationException("Todos los jugadores deben tener numero de camiseta.")
+            if key in used_keys:
+                raise ValidationException(f"El numero {shirt_number} esta repetido dentro del equipo.")
+            used_keys.add(key)
+
+        changed_memberships = [
+            membership
+            for membership in memberships
+            if membership.player_id in assignments
+            and membership.shirt_number != assignments[membership.player_id]
+        ]
+        occupied_temporary_numbers = {
+            (membership.shirt_number or "").strip()
+            for membership in memberships
+        }
+        temporary_numbers: dict[int, str] = {}
+        for membership in changed_memberships:
+            temporary_number = f"@{membership.player_id:x}"
+            while temporary_number in occupied_temporary_numbers:
+                temporary_number = f"@{temporary_number}"
+            temporary_numbers[membership.player_id] = temporary_number
+            occupied_temporary_numbers.add(temporary_number)
+
+        with self.unit_of_work.transaction():
+            # Temporary unique values allow safe swaps such as 7 <-> 10.
+            for membership in changed_memberships:
+                self.membership_repo.update(
+                    membership,
+                    shirt_number=temporary_numbers[membership.player_id],
+                )
+            for membership in changed_memberships:
+                self.membership_repo.update(
+                    membership,
+                    shirt_number=assignments[membership.player_id],
+                )
+
+        return self.membership_repo.list_by_team(team_id)
 
     def list_by_team(self, team_id: int, current_user: AuthUserOut | None = None) -> list[TeamMembership]:
         self.policy.ensure_team_exists(team_id)

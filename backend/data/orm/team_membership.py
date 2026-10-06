@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, ForeignKey, String
+from sqlalchemy import BigInteger, Column, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from database.alchemy import Base
@@ -6,6 +6,9 @@ from database.alchemy import Base
 
 class TeamMembership(Base):
     __tablename__ = "team_memberships"
+    __table_args__ = (
+        UniqueConstraint("team_id", "shirt_number", name="uq_team_memberships_team_shirt_number"),
+    )
 
     player_id = Column(
         BigInteger,
@@ -17,7 +20,7 @@ class TeamMembership(Base):
         ForeignKey("teams.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    shirt_number = Column(String(20), nullable=True)
+    shirt_number = Column(String(20), nullable=False)
 
     team = relationship("Team", back_populates="team_memberships")
     player = relationship("Player", back_populates="team_memberships")

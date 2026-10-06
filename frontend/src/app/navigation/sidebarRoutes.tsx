@@ -23,7 +23,8 @@ export const sidebarRoutes: SidebarRouteItem[] = [
     path: "/basketball",
     label: "Basquet",
     icon: <Dribbble size={16} />,
-    sidebarContext: "none",
+    sidebarContext: "basketball",
+    permissions: ["dashboard.view"],
   },
   {
     path: "/players",

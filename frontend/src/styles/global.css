@@ -265,3 +265,25 @@
     }
   }
 }
+
+@keyframes sb-group-carousel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sb-group-carousel-slide {
+  animation: sb-group-carousel-enter 320ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-group-carousel-slide {
+    animation: none;
+  }
+}

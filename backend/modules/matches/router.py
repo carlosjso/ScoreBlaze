@@ -6,6 +6,7 @@ from modules.matches.dependencies import get_match_service
 from modules.scoreboard.schemas import (
     ScoreboardEventCreate,
     ScoreboardPlayerParticipationUpdate,
+    ScoreboardSheetImport,
     ScoreboardSnapshotOut,
 )
 from modules.scoreboard.dependencies import get_scoreboard_service
@@ -98,6 +99,20 @@ def reset_match_scoreboard(
     current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
 ):
     return service.reset(match_id, current_user)
+
+
+@router.put(
+    "/{match_id}/scoreboard/import",
+    response_model=ScoreboardSnapshotOut,
+    status_code=status.HTTP_200_OK,
+)
+def import_match_scoreboard(
+    match_id: int,
+    payload: ScoreboardSheetImport,
+    service: ScoreboardService = Depends(get_scoreboard_service),
+    current_user: AuthUserOut = Depends(require_permissions("quick_match.edit")),
+):
+    return service.replace_from_sheet(match_id, payload, current_user)
 
 
 @router.put("/{match_id}", response_model=MatchOut, status_code=status.HTTP_200_OK)

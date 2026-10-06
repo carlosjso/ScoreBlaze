@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LockKeyhole, Mail, User2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import type { AuthMode, LoginFormValues, RegisterFormValues } from "@/features/auth/Auth.types";
@@ -157,7 +157,6 @@ export default function AuthPage({ mode }: AuthPageProps) {
 
 function LoginView() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
   const [apiError, setApiError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -178,15 +177,7 @@ function LoginView() {
 
     try {
       await login(values);
-      const from =
-        typeof location.state === "object" &&
-        location.state !== null &&
-        "from" in location.state &&
-        typeof location.state.from === "string"
-          ? location.state.from
-          : "/dashboard";
-
-      navigate(from, { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       setApiError(error);
     } finally {

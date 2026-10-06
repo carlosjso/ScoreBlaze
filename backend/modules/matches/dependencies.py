@@ -49,8 +49,8 @@ def get_match_service(
     policy: MatchPolicy = Depends(get_match_policy),
 ) -> MatchService:
     return MatchService(
-        match_repo,
-        TeamAccessScopeResolver(team_repo, player_repo, membership_repo),
-        unit_of_work,
-        policy,
+        match_repo=match_repo,
+        unit_of_work=unit_of_work,
+        policy=policy,
+        scope_resolver=TeamAccessScopeResolver(team_repo, player_repo, membership_repo),
     )

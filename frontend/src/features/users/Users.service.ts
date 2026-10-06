@@ -83,7 +83,7 @@ export const usersService = {
 
   createUser(payload: UserMutationPayload, signal?: AbortSignal) {
     return requestJson(
-      apiClient.post("/users", payload, { signal }),
+      apiClient.post("/users/", payload, { signal }),
       apiUserSchema,
       "La respuesta del usuario es invalida.",
     );

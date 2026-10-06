@@ -68,6 +68,10 @@ class ScoreboardEventCreate(BaseModel):
     elapsed_seconds: int = Field(..., ge=0)
 
 
+class ScoreboardSheetImport(BaseModel):
+    events: list[ScoreboardEventCreate] = Field(..., min_length=1, max_length=5000)
+
+
 class ScoreboardPlayerParticipationUpdate(BaseModel):
     team_key: ScoreboardTeamKey
     is_present: Optional[bool] = None

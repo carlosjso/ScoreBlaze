@@ -1,7 +1,13 @@
 import {
+  ArrowLeft,
   Bolt,
   Check,
+  ClipboardList,
   Clock3,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+  FileUp,
   MapPin,
   Monitor,
   Pencil,
@@ -11,13 +17,17 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { leagueTrackedStatOptions } from "@/features/leagues/Leagues.types";
+import { leagueMatchesQueryKeys } from "@/features/leagues/LeagueMatches.service";
 import type {
   MatchStatusFilter,
   QuickMatchListItem,
 } from "@/features/quick-matches/QuickMatches.types";
+import { quickMatchesQueryKeys } from "@/features/quick-matches/QuickMatches.service";
 import { TeamLogo } from "@/features/teams/components/TeamLogo";
+import { useToast } from "@/app/providers/ToastProvider";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { Modal } from "@/shared/components/ui/Modal";
 import { IconButton } from "@/shared/components/ui";
@@ -139,12 +149,31 @@ function MatchCardActions({
 }) {
   const [launchOpen, setLaunchOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [actionsView, setActionsView] = useState<"main" | "transfer">("main");
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
+  const [downloadingWorkbook, setDownloadingWorkbook] = useState(false);
+  const [downloadingSummary, setDownloadingSummary] = useState(false);
+  const [uploadingWorkbook, setUploadingWorkbook] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const disabled = deletingMatchId === match.id || updatingTrackedStatsMatchId === match.id;
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const disabled =
+    deletingMatchId === match.id ||
+    updatingTrackedStatsMatchId === match.id ||
+    downloadingTemplate ||
+    downloadingWorkbook ||
+    uploadingWorkbook ||
+    downloadingSummary;
   const readOnly = Boolean(isMatchReadOnly?.(match));
   const editDisabled = disabled || readOnly || Boolean(isMatchEditDisabled?.(match));
   const deleteDisabled = disabled || readOnly || Boolean(isMatchDeleteDisabled?.(match));
   const scoreboardDisabled = disabled || Boolean(isScoreboardDisabled?.(match));
+  const templateBlocked =
+    match.status !== "scheduled" ||
+    (match.scoreTeamA ?? 0) > 0 ||
+    (match.scoreTeamB ?? 0) > 0;
+  const sheetUploadDisabled = readOnly || match.status === "finished";
 
   useEffect(() => {
     if (!launchOpen && !actionsOpen) {
@@ -161,6 +190,7 @@ function MatchCardActions({
       if (event.key === "Escape") {
         setLaunchOpen(false);
         setActionsOpen(false);
+        setActionsView("main");
       }
     };
 
@@ -176,11 +206,120 @@ function MatchCardActions({
   const closeMenus = () => {
     setLaunchOpen(false);
     setActionsOpen(false);
+    setActionsView("main");
   };
 
   const runAction = (action: () => void) => {
     action();
     closeMenus();
+  };
+
+  const handleDownloadSummary = async () => {
+    setDownloadingSummary(true);
+    try {
+      const { downloadQuickMatchStatsPdf } = await import(
+        "@/features/quick-matches/QuickMatchStatsPdf"
+      );
+      await downloadQuickMatchStatsPdf(match.id);
+      toast.success({
+        title: "Resumen descargado",
+        description: `Se genero el reporte de ${match.matchupLabel}.`,
+      });
+    } catch (error) {
+      toast.error({
+        title: "No se pudo descargar el resumen",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Intenta nuevamente en unos momentos.",
+      });
+    } finally {
+      setDownloadingSummary(false);
+      closeMenus();
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    setDownloadingTemplate(true);
+    try {
+      const { downloadQuickMatchTemplate } = await import(
+        "@/features/quick-matches/QuickMatchTemplateExcel"
+      );
+      await downloadQuickMatchTemplate(match.id);
+      toast.success({
+        title: "Plantilla descargada",
+        description: `Se preparo el acta manual de ${match.matchupLabel}.`,
+      });
+    } catch (error) {
+      toast.error({
+        title: "No se pudo descargar la plantilla",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Intenta nuevamente en unos momentos.",
+      });
+    } finally {
+      setDownloadingTemplate(false);
+      closeMenus();
+    }
+  };
+
+  const handleDownloadWorkbook = async () => {
+    setDownloadingWorkbook(true);
+    try {
+      const { downloadQuickMatchWorkbook } = await import(
+        "@/features/quick-matches/QuickMatchTemplateExcel"
+      );
+      await downloadQuickMatchWorkbook(match.id);
+      toast.success({
+        title: "Partido descargado",
+        description: `La hoja incluye el avance actual de ${match.matchupLabel}.`,
+      });
+    } catch (error) {
+      toast.error({
+        title: "No se pudo descargar el partido",
+        description: error instanceof Error ? error.message : "Intenta nuevamente en unos momentos.",
+      });
+    } finally {
+      setDownloadingWorkbook(false);
+      closeMenus();
+    }
+  };
+
+  const handleUploadWorkbook = async (file: File) => {
+    const hasProgress = match.status !== "scheduled" || (match.scoreTeamA ?? 0) > 0 || (match.scoreTeamB ?? 0) > 0;
+    if (
+      hasProgress &&
+      !window.confirm("Esta carga reemplazara el marcador y las estadisticas actuales del partido. Deseas continuar?")
+    ) {
+      return;
+    }
+
+    setUploadingWorkbook(true);
+    try {
+      const { importQuickMatchWorkbook } = await import(
+        "@/features/quick-matches/QuickMatchTemplateExcel"
+      );
+      const result = await importQuickMatchWorkbook(match.id, file);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: quickMatchesQueryKeys.all }),
+        queryClient.invalidateQueries({ queryKey: leagueMatchesQueryKeys.all }),
+      ]);
+      toast.success({
+        title: "Partido cargado",
+        description: `Marcador ${result.scoreA} - ${result.scoreB}; ${result.eventCount} registros importados.`,
+      });
+    } catch (error) {
+      toast.error({
+        title: "No se pudo cargar la hoja",
+        description: error instanceof Error ? error.message : "Revisa el archivo e intenta nuevamente.",
+        durationMs: 7000,
+      });
+    } finally {
+      setUploadingWorkbook(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      closeMenus();
+    }
   };
 
   return (
@@ -190,12 +329,23 @@ function MatchCardActions({
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void handleUploadWorkbook(file);
+        }}
+      />
       <div className="relative">
         <IconButton
           label={launchOpen ? "Cerrar accesos de marcador" : "Abrir accesos de marcador"}
           onClick={() => {
             setLaunchOpen((current) => !current);
             setActionsOpen(false);
+            setActionsView("main");
           }}
           disabled={scoreboardDisabled}
           className="border border-slate-200 bg-slate-50 text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
@@ -237,7 +387,12 @@ function MatchCardActions({
         <IconButton
           label={actionsOpen ? "Cerrar acciones" : "Abrir acciones"}
           onClick={() => {
-            setActionsOpen((current) => !current);
+            setActionsOpen((current) => {
+              if (!current) {
+                setActionsView("main");
+              }
+              return !current;
+            });
             setLaunchOpen(false);
           }}
           disabled={disabled}
@@ -247,46 +402,121 @@ function MatchCardActions({
         </IconButton>
 
         {actionsOpen ? (
-          <div className="absolute right-0 top-full z-20 mt-2 w-44 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => runAction(() => onView(match))}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Search size={14} />
-              Ver datos
-            </button>
-            <button
-              type="button"
-              disabled={editDisabled}
-              onClick={() => runAction(() => onEdit(match))}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Pencil size={14} />
-              Editar
-            </button>
-            <button
-              type="button"
-              disabled={deleteDisabled}
-              onClick={() => runAction(() => onDelete(match))}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Trash2 size={14} />
-              Eliminar
-            </button>
-
-            {showTrackedStatsEditor && onUpdateTrackedStats ? (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => runAction(() => onOpenMetrics?.(match))}
-                className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <SlidersHorizontal size={14} />
-                Metricas
-              </button>
-            ) : null}
+          <div className="absolute right-0 top-full z-20 mt-1.5 w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+            {actionsView === "main" ? (
+              <>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => runAction(() => onView(match))}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Search size={14} />
+                  Ver datos
+                </button>
+                <button
+                  type="button"
+                  disabled={editDisabled}
+                  onClick={() => runAction(() => onEdit(match))}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Pencil size={14} />
+                  Editar
+                </button>
+                {showTrackedStatsEditor && onUpdateTrackedStats ? (
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => runAction(() => onOpenMetrics?.(match))}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <SlidersHorizontal size={14} />
+                    Metricas
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setActionsView("transfer")}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ClipboardList size={14} />
+                  Hoja de partido
+                </button>
+                <div className="my-1 border-t border-slate-100" />
+                <button
+                  type="button"
+                  disabled={deleteDisabled}
+                  onClick={() => runAction(() => onDelete(match))}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 size={14} />
+                  Eliminar
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActionsView("main")}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  <ArrowLeft size={14} />
+                  Hoja de partido
+                </button>
+                <div className="my-1 border-t border-slate-100" />
+                <p className="px-3 pb-1 pt-1 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Cargar
+                </p>
+                <button
+                  type="button"
+                  disabled={disabled || sheetUploadDisabled}
+                  title={sheetUploadDisabled ? "Los partidos finalizados o bloqueados no admiten cargas." : undefined}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <FileUp size={14} className={cn("text-slate-400", uploadingWorkbook && "animate-pulse")} />
+                  {uploadingWorkbook ? "Cargando..." : "Cargar partido"}
+                </button>
+                <p className="mt-1 px-3 pb-1 pt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Descargar
+                </p>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => void handleDownloadWorkbook()}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-sky-50 hover:text-sky-700 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <FileDown size={14} className={cn("text-slate-400", downloadingWorkbook && "animate-pulse")} />
+                  {downloadingWorkbook ? "Preparando..." : "Partido"}
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled || templateBlocked}
+                  title={templateBlocked ? "La plantilla vacia solo esta disponible antes de iniciar el partido." : undefined}
+                  onClick={() => void handleDownloadTemplate()}
+                  className="flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-sky-50 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <FileSpreadsheet
+                    size={14}
+                    className={cn("text-slate-400", downloadingTemplate && "animate-pulse")}
+                  />
+                  {downloadingTemplate ? "Preparando..." : "Plantilla"}
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => void handleDownloadSummary()}
+                  className="flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:bg-sky-50 hover:text-sky-700 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <FileText
+                    size={14}
+                    className={cn("text-slate-400", downloadingSummary && "animate-pulse")}
+                  />
+                  {downloadingSummary ? "Preparando..." : "Resumen estadistico"}
+                </button>
+              </>
+            )}
           </div>
         ) : null}
       </div>
@@ -345,7 +575,7 @@ function MatchCard({
         }
       }}
       className={cn(
-        "relative w-[368px] shrink-0 cursor-pointer overflow-hidden rounded-[24px] border bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition snap-start hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_16px_36px_rgba(249,115,22,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2",
+        "relative w-[368px] shrink-0 cursor-pointer rounded-[24px] border bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition snap-start hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_16px_36px_rgba(249,115,22,0.12)] focus-within:z-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2",
         emphasisLabel
           ? "border-orange-200 shadow-[0_16px_36px_rgba(249,115,22,0.16)]"
           : "border-slate-300"
@@ -503,7 +733,7 @@ function MatchSection({
         </div>
 
         {matches.length > 0 ? (
-          <div className="mt-5 overflow-x-auto pb-3">
+          <div className="mt-5 overflow-x-auto pb-8">
             <div className="flex min-w-max gap-4 pr-2">
               {matches.map((match, index) => (
                 <div key={match.id} className="shrink-0">

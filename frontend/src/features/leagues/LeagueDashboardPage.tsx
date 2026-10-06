@@ -224,11 +224,35 @@ export default function LeagueDashboardPage() {
     [league?.bracketGenerated, league?.standingsTiebreakers, liveMatchesSnapshot.matches, stats],
   );
   const standingsRows = standingsSnapshot?.rows ?? [];
-  const hasLiveStandings = (standingsSnapshot?.liveMatchCount ?? 0) > 0;
+  const groupStandings = useMemo(
+    () => (stats?.groupStandings ?? []).map((group) => ({
+      ...group,
+      snapshot: buildLiveLeagueStandings(
+        group.standings,
+        league?.bracketGenerated
+          ? []
+          : liveMatchesSnapshot.matches.filter((match) => (
+              match.competitionStage === "GROUP_STAGE"
+              && match.groupStageGroupKey === group.groupKey
+              && group.teamIds.includes(match.teamAId)
+              && group.teamIds.includes(match.teamBId)
+            )),
+        league?.standingsTiebreakers,
+      ),
+    })),
+    [league?.bracketGenerated, league?.standingsTiebreakers, liveMatchesSnapshot.matches, stats?.groupStandings],
+  );
+  const liveStandingsCount = league?.competitionType === "GROUPS"
+    ? groupStandings.reduce((total, group) => total + group.snapshot.liveMatchCount, 0)
+    : standingsSnapshot?.liveMatchCount ?? 0;
+  const hasLiveStandings = liveStandingsCount > 0;
   const leaderPreviewItems = useMemo(() => buildLeagueLeaderPreviewItems(stats, league?.competitionType), [league?.competitionType, stats]);
   const capabilities = league ? getCompetitionCapabilities(league) : null;
   const groupSetupPending = league?.competitionType === "GROUPS" && !league.groupStageConfig;
   const [activeLeaderPage, setActiveLeaderPage] = useState(0);
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
+  const [groupCarouselPaused, setGroupCarouselPaused] = useState(false);
+  const activeGroup = groupStandings[activeGroupIndex] ?? groupStandings[0] ?? null;
 
   const actions: DashboardActionCard[] = [
     {
@@ -331,6 +355,22 @@ export default function LeagueDashboardPage() {
 
     return () => window.clearInterval(intervalId);
   }, [leaderPageCount]);
+
+  useEffect(() => {
+    setActiveGroupIndex(0);
+  }, [league?.id, groupStandings.length]);
+
+  useEffect(() => {
+    if (groupStandings.length <= 1 || groupCarouselPaused) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveGroupIndex((current) => (current + 1) % groupStandings.length);
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [groupCarouselPaused, groupStandings.length]);
 
   return (
     <div className="sb-page">
@@ -472,7 +512,7 @@ export default function LeagueDashboardPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{capabilities.showGroups ? "Fase actual" : "Tabla actual"}</p>
-                      <h3 className="mt-1 text-xl font-semibold text-slate-950">{capabilities.showGroups ? "Carpetas de grupos" : "Posiciones de la liga"}</h3>
+                      <h3 className="mt-1 text-xl font-semibold text-slate-950">{capabilities.showGroups ? "Tablas por grupo" : "Posiciones de la liga"}</h3>
                       {hasLiveStandings ? (
                         <p className="mt-1 text-xs font-medium text-orange-600">
                           Tabla provisional en vivo
@@ -487,15 +527,124 @@ export default function LeagueDashboardPage() {
                     </Button>
                   </div>
 
-                  {capabilities.showGroups && (stats?.groupStandings.length ?? 0) > 0 ? (
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      {stats?.groupStandings.map((group) => (
-                        <div key={group.groupKey} className="rounded-[18px] border border-sky-100 bg-sky-50/60 px-4 py-3">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sky-700">{group.groupName}</p>
-                          <p className="mt-1 truncate text-sm font-bold text-slate-900">{group.standings[0]?.teamName ?? "Sin equipos"}</p>
-                          <p className="mt-1 text-xs text-slate-500">{group.matchCount} partidos registrados</p>
+                  {capabilities.showGroups && groupStandings.length > 0 && activeGroup ? (
+                    <div
+                      className="mt-4 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
+                      onMouseEnter={() => setGroupCarouselPaused(true)}
+                      onMouseLeave={() => setGroupCarouselPaused(false)}
+                      onFocusCapture={() => setGroupCarouselPaused(true)}
+                      onBlurCapture={(event) => {
+                        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                          setGroupCarouselPaused(false);
+                        }
+                      }}
+                    >
+                      <div key={activeGroup.groupKey} className="sb-group-carousel-slide">
+                        <div className="flex flex-col gap-4 border-b border-sky-100 bg-[linear-gradient(115deg,#eff9ff_0%,#ffffff_58%,#fff7ed_100%)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-sky-700">
+                                Grupo {activeGroup.groupKey}
+                              </span>
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                {activeGroupIndex + 1} de {groupStandings.length}
+                              </span>
+                            </div>
+                            <h4 className="mt-2 truncate text-lg font-bold text-slate-950" title={activeGroup.groupName}>{activeGroup.groupName}</h4>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {activeGroup.teamIds.length} equipos · {activeGroup.matchCount} partidos registrados
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-auto">
+                            <span className="mr-1 hidden rounded-full border border-orange-200 bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-orange-700 sm:inline-flex">
+                              {league.groupStageConfig?.qualifiersPerGroup ?? 0} clasifican
+                            </span>
+                            <button
+                              type="button"
+                              aria-label="Ver grupo anterior"
+                              onClick={() => setActiveGroupIndex((current) => (current - 1 + groupStandings.length) % groupStandings.length)}
+                              disabled={groupStandings.length <= 1}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-35"
+                            >
+                              <ChevronLeft size={17} />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Ver grupo siguiente"
+                              onClick={() => setActiveGroupIndex((current) => (current + 1) % groupStandings.length)}
+                              disabled={groupStandings.length <= 1}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-35"
+                            >
+                              <ChevronRight size={17} />
+                            </button>
+                          </div>
                         </div>
-                      ))}
+
+                        <div className="overflow-x-auto">
+                          <div className="min-w-[520px]">
+                            <div className="grid grid-cols-[46px_minmax(170px,1fr)_48px_48px_58px_56px] border-b border-slate-200 bg-slate-50/80 px-4 py-2.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                              <span>Pos</span>
+                              <span>Equipo</span>
+                              <span className="text-center">PJ</span>
+                              <span className="text-center">G</span>
+                              <span className="text-center">DIF</span>
+                              <span className="text-center">PTS</span>
+                            </div>
+                            {activeGroup.snapshot.rows.map((row) => {
+                              const qualifies = (league.groupStageConfig?.qualifiersPerGroup ?? 0) > 0
+                                && row.position <= (league.groupStageConfig?.qualifiersPerGroup ?? 0);
+                              return (
+                                <div
+                                  key={row.teamId}
+                                  className={cn(
+                                    "grid grid-cols-[46px_minmax(170px,1fr)_48px_48px_58px_56px] items-center border-b border-slate-100 px-4 py-3 text-sm last:border-b-0",
+                                    qualifies && "bg-orange-50/35",
+                                  )}
+                                >
+                                  <span className={cn(
+                                    "inline-flex h-7 w-7 items-center justify-center rounded-lg font-bold",
+                                    qualifies ? "bg-orange-100 text-orange-700" : "text-slate-500",
+                                  )}>
+                                    {row.position}
+                                  </span>
+                                  <span className="min-w-0 pr-2">
+                                    <span className="flex items-center gap-2 truncate font-semibold text-slate-900" title={row.teamName}>
+                                      {qualifies ? <Trophy size={12} className="shrink-0 text-orange-500" /> : null}
+                                      {row.teamName}
+                                    </span>
+                                    {row.isLive && row.liveSummary ? (
+                                      <span className="mt-0.5 block truncate text-[10px] font-semibold text-orange-600">{row.liveSummary}</span>
+                                    ) : null}
+                                  </span>
+                                  <span className="text-center text-slate-600">{row.matchesPlayed}</span>
+                                  <span className="text-center text-slate-600">{row.wins}</span>
+                                  <span className="text-center text-slate-600">{row.pointsDifference}</span>
+                                  <span className="text-center font-bold text-slate-950">{row.standingsPoints}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-center border-t border-slate-100 bg-slate-50/70 px-4 py-3">
+                        <div className="flex items-center gap-1.5" aria-label="Seleccionar grupo">
+                          {groupStandings.map((group, index) => (
+                            <button
+                              key={group.groupKey}
+                              type="button"
+                              aria-label={`Ver ${group.groupName}`}
+                              aria-current={index === activeGroupIndex ? "true" : undefined}
+                              onClick={() => setActiveGroupIndex(index)}
+                              className={cn(
+                                "h-2 rounded-full transition-all",
+                                index === activeGroupIndex ? "w-7 bg-orange-500" : "w-2 bg-slate-300 hover:bg-slate-400",
+                              )}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   ) : standingsRows.length > 0 ? (
                     <div className="mt-4 overflow-hidden rounded-[22px] border border-slate-200">
