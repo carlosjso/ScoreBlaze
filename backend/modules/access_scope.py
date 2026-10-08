@@ -5,12 +5,13 @@ from authentication.schemas import AuthUserOut
 from modules.memberships.repositories import MembershipRepository
 from modules.players.repositories import PlayerRepository
 from modules.teams.repositories import TeamRepository
+from modules.users.role_names import GLOBAL_SCOPE_ROLE_NAMES, PLAYER_ROLE_NAME, TEAM_MANAGER_ROLE_NAMES
 
 
 class TeamAccessScopeResolver:
-    ADMIN_ROLE_NAMES = {"admin", "superadmin"}
-    COACH_ROLE_NAME = "coach"
-    PLAYER_ROLE_NAME = "jugador"
+    ADMIN_ROLE_NAMES = GLOBAL_SCOPE_ROLE_NAMES
+    COACH_ROLE_NAMES = TEAM_MANAGER_ROLE_NAMES
+    PLAYER_ROLE_NAME = PLAYER_ROLE_NAME
 
     def __init__(
         self,
@@ -37,14 +38,14 @@ class TeamAccessScopeResolver:
     @classmethod
     def is_coach_scoped_user(cls, current_user: AuthUserOut) -> bool:
         role_names = cls.role_names(current_user)
-        return cls.COACH_ROLE_NAME in role_names and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
+        return not cls.COACH_ROLE_NAMES.isdisjoint(role_names) and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
 
     @classmethod
     def is_player_scoped_user(cls, current_user: AuthUserOut) -> bool:
         role_names = cls.role_names(current_user)
         return (
             cls.PLAYER_ROLE_NAME in role_names
-            and cls.COACH_ROLE_NAME not in role_names
+            and cls.COACH_ROLE_NAMES.isdisjoint(role_names)
             and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
         )
 

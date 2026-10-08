@@ -8,6 +8,7 @@ from data.orm import User
 from database.unit_of_work import UnitOfWork
 from modules.users.default_role_permissions import apply_default_permissions_to_role, ensure_catalog_permissions
 from modules.users.repositories import PermissionRepository, RoleRepository, UserRepository
+from modules.users.role_names import ADMINISTRATOR_ROLE_NAME
 from utils.security import hash_password
 
 from .policy import UserPolicy
@@ -32,7 +33,7 @@ class UserService:
     def _resolve_registration_roles(self, email: str) -> list[str]:
         normalized_email = email.strip().lower()
         if normalized_email in config.AUTH_BOOTSTRAP_ADMIN_EMAILS:
-            return list(dict.fromkeys(["admin", config.AUTH_DEFAULT_ROLE]))
+            return list(dict.fromkeys([ADMINISTRATOR_ROLE_NAME, config.AUTH_DEFAULT_ROLE]))
         return [config.AUTH_DEFAULT_ROLE]
 
     def _normalize_role_name(self, value: str | None) -> str | None:

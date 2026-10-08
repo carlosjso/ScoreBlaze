@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 
 from database.alchemy import SessionLocal
-from modules.users.default_role_permissions import sync_default_permissions_for_existing_roles
+from modules.users.default_role_permissions import sync_default_roles_and_permissions
 from modules.users.repositories import PermissionRepository, RoleRepository, UserRepository
 from seed_support import build_default_seed_users, sync_permissions_and_roles, upsert_user
 
@@ -16,7 +16,7 @@ def run() -> None:
         user_repo = UserRepository(db)
 
         permissions_by_name = sync_permissions_and_roles(permission_repo, role_repo)
-        synced_default_roles = sync_default_permissions_for_existing_roles(
+        synced_default_roles = sync_default_roles_and_permissions(
             role_repo=role_repo,
             permission_repo=permission_repo,
         )
@@ -40,7 +40,7 @@ def run() -> None:
         for seeded_user in seeded_users:
             print(f"- {seeded_user}")
         if synced_default_roles:
-            print("Default role permissions synced:")
+            print("Default roles and permissions synced:")
             for role_name in synced_default_roles:
                 print(f"- {role_name}")
     except Exception:

@@ -5,15 +5,16 @@ from core.exceptions import ForbiddenException, NotFoundException, ValidationExc
 from data.orm import TeamMembership
 from database.unit_of_work import UnitOfWork
 from modules.memberships.repositories import MembershipRepository
+from modules.users.role_names import GLOBAL_SCOPE_ROLE_NAMES, PLAYER_ROLE_NAME, TEAM_MANAGER_ROLE_NAMES
 
 from .policy import TeamMembershipPolicy
 from .schemas import TeamMembershipCreate, TeamMembershipUpdate, TeamShirtNumbersUpdate
 
 
 class TeamMembershipService:
-    ADMIN_ROLE_NAMES = {"admin", "superadmin"}
-    COACH_ROLE_NAME = "coach"
-    PLAYER_ROLE_NAME = "jugador"
+    ADMIN_ROLE_NAMES = GLOBAL_SCOPE_ROLE_NAMES
+    COACH_ROLE_NAMES = TEAM_MANAGER_ROLE_NAMES
+    PLAYER_ROLE_NAME = PLAYER_ROLE_NAME
 
     def __init__(
         self,
@@ -40,14 +41,14 @@ class TeamMembershipService:
     @classmethod
     def _is_coach_scoped_user(cls, current_user: AuthUserOut) -> bool:
         role_names = cls._role_names(current_user)
-        return cls.COACH_ROLE_NAME in role_names and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
+        return not cls.COACH_ROLE_NAMES.isdisjoint(role_names) and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
 
     @classmethod
     def _is_player_scoped_user(cls, current_user: AuthUserOut) -> bool:
         role_names = cls._role_names(current_user)
         return (
             cls.PLAYER_ROLE_NAME in role_names
-            and cls.COACH_ROLE_NAME not in role_names
+            and cls.COACH_ROLE_NAMES.isdisjoint(role_names)
             and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
         )
 

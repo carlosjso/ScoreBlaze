@@ -17,6 +17,12 @@ from modules.teams.repositories import TeamRepository
 from modules.players.schemas import PlayerOut
 from modules.users.default_role_permissions import apply_default_permissions_to_role, ensure_catalog_permissions
 from modules.users.repositories import PermissionRepository, RoleRepository, UserRepository
+from modules.users.role_names import (
+    COACH_ROLE_NAME,
+    GLOBAL_SCOPE_ROLE_NAMES,
+    PLAYER_ROLE_NAME,
+    TEAM_MANAGER_ROLE_NAMES,
+)
 from utils.media import decode_base64_payload
 
 from .policy import TeamPolicy
@@ -26,9 +32,10 @@ logger = logging.getLogger(__name__)
 
 
 class TeamService:
-    ADMIN_ROLE_NAMES = {"admin", "superadmin"}
-    RESPONSIBLE_ROLE_NAME = "coach"
-    PLAYER_ROLE_NAME = "jugador"
+    ADMIN_ROLE_NAMES = GLOBAL_SCOPE_ROLE_NAMES
+    RESPONSIBLE_ROLE_NAME = COACH_ROLE_NAME
+    RESPONSIBLE_ROLE_NAMES = TEAM_MANAGER_ROLE_NAMES
+    PLAYER_ROLE_NAME = PLAYER_ROLE_NAME
 
     def __init__(
         self,
@@ -71,14 +78,14 @@ class TeamService:
     @classmethod
     def _is_coach_scoped_user(cls, current_user: AuthUserOut) -> bool:
         role_names = cls._role_names(current_user)
-        return cls.RESPONSIBLE_ROLE_NAME in role_names and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
+        return not cls.RESPONSIBLE_ROLE_NAMES.isdisjoint(role_names) and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
 
     @classmethod
     def _is_player_scoped_user(cls, current_user: AuthUserOut) -> bool:
         role_names = cls._role_names(current_user)
         return (
             cls.PLAYER_ROLE_NAME in role_names
-            and cls.RESPONSIBLE_ROLE_NAME not in role_names
+            and cls.RESPONSIBLE_ROLE_NAMES.isdisjoint(role_names)
             and cls.ADMIN_ROLE_NAMES.isdisjoint(role_names)
         )
 

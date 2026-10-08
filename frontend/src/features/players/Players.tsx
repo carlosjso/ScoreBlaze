@@ -102,7 +102,7 @@ export default function Players() {
       <div className="sb-page-shell">
         <PageHeader title="Jugadores" subtitle="Directorio de perfiles. Las altas operativas se hacen desde la plantilla de cada equipo." />
 
-        <Panel>
+        <Panel className="border-0 bg-transparent p-0 shadow-none">
           {panelError ? (
             <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {panelError}

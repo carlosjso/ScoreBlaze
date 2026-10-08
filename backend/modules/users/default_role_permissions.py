@@ -6,11 +6,34 @@ from data.orm import Permission, Role
 
 from .permission_catalog import get_catalog_permission_names
 from .repositories import PermissionRepository, RoleRepository
-
-COACH_ROLE_NAME = "coach"
-PLAYER_ROLE_NAME = "jugador"
+from .role_names import (
+    ADMINISTRATOR_ROLE_NAME,
+    CAPTAIN_ROLE_NAME,
+    COACH_ROLE_NAME,
+    DEFAULT_ROLE_NAMES,
+    PLAYER_ROLE_NAME,
+    REFEREE_ROLE_NAME,
+    USER_ROLE_NAME,
+)
 
 DEFAULT_ROLE_PERMISSION_NAMES: dict[str, set[str]] = {
+    USER_ROLE_NAME: {
+        "dashboard.view",
+        "players.view",
+        "teams.view",
+        "quick_match.view",
+        "quick_match.view_stats",
+        "leagues.view",
+    },
+    REFEREE_ROLE_NAME: {
+        "dashboard.view",
+        "players.view",
+        "teams.view",
+        "quick_match.view",
+        "quick_match.edit",
+        "quick_match.view_stats",
+        "leagues.view",
+    },
     COACH_ROLE_NAME: {
         "dashboard.view",
         "players.view",
@@ -37,6 +60,20 @@ DEFAULT_ROLE_PERMISSION_NAMES: dict[str, set[str]] = {
         "quick_match.view_stats",
         "leagues.view",
     },
+    CAPTAIN_ROLE_NAME: {
+        "dashboard.view",
+        "players.view",
+        "players.create",
+        "players.edit",
+        "players.assign_team",
+        "teams.view",
+        "teams.edit",
+        "teams.manage_roster",
+        "quick_match.view",
+        "quick_match.view_stats",
+        "leagues.view",
+    },
+    ADMINISTRATOR_ROLE_NAME: get_catalog_permission_names(),
 }
 
 
@@ -106,3 +143,17 @@ def sync_default_permissions_for_existing_roles(
             updated_role_names.append(role.name)
 
     return updated_role_names
+
+
+def sync_default_roles_and_permissions(
+    *,
+    role_repo: RoleRepository,
+    permission_repo: PermissionRepository,
+) -> list[str]:
+    permissions_by_name = ensure_catalog_permissions(permission_repo)
+
+    for role_name in DEFAULT_ROLE_NAMES:
+        role = role_repo.get_or_create(role_name)
+        apply_default_permissions_to_role(role, permissions_by_name)
+
+    return list(DEFAULT_ROLE_NAMES)
