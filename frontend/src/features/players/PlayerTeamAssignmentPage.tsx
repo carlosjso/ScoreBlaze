@@ -176,6 +176,7 @@ export default function PlayerTeamAssignmentPage() {
         age: selectedPlayer.age === null ? "" : String(selectedPlayer.age),
         heightCm: selectedPlayer.heightCm === null ? "" : String(selectedPlayer.heightCm),
         weightKg: selectedPlayer.weightKg === null ? "" : String(selectedPlayer.weightKg),
+        sex: selectedPlayer.sex ?? "",
         nationality: selectedPlayer.nationality,
         favoritePosition: selectedPlayer.favoritePosition,
         photoBase64: selectedPlayer.photoBase64,

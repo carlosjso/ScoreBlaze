@@ -106,6 +106,7 @@ class AccountInvitationService:
                     age=data.age,
                     height_cm=data.height_cm,
                     weight_kg=data.weight_kg,
+                    sex=data.sex,
                     nationality=data.nationality,
                     favorite_position=data.favorite_position,
                     photo=self._decode_photo(data.photo_base64),

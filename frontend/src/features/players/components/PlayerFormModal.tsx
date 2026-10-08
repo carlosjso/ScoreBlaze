@@ -15,7 +15,7 @@ import {
   toPlayerFormValues,
 } from "@/features/players/schemas/Players.schema";
 import { mapApiErrorToForm } from "@/shared/api/client";
-import { Button, ImageCropperModal, Input, Modal } from "@/shared/components/ui";
+import { Button, ImageCropperModal, Input, Modal, Select } from "@/shared/components/ui";
 import { getBase64ImageSrc, readImageFileAsDataUrl } from "@/shared/utils/base64Image";
 import { cn } from "@/shared/utils/cn";
 
@@ -308,6 +308,29 @@ export function PlayerFormModal({
                         disabled={loading}
                         className="bg-slate-100"
                       />
+                    )}
+                  />
+
+                  <Controller
+                    name="sex"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Select
+                        label="Sexo (opcional)"
+                        value={field.value}
+                        onChange={(event) => {
+                          dismissApiFieldError("sex");
+                          field.onChange(event.target.value as PlayerFormValues["sex"]);
+                        }}
+                        onBlur={field.onBlur}
+                        error={fieldState.error?.message ?? getApiFieldError("sex")}
+                        disabled={loading}
+                        className="bg-slate-100"
+                      >
+                        <option value="">Sin especificar</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                      </Select>
                     )}
                   />
 

@@ -6,8 +6,9 @@ import {
   accountInvitationService,
   type AccountInvitation,
 } from "@/features/player-profile/PlayerProfileInvitation.service";
+import type { PlayerSex } from "@/features/players/Players.types";
 import { getApiGlobalErrorMessage } from "@/shared/api/client";
-import { Button, Input } from "@/shared/components/ui";
+import { Button, Input, Select } from "@/shared/components/ui";
 
 type FormState = {
   password: string;
@@ -16,6 +17,7 @@ type FormState = {
   age: string;
   heightCm: string;
   weightKg: string;
+  sex: "" | PlayerSex;
   nationality: string;
   favoritePosition: string;
 };
@@ -27,6 +29,7 @@ const emptyForm: FormState = {
   age: "",
   heightCm: "",
   weightKg: "",
+  sex: "",
   nationality: "",
   favoritePosition: "",
 };
@@ -108,6 +111,7 @@ export default function CompletePlayerProfilePage() {
         age: requiresPlayerProfile ? optionalNumber(form.age) : null,
         height_cm: requiresPlayerProfile ? optionalNumber(form.heightCm) : null,
         weight_kg: requiresPlayerProfile ? optionalNumber(form.weightKg) : null,
+        sex: requiresPlayerProfile ? form.sex || null : null,
         nationality: requiresPlayerProfile ? form.nationality.trim() || null : null,
         favorite_position: requiresPlayerProfile ? form.favoritePosition.trim() || null : null,
         photo_base64: null,
@@ -228,6 +232,17 @@ export default function CompletePlayerProfilePage() {
                           disabled={submitting}
                           className="bg-slate-100"
                         />
+                        <Select
+                          label="Sexo (opcional)"
+                          value={form.sex}
+                          onChange={(event) => updateField("sex", event.target.value as FormState["sex"])}
+                          disabled={submitting}
+                          className="bg-slate-100"
+                        >
+                          <option value="">Sin especificar</option>
+                          <option value="Masculino">Masculino</option>
+                          <option value="Femenino">Femenino</option>
+                        </Select>
                         <Input
                           label="Estatura cm"
                           value={form.heightCm}

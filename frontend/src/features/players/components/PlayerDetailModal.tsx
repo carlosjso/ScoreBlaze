@@ -320,6 +320,7 @@ export function PlayerDetailModal({
   const highlightTags = player
     ? [
         player.favoritePosition ? { key: "favoritePosition", label: player.favoritePosition } : null,
+        player.sex ? { key: "sex", label: player.sex } : null,
         player.nationality ? { key: "nationality", label: player.nationality } : null,
         leagueParticipation ? { key: "team", label: leagueParticipation.teamName } : null,
         { key: "status", label: player.status },
@@ -434,6 +435,7 @@ export function PlayerDetailModal({
                       <DetailPanelRow label="Correo" value={player.email} icon={<Mail size={14} />} />
                       <DetailPanelRow label="Telefono" value={player.phone || "Sin telefono"} icon={<Phone size={14} />} />
                       <DetailPanelRow label="Estatus" value={player.status} icon={<Shield size={14} />} />
+                      <DetailPanelRow label="Sexo" value={player.sex || "Sin especificar"} icon={<UsersRound size={14} />} />
                       <DetailPanelRow
                         label="Nacionalidad"
                         value={player.nationality || "Sin registrar"}

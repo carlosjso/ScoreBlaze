@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import type { SortDir, SortKey } from "@/features/teams/Teams.types";
-import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
+import { TEAMS_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 type UseTeamsTableDataParams = {
   page: number;
@@ -20,7 +20,7 @@ export function useTeamsTableData({
   const query = useQuery({
     queryKey: teamsQueryKeys.table({
       page,
-      pageSize: DEFAULT_TABLE_PAGE_SIZE,
+      pageSize: TEAMS_TABLE_PAGE_SIZE,
       search,
       sortKey,
       sortDir,
@@ -29,7 +29,7 @@ export function useTeamsTableData({
       teamsService.getTablePage(
         {
           page,
-          pageSize: DEFAULT_TABLE_PAGE_SIZE,
+          pageSize: TEAMS_TABLE_PAGE_SIZE,
           search,
           sortKey,
           sortDir,
@@ -41,7 +41,7 @@ export function useTeamsTableData({
   return {
     teams: query.data?.items ?? [],
     page: query.data?.page ?? page,
-    pageSize: query.data?.pageSize ?? DEFAULT_TABLE_PAGE_SIZE,
+    pageSize: query.data?.pageSize ?? TEAMS_TABLE_PAGE_SIZE,
     totalItems: query.data?.totalItems ?? 0,
     totalPages: query.data?.totalPages ?? 1,
     loading: query.isPending,

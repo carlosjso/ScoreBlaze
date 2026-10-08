@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import "@fontsource/sora/400.css";
 import "@fontsource/sora/500.css";
@@ -42,16 +42,23 @@ import TeamRosterPage, { TeamRosterManagePage } from "@/features/teams/TeamRoste
 import Teams from "@/features/teams/Teams";
 import Users from "@/features/users/Users";
 import { getFirstAllowedPath } from "@/features/auth/permissions";
+import RoutePageLoader from "@/shared/components/RoutePageLoader";
 
 function HomeRedirect() {
   const { session } = useAuth();
   return <Navigate to={getFirstAllowedPath(session) ?? "/dashboard"} replace />;
 }
 
+function RouteLoadingIndicator() {
+  const location = useLocation();
+  return <RoutePageLoader key={location.pathname} />;
+}
+
 export default function App() {
   return (
     <QueryProvider>
       <BrowserRouter>
+        <RouteLoadingIndicator />
         <AuthProvider>
           <ToastProvider>
             <Routes>

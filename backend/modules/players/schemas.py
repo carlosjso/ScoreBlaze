@@ -24,6 +24,7 @@ class PlayerBase(BaseModel):
     age: Optional[int] = Field(default=None, ge=1, le=99)
     height_cm: Optional[int] = Field(default=None, ge=80, le=260)
     weight_kg: Optional[int] = Field(default=None, ge=20, le=250)
+    sex: Optional[Literal["Masculino", "Femenino"]] = None
     nationality: Optional[str] = Field(
         default=None,
         min_length=1,
@@ -54,7 +55,7 @@ class PlayerBase(BaseModel):
             return None
         return value
 
-    @field_validator("nationality", "favorite_position", mode="before")
+    @field_validator("sex", "nationality", "favorite_position", mode="before")
     @classmethod
     def normalize_optional_text(cls, value: object) -> object:
         if value is None:
@@ -108,6 +109,7 @@ class PlayerTableRowOut(BaseModel):
     age: Optional[int] = None
     height_cm: Optional[int] = None
     weight_kg: Optional[int] = None
+    sex: Optional[Literal["Masculino", "Femenino"]] = None
     nationality: Optional[str] = None
     favorite_position: Optional[str] = None
     photo_base64: Optional[str] = Field(

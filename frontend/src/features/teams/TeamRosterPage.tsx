@@ -24,7 +24,7 @@ import { useTeamsMutations } from "@/features/teams/hooks/useTeamsMutations";
 import { teamsQueryKeys, teamsService } from "@/features/teams/Teams.service";
 import type { ApiPlayer, TeamListItem, TeamPlayerSummary } from "@/features/teams/Teams.types";
 import { playersQueryKeys, playersService } from "@/features/players/Players.service";
-import type { PlayerMutationPayload } from "@/features/players/Players.types";
+import type { PlayerMutationPayload, PlayerSex } from "@/features/players/Players.types";
 import { getApiGlobalErrorMessage } from "@/shared/api/client";
 import { TableEmptyState } from "@/shared/components/table/TableEmptyState";
 import { Button, Input, Modal, PageHeader, Panel, SearchInput, Select } from "@/shared/components/ui";
@@ -68,12 +68,14 @@ type QuickRosterPlayerForm = {
   name: string;
   email: string;
   phone: string;
+  sex: "" | PlayerSex;
 };
 
 const emptyQuickRosterPlayerForm: QuickRosterPlayerForm = {
   name: "",
   email: "",
   phone: "",
+  sex: "",
 };
 
 function buildQuickRosterPlayerPayload(values: QuickRosterPlayerForm, teamId: number): PlayerMutationPayload {
@@ -84,6 +86,7 @@ function buildQuickRosterPlayerPayload(values: QuickRosterPlayerForm, teamId: nu
     age: null,
     height_cm: null,
     weight_kg: null,
+    sex: values.sex || null,
     nationality: null,
     favorite_position: null,
     photo_base64: null,
@@ -1263,6 +1266,17 @@ export function TeamRosterManagePage() {
               disabled={quickCreateSubmitting}
               className="bg-slate-100"
             />
+            <Select
+              label="Sexo (opcional)"
+              value={quickCreateValues.sex}
+              onChange={(event) => updateQuickCreateField("sex", event.target.value as QuickRosterPlayerForm["sex"])}
+              disabled={quickCreateSubmitting}
+              className="bg-slate-100"
+            >
+              <option value="">Sin especificar</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Femenino">Femenino</option>
+            </Select>
           </div>
 
           <p className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs leading-5 text-orange-800">

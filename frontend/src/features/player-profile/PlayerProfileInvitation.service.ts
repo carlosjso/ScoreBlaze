@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { apiClient, toApiRequestError } from "@/shared/api/client";
+import type { PlayerSex } from "@/features/players/Players.types";
 
 export type AccountInvitation = {
   userId: number;
@@ -20,6 +21,7 @@ export type CompleteAccountInvitationPayload = {
   age: number | null;
   height_cm: number | null;
   weight_kg: number | null;
+  sex: PlayerSex | null;
   nationality: string | null;
   favorite_position: string | null;
   photo_base64: string | null;

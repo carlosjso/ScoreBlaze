@@ -9,6 +9,7 @@ import {
   type PlayerFormValues,
   type PlayerListItem,
   type PlayerMutationPayload,
+  type PlayerSex,
 } from "@/features/players/Players.types";
 import { buildPaginatedResponseSchema } from "@/shared/api/pagination";
 
@@ -17,6 +18,7 @@ function sanitizeTeamIds(teamIds: number[]): number[] {
 }
 
 const idSchema = z.coerce.number().int();
+const playerSexSchema = z.union([z.literal("Masculino"), z.literal("Femenino")]);
 type PlayerFormFieldName = Extract<keyof PlayerFormValues, string>;
 const PLAYER_PHONE_MAX_VALUE = 9_223_372_036_854_775_807n;
 
@@ -39,6 +41,7 @@ export const apiPlayerSchema = z.object({
   age: z.preprocess((value) => value ?? null, z.coerce.number().int().min(1).max(99).nullable()),
   height_cm: z.preprocess((value) => value ?? null, z.coerce.number().int().min(80).max(260).nullable()),
   weight_kg: z.preprocess((value) => value ?? null, z.coerce.number().int().min(20).max(250).nullable()),
+  sex: z.preprocess((value) => value ?? null, playerSexSchema.nullable()),
   nationality: z.preprocess((value) => value ?? null, z.string().trim().nullable()),
   favorite_position: z.preprocess((value) => value ?? null, z.string().trim().nullable()),
   photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
@@ -101,6 +104,7 @@ export const apiPaginatedPlayersTableSchema = buildPaginatedResponseSchema(
       age: z.preprocess((value) => value ?? null, z.coerce.number().int().min(1).max(99).nullable()),
       height_cm: z.preprocess((value) => value ?? null, z.coerce.number().int().min(80).max(260).nullable()),
       weight_kg: z.preprocess((value) => value ?? null, z.coerce.number().int().min(20).max(250).nullable()),
+      sex: z.preprocess((value) => value ?? null, playerSexSchema.nullable()),
       nationality: z.preprocess((value) => value ?? null, z.string().trim().nullable()),
       favorite_position: z.preprocess((value) => value ?? null, z.string().trim().nullable()),
       photo_base64: z.preprocess((value) => value ?? null, z.string().nullable()),
@@ -120,6 +124,7 @@ export const apiPaginatedPlayersTableSchema = buildPaginatedResponseSchema(
         age: player.age,
         heightCm: player.height_cm,
         weightKg: player.weight_kg,
+        sex: player.sex,
         nationality: player.nationality ?? "",
         favoritePosition: player.favorite_position ?? "",
         photoBase64: player.photo_base64,
@@ -173,6 +178,7 @@ export const playerFormSchema = z.object({
     .max(PLAYER_FORM_LIMITS.weightKg, "El peso no puede exceder 3 digitos.")
     .refine((value) => value === "" || /^\d+$/.test(value), "El peso debe contener solo numeros.")
     .refine((value) => value === "" || (Number(value) >= 20 && Number(value) <= 250), "El peso debe estar entre 20 y 250 kg."),
+  sex: z.union([z.literal(""), playerSexSchema]),
   nationality: z
     .string()
     .trim()
@@ -192,6 +198,7 @@ export const playerFormApiFieldMap = {
   age: "age",
   height_cm: "heightCm",
   weight_kg: "weightKg",
+  sex: "sex",
   nationality: "nationality",
   favorite_position: "favoritePosition",
   photo_base64: "photoBase64",
@@ -262,6 +269,7 @@ export function buildPlayersView(
       age: player.age,
       heightCm: player.height_cm,
       weightKg: player.weight_kg,
+      sex: player.sex,
       nationality: player.nationality ?? "",
       favoritePosition: player.favorite_position ?? "",
       photoBase64: player.photo_base64,
@@ -284,6 +292,7 @@ export function toPlayerFormValues(player?: PlayerListItem | null): PlayerFormVa
       age: player.age === null ? "" : String(player.age),
       heightCm: player.heightCm === null ? "" : String(player.heightCm),
       weightKg: player.weightKg === null ? "" : String(player.weightKg),
+      sex: player.sex ?? "",
       nationality: player.nationality,
       favoritePosition: player.favoritePosition,
       photoBase64: player.photoBase64,
@@ -298,6 +307,7 @@ export function toPlayerFormValues(player?: PlayerListItem | null): PlayerFormVa
     age: "",
     heightCm: "",
     weightKg: "",
+    sex: "",
     nationality: "",
     favoritePosition: "",
     photoBase64: null,
@@ -316,6 +326,7 @@ export function toPlayerMutationPayload(values: PlayerFormValues): PlayerMutatio
     age: normalizedValues.age.trim() ? Number(normalizedValues.age) : null,
     height_cm: normalizedValues.heightCm.trim() ? Number(normalizedValues.heightCm) : null,
     weight_kg: normalizedValues.weightKg.trim() ? Number(normalizedValues.weightKg) : null,
+    sex: normalizedValues.sex ? (normalizedValues.sex as PlayerSex) : null,
     nationality: normalizedValues.nationality.trim() || null,
     favorite_position: normalizedValues.favoritePosition.trim() || null,
     photo_base64: normalizedValues.photoBase64?.trim() ? normalizedValues.photoBase64.trim() : null,

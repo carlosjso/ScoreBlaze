@@ -1,4 +1,5 @@
 export type PlayerStatus = "Con equipo" | "Sin equipo";
+export type PlayerSex = "Masculino" | "Femenino";
 export type SortKey = "id" | "name";
 export type SortDir = "asc" | "desc";
 export type TeamFilterValue = "all" | "none" | `${number}`;
@@ -12,6 +13,7 @@ export type ApiPlayer = {
   age: number | null;
   height_cm: number | null;
   weight_kg: number | null;
+  sex: PlayerSex | null;
   nationality: string | null;
   favorite_position: string | null;
   photo_base64: string | null;
@@ -60,6 +62,7 @@ export type PlayerListItem = {
   age: number | null;
   heightCm: number | null;
   weightKg: number | null;
+  sex: PlayerSex | null;
   nationality: string;
   favoritePosition: string;
   photoBase64: string | null;
@@ -120,6 +123,7 @@ export type PlayerFormValues = {
   age: string;
   heightCm: string;
   weightKg: string;
+  sex: "" | PlayerSex;
   nationality: string;
   favoritePosition: string;
   photoBase64: string | null;
@@ -133,6 +137,7 @@ export type PlayerMutationPayload = {
   age: number | null;
   height_cm: number | null;
   weight_kg: number | null;
+  sex: PlayerSex | null;
   nationality: string | null;
   favorite_position: string | null;
   photo_base64: string | null;

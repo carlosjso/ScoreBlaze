@@ -1,6 +1,6 @@
 import base64
 
-from sqlalchemy import BigInteger, Column, Integer, LargeBinary, String
+from sqlalchemy import BigInteger, CheckConstraint, Column, Integer, LargeBinary, String
 from sqlalchemy.orm import relationship
 
 from database.alchemy import Base
@@ -8,6 +8,12 @@ from database.alchemy import Base
 
 class Player(Base):
     __tablename__ = "players"
+    __table_args__ = (
+        CheckConstraint(
+            "sex IS NULL OR sex IN ('Masculino', 'Femenino')",
+            name="ck_players_sex",
+        ),
+    )
 
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
     name = Column(String(100), nullable=False)
@@ -16,6 +22,7 @@ class Player(Base):
     age = Column(Integer, nullable=True)
     height_cm = Column(Integer, nullable=True)
     weight_kg = Column(Integer, nullable=True)
+    sex = Column(String(10), nullable=True)
     nationality = Column(String(80), nullable=True)
     favorite_position = Column(String(60), nullable=True)
     photo = Column(LargeBinary, nullable=True)

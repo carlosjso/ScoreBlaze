@@ -36,7 +36,7 @@ function isBasketballPath(pathname: string) {
 
 const breadcrumbByPath: Record<string, BreadcrumbItem[]> = {
   "/dashboard": [{ label: "Inicio" }],
-  "/basketball": [{ label: "Inicio", to: "/dashboard" }, { label: "Basquet" }],
+  "/basketball": [{ label: "Inicio" }],
   "/settings": [{ label: "Inicio", to: "/dashboard" }, { label: "Configuracion" }],
   "/settings/permissions": [
     { label: "Inicio", to: "/dashboard" },
@@ -120,8 +120,8 @@ export default function AppLayout() {
         ]
       : location.pathname.startsWith("/leagues/") && location.pathname.endsWith("/groups")
       ? [
-          { label: "Inicio", to: "/dashboard" },
-          { label: "Basquet", to: "/basketball" },
+          { label: "Deportes", to: "/dashboard" },
+          { label: "Inicio", to: "/basketball" },
           { label: "Ligas", to: "/leagues" },
           { label: "Grupos" },
         ]

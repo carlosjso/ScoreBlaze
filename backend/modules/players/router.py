@@ -111,6 +111,7 @@ def update_player(
             or payload.age != player.age
             or payload.height_cm != player.height_cm
             or payload.weight_kg != player.weight_kg
+            or payload.sex != player.sex
             or payload.nationality != player.nationality
             or payload.favorite_position != player.favorite_position
             or payload.photo_base64 != player.photo_base64

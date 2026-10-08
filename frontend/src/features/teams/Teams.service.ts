@@ -2,7 +2,7 @@ import type { ZodType } from "zod";
 
 import { apiClient, toApiRequestError } from "@/shared/api/client";
 import type { PaginatedResponse } from "@/shared/api/pagination";
-import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
+import { TEAMS_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 import type { TeamMutationPayload, TeamsSnapshot } from "@/features/teams/Teams.types";
 import {
   apiPaginatedTeamsTableSchema,
@@ -82,7 +82,7 @@ export const teamsService = {
         signal,
         params: {
           page: params.page,
-          page_size: params.pageSize ?? DEFAULT_TABLE_PAGE_SIZE,
+          page_size: params.pageSize ?? TEAMS_TABLE_PAGE_SIZE,
           search: params.search,
           sort_key: params.sortKey,
           sort_dir: params.sortDir,

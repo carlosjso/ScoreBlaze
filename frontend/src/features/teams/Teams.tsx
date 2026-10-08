@@ -14,7 +14,7 @@ import { useTeamsMutations } from "@/features/teams/hooks/useTeamsMutations";
 import type { SortDir, SortKey } from "@/features/teams/Teams.types";
 import { ConfirmModal } from "@/shared/components/modals/ConfirmModal";
 import { PageHeader, Panel } from "@/shared/components/ui";
-import { DEFAULT_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
+import { TEAMS_TABLE_PAGE_SIZE } from "@/shared/constants/pagination";
 
 export default function Teams() {
   const navigate = useNavigate();
@@ -127,7 +127,7 @@ export default function Teams() {
               sortDir={sortDir}
               currentPage={page}
               totalPages={totalPages}
-              pageSize={DEFAULT_TABLE_PAGE_SIZE}
+              pageSize={TEAMS_TABLE_PAGE_SIZE}
               deletingTeamId={deletingTeamId}
               onToggleSort={toggleSort}
               onPageChange={setCurrentPage}

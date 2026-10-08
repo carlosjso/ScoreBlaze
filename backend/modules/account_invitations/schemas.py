@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -30,6 +30,7 @@ class AccountInvitationCompletion(BaseModel):
     age: Optional[int] = Field(default=None, ge=1, le=99)
     height_cm: Optional[int] = Field(default=None, ge=80, le=260)
     weight_kg: Optional[int] = Field(default=None, ge=20, le=250)
+    sex: Optional[Literal["Masculino", "Femenino"]] = None
     nationality: Optional[str] = Field(default=None, min_length=1, max_length=PLAYER_NATIONALITY_MAX_LENGTH)
     favorite_position: Optional[str] = Field(default=None, min_length=1, max_length=PLAYER_FAVORITE_POSITION_MAX_LENGTH)
     photo_base64: Optional[str] = Field(default=None)
@@ -44,7 +45,7 @@ class AccountInvitationCompletion(BaseModel):
     def normalize_completion_numbers(cls, value: object) -> object:
         return PlayerBase.normalize_optional_numbers(value)
 
-    @field_validator("nationality", "favorite_position", mode="before")
+    @field_validator("sex", "nationality", "favorite_position", mode="before")
     @classmethod
     def normalize_completion_text(cls, value: object) -> object:
         return PlayerBase.normalize_optional_text(value)
